@@ -1,0 +1,55 @@
+2026-01-31 03:18:16.000 | INFO     | MAIN | Starting USV Control System
+2026-01-31 03:18:16.001 | INFO     | MAIN | Mode: SIMULATION
+2026-01-31 03:18:16.390 | INFO     | SensorService | Process SensorService starting...
+2026-01-31 03:18:16.390 | INFO     | SensorService | Process SensorService entering loop at 20.0 Hz
+2026-01-31 03:18:16.390 | INFO     | GNCService | Process GNCService starting...
+2026-01-31 03:18:16.390 | INFO     | GNCService | Process GNCService entering loop at 5.0 Hz
+2026-01-31 03:18:17.371 | INFO     | SensorService | Reading sensor data... sample #20
+2026-01-31 03:18:18.404 | INFO     | SensorService | Reading sensor data... sample #40
+2026-01-31 03:18:19.416 | INFO     | SensorService | Reading sensor data... sample #60
+2026-01-31 03:18:20.431 | INFO     | SensorService | Reading sensor data... sample #80
+2026-01-31 03:18:21.494 | INFO     | SensorService | Reading sensor data... sample #100
+2026-01-31 03:18:22.546 | INFO     | SensorService | Reading sensor data... sample #120
+2026-01-31 03:18:23.563 | INFO     | SensorService | Reading sensor data... sample #140
+2026-01-31 03:18:24.573 | INFO     | SensorService | Reading sensor data... sample #160
+2026-01-31 03:18:25.592 | INFO     | SensorService | Reading sensor data... sample #180
+2026-01-31 03:18:26.607 | INFO     | SensorService | Reading sensor data... sample #200
+2026-01-31 03:18:27.709 | INFO     | SensorService | Reading sensor data... sample #220
+2026-01-31 03:18:28.761 | INFO     | SensorService | Reading sensor data... sample #240
+2026-01-31 03:18:29.934 | INFO     | SensorService | Reading sensor data... sample #260
+2026-01-31 03:18:30.976 | INFO     | SensorService | Reading sensor data... sample #280
+2026-01-31 03:18:32.006 | INFO     | SensorService | Reading sensor data... sample #300
+2026-01-31 03:18:33.018 | INFO     | SensorService | Reading sensor data... sample #320
+2026-01-31 03:18:34.026 | INFO     | SensorService | Reading sensor data... sample #340
+2026-01-31 03:18:35.131 | INFO     | SensorService | Reading sensor data... sample #360
+2026-01-31 03:18:36.279 | INFO     | SensorService | Reading sensor data... sample #380
+2026-01-31 03:18:37.302 | INFO     | SensorService | Reading sensor data... sample #400
+2026-01-31 03:18:38.332 | INFO     | SensorService | Reading sensor data... sample #420
+2026-01-31 03:18:39.343 | INFO     | SensorService | Reading sensor data... sample #440
+2026-01-31 03:18:40.366 | INFO     | SensorService | Reading sensor data... sample #460
+2026-01-31 03:18:41.378 | INFO     | SensorService | Reading sensor data... sample #480
+2026-01-31 03:18:42.410 | INFO     | SensorService | Reading sensor data... sample #500
+2026-01-31 03:18:42.528 | INFO     | SensorService | Process SensorService received signal 2. Stopping...
+2026-01-31 03:18:42.528 | INFO     | GNCService | Process GNCService received signal 2. Stopping...
+2026-01-31 03:18:42.529 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-01-31 03:18:42.562 | INFO     | SensorService | Process SensorService stopped.
+2026-01-31 03:18:42.696 | INFO     | GNCService | Process GNCService stopped.
+2026-01-31 03:18:42.734 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-01-31 03:23:24.495 | INFO     | MAIN | Starting USV Control System
+2026-01-31 03:23:24.495 | INFO     | MAIN | Mode: SIMULATION
+2026-01-31 03:23:24.861 | INFO     | HALService | Process HALService starting...
+2026-01-31 03:23:24.861 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-01-31 03:23:24.872 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-01-31 03:23:24.973 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-01-31 03:23:24.974 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-01-31 03:23:39.866 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-01-31 03:23:39.866 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-01-31 03:23:39.884 | INFO     | HALService | Process HALService stopped.
+2026-01-31 03:23:39.924 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-01-31 03:27:16.739 | INFO     | MAIN | Starting USV Control System
+2026-01-31 03:27:16.739 | INFO     | MAIN | Mode: SIMULATION
+2026-01-31 03:27:17.078 | INFO     | HALService | Process HALService starting...
+2026-01-31 03:27:17.078 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-01-31 03:27:17.117 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-01-31 03:27:17.183 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-01-31 03:27:17.183 | INFO     | HALService | Process HALService entering loop at 50.0 Hz

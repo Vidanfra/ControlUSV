@@ -1,0 +1,7 @@
+pyzmq
+pydantic
+pydantic-settings
+fastapi
+uvicorn
+loguru
+tornado
