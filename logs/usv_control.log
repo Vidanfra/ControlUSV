@@ -53,3 +53,1268 @@
 2026-01-31 03:27:17.117 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
 2026-01-31 03:27:17.183 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
 2026-01-31 03:27:17.183 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-01-31 03:54:33.841 | INFO     | MAIN | Starting USV Control System
+2026-01-31 03:54:33.841 | INFO     | MAIN | Mode: SIMULATION
+2026-01-31 03:54:34.659 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-01-31 03:54:34.660 | INFO     | CommsService | Starting Web Server on port 8000
+2026-01-31 03:54:34.644 | INFO     | HALService | Process HALService starting...
+2026-01-31 03:54:34.644 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-01-31 03:54:34.712 | INFO     | CommsService | Starting Web Server...
+2026-01-31 03:54:34.716 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-01-31 03:54:34.766 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-01-31 03:54:34.766 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-01-31 03:54:55.981 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-01-31 03:54:55.980 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-01-31 03:54:55.982 | INFO     | HALService | Process HALService stopped.
+2026-01-31 03:54:56.112 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-01-31 03:54:56.164 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-02-09 13:55:12.729 | INFO     | MAIN | Starting USV Control System
+2026-02-09 13:55:12.729 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 13:55:13.332 | INFO     | HALService | Process HALService starting...
+2026-02-09 13:55:13.333 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 13:55:13.333 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 13:55:13.349 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 13:55:13.403 | INFO     | CommsService | Starting Web Server...
+2026-02-09 13:55:13.411 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 13:55:13.452 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 13:55:13.455 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 14:02:02.004 | INFO     | MAIN | Starting USV Control System
+2026-02-09 14:02:02.004 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 14:02:02.649 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 14:02:02.648 | INFO     | HALService | Process HALService starting...
+2026-02-09 14:02:02.649 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 14:02:02.655 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 14:02:02.742 | INFO     | CommsService | Starting Web Server...
+2026-02-09 14:02:02.747 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 14:02:02.756 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 14:02:02.757 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 14:04:24.643 | INFO     | MAIN | Starting USV Control System
+2026-02-09 14:04:24.643 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 14:04:25.332 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 14:04:25.372 | INFO     | CommsService | Starting Web Server...
+2026-02-09 14:04:25.397 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 14:04:25.420 | INFO     | HALService | Process HALService starting...
+2026-02-09 14:04:25.420 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 14:04:25.432 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 14:04:25.528 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 14:04:25.529 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 14:07:56.906 | INFO     | MAIN | Starting USV Control System
+2026-02-09 14:07:56.906 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 14:07:57.595 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 14:07:57.627 | INFO     | HALService | Process HALService starting...
+2026-02-09 14:07:57.627 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 14:07:57.633 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 14:07:57.633 | INFO     | CommsService | Starting Web Server...
+2026-02-09 14:07:57.654 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 14:07:57.733 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 14:07:57.733 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 14:08:06.737 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 14:08:06.756 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 14:14:09.917 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 14:14:09.916 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 14:14:09.920 | INFO     | HALService | Process HALService stopped.
+2026-02-09 14:14:09.989 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 14:14:09.990 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 14:14:10.101 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-02-09 14:14:10.227 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-02-09 14:14:47.031 | INFO     | MAIN | Starting USV Control System
+2026-02-09 14:14:47.031 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 14:14:47.754 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 14:14:47.754 | INFO     | HALService | Process HALService starting...
+2026-02-09 14:14:47.754 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 14:14:47.770 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 14:14:47.772 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 14:14:47.776 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 14:14:47.812 | INFO     | CommsService | Starting Web Server...
+2026-02-09 14:14:47.818 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 14:14:47.862 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 14:14:47.865 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 14:14:50.978 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 14:14:51.334 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 14:14:58.885 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 14:14:58.885 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 14:14:59.281 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 14:14:59.304 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 14:54:09.624 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 14:54:09.625 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 15:09:05.803 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 15:16:43.975 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 15:16:43.976 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 15:16:43.990 | INFO     | HALService | Process HALService stopped.
+2026-02-09 15:16:44.075 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 15:16:44.185 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-02-09 15:16:44.188 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-02-09 15:16:44.200 | INFO     | CommsService | MAVLink bridge stopped.
+2026-02-09 15:16:44.304 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-02-09 15:16:46.843 | INFO     | MAIN | Starting USV Control System
+2026-02-09 15:16:46.843 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 15:16:47.582 | INFO     | HALService | Process HALService starting...
+2026-02-09 15:16:47.582 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 15:16:47.588 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 15:16:47.588 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 15:16:47.594 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 15:16:47.597 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 15:16:47.648 | INFO     | CommsService | Starting Web Server...
+2026-02-09 15:16:47.653 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 15:16:47.687 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 15:16:47.688 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 15:16:47.904 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 15:16:50.999 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 15:16:51.703 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 15:16:51.726 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 15:24:15.091 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 15:24:15.092 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 15:24:15.108 | INFO     | HALService | Process HALService stopped.
+2026-02-09 15:24:15.139 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 15:24:15.140 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 15:24:15.248 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-02-09 15:24:15.252 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-02-09 15:24:15.264 | INFO     | CommsService | MAVLink bridge stopped.
+2026-02-09 15:24:15.355 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-02-09 15:26:42.923 | INFO     | MAIN | Starting USV Control System
+2026-02-09 15:26:42.923 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 15:26:43.770 | INFO     | HALService | Process HALService starting...
+2026-02-09 15:26:43.770 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 15:26:43.776 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 15:26:43.782 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 15:26:43.799 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 15:26:43.801 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 15:26:43.845 | INFO     | CommsService | Starting Web Server...
+2026-02-09 15:26:43.852 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 15:26:43.876 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 15:26:43.876 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 15:26:43.970 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 15:26:47.052 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 15:27:02.005 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 15:27:02.005 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 15:27:02.602 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 15:27:02.968 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 15:27:43.283 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 15:27:43.283 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 15:27:43.300 | INFO     | HALService | Process HALService stopped.
+2026-02-09 15:27:43.389 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 15:27:43.390 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 15:27:43.498 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-02-09 15:27:43.502 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-02-09 15:27:43.514 | INFO     | CommsService | MAVLink bridge stopped.
+2026-02-09 15:27:43.620 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-02-09 15:27:46.211 | INFO     | MAIN | Starting USV Control System
+2026-02-09 15:27:46.211 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 15:27:46.898 | INFO     | HALService | Process HALService starting...
+2026-02-09 15:27:46.898 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 15:27:46.905 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 15:27:46.910 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 15:27:46.911 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 15:27:46.912 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 15:27:46.949 | INFO     | CommsService | Starting Web Server...
+2026-02-09 15:27:46.954 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 15:27:47.004 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 15:27:47.005 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 15:27:47.234 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 15:27:47.248 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 15:27:50.717 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 15:27:50.717 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 15:27:51.081 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 15:27:51.094 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 15:28:45.304 | INFO     | MAIN | Starting USV Control System
+2026-02-09 15:28:45.304 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 15:28:46.065 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 15:28:46.066 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 15:28:46.071 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 15:28:46.073 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 15:28:46.058 | INFO     | HALService | Process HALService starting...
+2026-02-09 15:28:46.059 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 15:28:46.115 | INFO     | CommsService | Starting Web Server...
+2026-02-09 15:28:46.119 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 15:28:46.179 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 15:28:46.179 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 15:28:46.255 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 15:28:46.270 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 15:28:56.830 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 15:28:56.831 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 15:28:57.176 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 15:28:57.193 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 15:36:59.494 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 15:36:59.494 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 15:36:59.498 | INFO     | HALService | Process HALService stopped.
+2026-02-09 15:36:59.583 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 15:36:59.583 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 15:36:59.693 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-02-09 15:36:59.699 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-02-09 15:36:59.709 | INFO     | CommsService | MAVLink bridge stopped.
+2026-02-09 15:36:59.807 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-02-09 15:37:01.946 | INFO     | MAIN | Starting USV Control System
+2026-02-09 15:37:01.946 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 15:37:02.776 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 15:37:02.797 | INFO     | HALService | Process HALService starting...
+2026-02-09 15:37:02.797 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 15:37:02.818 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 15:37:02.823 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 15:37:02.825 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 15:37:02.871 | INFO     | CommsService | Starting Web Server...
+2026-02-09 15:37:02.875 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 15:37:02.902 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 15:37:02.903 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 15:37:02.911 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 15:37:02.926 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 15:38:00.434 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 15:38:00.435 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 15:38:01.205 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 15:38:01.221 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 15:42:21.803 | INFO     | MAIN | Starting USV Control System
+2026-02-09 15:42:21.803 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 15:42:22.624 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 15:42:22.630 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 15:42:22.632 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 15:42:22.633 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 15:42:22.633 | INFO     | HALService | Process HALService starting...
+2026-02-09 15:42:22.634 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 15:42:22.639 | INFO     | ManagerService | Process ManagerService starting...
+2026-02-09 15:42:22.672 | INFO     | CommsService | Starting Web Server...
+2026-02-09 15:42:22.676 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 15:42:22.731 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 15:42:22.739 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 15:42:22.740 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 15:42:22.744 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 15:42:22.763 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-02-09 15:42:22.764 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-02-09 15:44:59.352 | INFO     | MAIN | Starting USV Control System
+2026-02-09 15:44:59.353 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 15:45:00.164 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 15:45:00.176 | INFO     | ManagerService | Process ManagerService starting...
+2026-02-09 15:45:00.192 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 15:45:00.198 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 15:45:00.200 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 15:45:00.237 | INFO     | CommsService | Starting Web Server...
+2026-02-09 15:45:00.242 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 15:45:00.239 | INFO     | HALService | Process HALService starting...
+2026-02-09 15:45:00.240 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 15:45:00.286 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-02-09 15:45:00.286 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-02-09 15:45:00.345 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 15:45:00.345 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 15:45:03.722 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 15:45:03.754 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 15:45:07.248 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 15:45:07.249 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 15:45:08.022 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 15:45:08.040 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 15:47:23.448 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 15:47:23.449 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-02-09 15:47:23.449 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 15:47:23.452 | INFO     | HALService | Process HALService stopped.
+2026-02-09 15:47:23.484 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 15:47:23.485 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 15:47:23.525 | INFO     | ManagerService | Process ManagerService stopped.
+2026-02-09 15:47:23.593 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-02-09 15:47:23.596 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-02-09 15:47:23.609 | INFO     | CommsService | MAVLink bridge stopped.
+2026-02-09 15:47:23.686 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-02-09 15:47:25.775 | INFO     | MAIN | Starting USV Control System
+2026-02-09 15:47:25.775 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 15:47:26.578 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 15:47:26.583 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 15:47:26.596 | INFO     | HALService | Process HALService starting...
+2026-02-09 15:47:26.597 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 15:47:26.600 | INFO     | ManagerService | Process ManagerService starting...
+2026-02-09 15:47:26.608 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 15:47:26.609 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 15:47:26.649 | INFO     | CommsService | Starting Web Server...
+2026-02-09 15:47:26.654 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 15:47:26.702 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 15:47:26.703 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 15:47:26.709 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-02-09 15:47:26.710 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-02-09 15:47:26.816 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 15:47:26.829 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 15:47:47.453 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 15:47:47.454 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 15:47:48.182 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 15:47:48.200 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 15:48:07.945 | INFO     | CommsService | Command received and published: CommandType.ARM
+2026-02-09 15:48:08.018 | INFO     | ManagerService | Manager received command: CommandType.ARM
+2026-02-09 15:48:08.018 | WARNING  | ManagerService | >>> VEHICLE ARMED <<<
+2026-02-09 15:48:45.790 | INFO     | CommsService | Command received and published: CommandType.DISARM
+2026-02-09 15:48:45.812 | INFO     | ManagerService | Manager received command: CommandType.DISARM
+2026-02-09 15:48:45.813 | WARNING  | ManagerService | >>> VEHICLE DISARMED <<<
+2026-02-09 15:48:50.910 | INFO     | CommsService | Command received and published: CommandType.ARM
+2026-02-09 15:48:50.951 | INFO     | ManagerService | Manager received command: CommandType.ARM
+2026-02-09 15:48:50.952 | WARNING  | ManagerService | >>> VEHICLE ARMED <<<
+2026-02-09 15:48:56.029 | INFO     | CommsService | Command received and published: CommandType.DISARM
+2026-02-09 15:48:56.084 | INFO     | ManagerService | Manager received command: CommandType.DISARM
+2026-02-09 15:48:56.085 | WARNING  | ManagerService | >>> VEHICLE DISARMED <<<
+2026-02-09 15:53:04.052 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 15:53:04.052 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-02-09 15:53:04.052 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 15:53:04.071 | INFO     | HALService | Process HALService stopped.
+2026-02-09 15:53:04.114 | INFO     | ManagerService | Process ManagerService stopped.
+2026-02-09 15:53:04.146 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 15:53:04.147 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 15:53:04.256 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-02-09 15:53:04.259 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-02-09 15:53:04.272 | INFO     | CommsService | MAVLink bridge stopped.
+2026-02-09 15:53:04.371 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-02-09 15:53:08.357 | INFO     | MAIN | Starting USV Control System
+2026-02-09 15:53:08.358 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 15:53:09.184 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 15:53:09.208 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 15:53:09.214 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 15:53:09.217 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 15:53:09.209 | INFO     | ManagerService | Process ManagerService starting...
+2026-02-09 15:53:09.230 | INFO     | HALService | Process HALService starting...
+2026-02-09 15:53:09.231 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 15:53:09.259 | INFO     | CommsService | Starting Web Server...
+2026-02-09 15:53:09.265 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 15:53:09.320 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-02-09 15:53:09.320 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-02-09 15:53:09.336 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 15:53:09.337 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 15:53:09.353 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 15:53:09.366 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 15:53:19.958 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 15:53:19.958 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 15:53:20.703 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 15:53:20.720 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 15:53:35.985 | INFO     | CommsService | Command received and published: CommandType.UPLOAD_MISSION
+2026-02-09 15:53:36.004 | INFO     | ManagerService | Manager received command: CommandType.UPLOAD_MISSION
+2026-02-09 15:57:58.589 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-02-09 15:57:58.589 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 15:57:58.590 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 15:57:58.594 | INFO     | HALService | Process HALService stopped.
+2026-02-09 15:57:58.645 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 15:57:58.647 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 15:57:58.673 | INFO     | ManagerService | Process ManagerService stopped.
+2026-02-09 15:57:58.756 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-02-09 15:57:58.759 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-02-09 15:57:58.772 | INFO     | CommsService | MAVLink bridge stopped.
+2026-02-09 15:57:58.882 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-02-09 15:58:01.007 | INFO     | MAIN | Starting USV Control System
+2026-02-09 15:58:01.007 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 15:58:01.772 | INFO     | HALService | Process HALService starting...
+2026-02-09 15:58:01.775 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 15:58:01.772 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 15:58:01.780 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 15:58:01.782 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 15:58:01.821 | INFO     | CommsService | Starting Web Server...
+2026-02-09 15:58:01.826 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 15:58:01.842 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 15:58:01.843 | INFO     | ManagerService | Process ManagerService starting...
+2026-02-09 15:58:01.878 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 15:58:01.878 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 15:58:01.965 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-02-09 15:58:01.965 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-02-09 15:58:01.972 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 15:58:01.987 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 15:58:07.597 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 15:58:07.598 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 15:58:08.371 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 15:58:16.597 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 15:58:16.597 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-02-09 15:58:16.598 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 15:58:16.599 | INFO     | HALService | Process HALService stopped.
+2026-02-09 15:58:16.671 | INFO     | ManagerService | Process ManagerService stopped.
+2026-02-09 15:58:16.681 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 15:58:16.792 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-02-09 15:58:16.796 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-02-09 15:58:16.808 | INFO     | CommsService | MAVLink bridge stopped.
+2026-02-09 15:58:16.901 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-02-09 15:58:21.650 | INFO     | MAIN | Starting USV Control System
+2026-02-09 15:58:21.651 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 15:58:22.386 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 15:58:22.392 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 15:58:22.394 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 15:58:22.398 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 15:58:22.392 | INFO     | ManagerService | Process ManagerService starting...
+2026-02-09 15:58:22.391 | INFO     | HALService | Process HALService starting...
+2026-02-09 15:58:22.391 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 15:58:22.434 | INFO     | CommsService | Starting Web Server...
+2026-02-09 15:58:22.439 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 15:58:22.501 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-02-09 15:58:22.502 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-02-09 15:58:22.512 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 15:58:22.513 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 15:58:25.350 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 15:58:29.292 | INFO     | CommsService | Command received and published: CommandType.ARM
+2026-02-09 15:58:29.374 | INFO     | ManagerService | Manager received command: CommandType.ARM
+2026-02-09 15:58:29.375 | WARNING  | ManagerService | >>> VEHICLE ARMED <<<
+2026-02-09 15:58:32.230 | INFO     | CommsService | Command received and published: CommandType.DISARM
+2026-02-09 15:58:32.289 | INFO     | ManagerService | Manager received command: CommandType.DISARM
+2026-02-09 15:58:32.290 | WARNING  | ManagerService | >>> VEHICLE DISARMED <<<
+2026-02-09 16:01:10.738 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 16:01:10.740 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-02-09 16:01:10.743 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 16:01:10.758 | INFO     | HALService | Process HALService stopped.
+2026-02-09 16:01:10.833 | INFO     | ManagerService | Process ManagerService stopped.
+2026-02-09 16:01:10.844 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:01:10.956 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-02-09 16:01:10.960 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-02-09 16:01:10.974 | INFO     | CommsService | MAVLink bridge stopped.
+2026-02-09 16:01:11.078 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-02-09 16:01:13.199 | INFO     | MAIN | Starting USV Control System
+2026-02-09 16:01:13.200 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 16:01:13.965 | INFO     | HALService | Process HALService starting...
+2026-02-09 16:01:13.965 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 16:01:13.958 | INFO     | ManagerService | Process ManagerService starting...
+2026-02-09 16:01:13.969 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 16:01:13.982 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 16:01:13.987 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 16:01:13.988 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 16:01:14.028 | INFO     | CommsService | Starting Web Server...
+2026-02-09 16:01:14.033 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 16:01:14.067 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-02-09 16:01:14.068 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-02-09 16:01:14.070 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 16:01:14.070 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 16:01:14.224 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:01:17.598 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:01:18.268 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:01:20.715 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:01:21.046 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:01:23.351 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:01:23.685 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:01:24.612 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:01:24.938 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:01:48.628 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-02-09 16:01:48.628 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 16:01:48.628 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 16:01:48.648 | INFO     | HALService | Process HALService stopped.
+2026-02-09 16:01:48.680 | INFO     | ManagerService | Process ManagerService stopped.
+2026-02-09 16:01:48.722 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:01:48.832 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-02-09 16:01:48.836 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-02-09 16:01:48.847 | INFO     | CommsService | MAVLink bridge stopped.
+2026-02-09 16:01:48.945 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-02-09 16:01:54.188 | INFO     | MAIN | Starting USV Control System
+2026-02-09 16:01:54.189 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 16:01:54.984 | INFO     | HALService | Process HALService starting...
+2026-02-09 16:01:54.985 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 16:01:54.985 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 16:01:54.998 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 16:01:55.000 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 16:01:54.993 | INFO     | ManagerService | Process ManagerService starting...
+2026-02-09 16:01:55.003 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 16:01:55.040 | INFO     | CommsService | Starting Web Server...
+2026-02-09 16:01:55.070 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 16:01:55.091 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 16:01:55.091 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 16:01:55.102 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-02-09 16:01:55.102 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-02-09 16:01:57.389 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:02:00.589 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:02:01.327 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:02:02.781 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:02:03.123 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:02:04.665 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:02:04.991 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:02:05.416 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:02:05.758 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:02:06.131 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:02:06.474 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:02:11.762 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:02:15.197 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:04:54.398 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 16:04:54.399 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-02-09 16:04:54.401 | INFO     | HALService | Process HALService stopped.
+2026-02-09 16:04:54.401 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 16:04:54.431 | INFO     | ManagerService | Process ManagerService stopped.
+2026-02-09 16:04:54.443 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:04:54.552 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-02-09 16:04:54.555 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-02-09 16:04:54.568 | INFO     | CommsService | MAVLink bridge stopped.
+2026-02-09 16:04:54.690 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-02-09 16:04:56.968 | INFO     | MAIN | Starting USV Control System
+2026-02-09 16:04:56.968 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 16:04:57.833 | INFO     | ManagerService | Process ManagerService starting...
+2026-02-09 16:04:57.843 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 16:04:57.847 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 16:04:57.849 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 16:04:57.848 | INFO     | HALService | Process HALService starting...
+2026-02-09 16:04:57.848 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 16:04:57.862 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 16:04:57.888 | INFO     | CommsService | Starting Web Server...
+2026-02-09 16:04:57.892 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 16:04:57.943 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-02-09 16:04:57.943 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-02-09 16:04:57.953 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 16:04:57.953 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 16:04:58.287 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:05:03.943 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:05:04.653 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:05:04.677 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 16:09:40.717 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-02-09 16:09:40.717 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 16:09:40.717 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 16:09:40.731 | INFO     | HALService | Process HALService stopped.
+2026-02-09 16:09:40.754 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 16:09:40.762 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:09:40.805 | INFO     | ManagerService | Process ManagerService stopped.
+2026-02-09 16:09:40.864 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-02-09 16:09:40.867 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-02-09 16:09:40.879 | INFO     | CommsService | MAVLink bridge stopped.
+2026-02-09 16:09:41.012 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-02-09 16:09:43.625 | INFO     | MAIN | Starting USV Control System
+2026-02-09 16:09:43.626 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 16:09:44.388 | INFO     | HALService | Process HALService starting...
+2026-02-09 16:09:44.389 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 16:09:44.388 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 16:09:44.396 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 16:09:44.397 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 16:09:44.397 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 16:09:44.397 | INFO     | ManagerService | Process ManagerService starting...
+2026-02-09 16:09:44.436 | INFO     | CommsService | Starting Web Server...
+2026-02-09 16:09:44.441 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 16:09:44.495 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 16:09:44.495 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 16:09:44.507 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-02-09 16:09:44.507 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-02-09 16:09:44.592 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:09:44.608 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 16:09:56.403 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 16:09:56.405 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:09:57.082 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:09:57.110 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 16:13:03.585 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-02-09 16:13:03.587 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 16:13:03.589 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 16:13:03.589 | INFO     | HALService | Process HALService stopped.
+2026-02-09 16:13:03.667 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 16:13:03.667 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:13:03.685 | INFO     | ManagerService | Process ManagerService stopped.
+2026-02-09 16:13:03.776 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-02-09 16:13:03.779 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-02-09 16:13:03.792 | INFO     | CommsService | MAVLink bridge stopped.
+2026-02-09 16:13:03.901 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-02-09 16:13:05.848 | INFO     | MAIN | Starting USV Control System
+2026-02-09 16:13:05.849 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 16:13:06.647 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 16:13:06.654 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 16:13:06.656 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 16:13:06.655 | INFO     | ManagerService | Process ManagerService starting...
+2026-02-09 16:13:06.665 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 16:13:06.700 | INFO     | CommsService | Starting Web Server...
+2026-02-09 16:13:06.706 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 16:13:06.705 | INFO     | HALService | Process HALService starting...
+2026-02-09 16:13:06.706 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 16:13:06.767 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-02-09 16:13:06.768 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-02-09 16:13:06.811 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 16:13:06.812 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 16:13:07.006 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:13:07.024 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 16:13:09.554 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 16:13:09.554 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:13:10.304 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:13:10.327 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 16:18:47.073 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-02-09 16:18:47.075 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 16:18:47.077 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 16:18:47.092 | INFO     | HALService | Process HALService stopped.
+2026-02-09 16:18:47.155 | INFO     | ManagerService | Process ManagerService stopped.
+2026-02-09 16:18:47.171 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 16:18:47.171 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:19:31.719 | INFO     | MAIN | Starting USV Control System
+2026-02-09 16:19:31.720 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 16:19:32.571 | INFO     | ManagerService | Process ManagerService starting...
+2026-02-09 16:19:32.576 | INFO     | HALService | Process HALService starting...
+2026-02-09 16:19:32.576 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 16:19:32.595 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 16:19:32.613 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 16:19:32.616 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 16:19:32.619 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 16:19:32.666 | INFO     | CommsService | Starting Web Server...
+2026-02-09 16:19:32.671 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 16:19:32.681 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-02-09 16:19:32.682 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-02-09 16:19:32.682 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 16:19:32.682 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 16:19:38.635 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:19:38.654 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 16:21:01.287 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 16:21:01.288 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-02-09 16:21:01.291 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 16:21:01.297 | INFO     | HALService | Process HALService stopped.
+2026-02-09 16:21:01.320 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 16:21:01.322 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:21:01.344 | INFO     | ManagerService | Process ManagerService stopped.
+2026-02-09 16:21:01.428 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-02-09 16:21:01.431 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-02-09 16:21:01.444 | INFO     | CommsService | MAVLink bridge stopped.
+2026-02-09 16:21:01.533 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-02-09 16:21:04.026 | INFO     | MAIN | Starting USV Control System
+2026-02-09 16:21:04.026 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 16:21:05.000 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 16:21:04.995 | INFO     | HALService | Process HALService starting...
+2026-02-09 16:21:04.995 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 16:21:05.006 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 16:21:04.995 | INFO     | ManagerService | Process ManagerService starting...
+2026-02-09 16:21:05.009 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 16:21:05.019 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 16:21:05.064 | INFO     | CommsService | Starting Web Server...
+2026-02-09 16:21:05.070 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 16:21:05.103 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 16:21:05.103 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 16:21:05.103 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.109 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-02-09 16:21:05.109 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-02-09 16:21:05.124 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.145 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.165 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.186 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.207 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.227 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.248 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.268 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.288 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.309 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.329 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.350 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.370 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.391 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.412 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.432 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.453 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.475 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.496 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.516 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.537 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.557 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.578 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.598 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.619 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.642 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.662 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.682 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.703 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.726 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.747 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.767 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.788 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.809 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.829 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.850 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.870 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.891 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.912 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.932 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.952 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.975 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:05.996 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.016 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.036 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.059 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.080 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.100 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.121 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.142 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.162 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.182 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.203 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.224 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.245 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.265 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.285 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.306 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.327 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.347 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.367 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.388 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.409 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.430 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.450 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.471 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.491 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.512 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.532 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.552 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.573 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.594 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.614 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.635 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.655 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.675 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.696 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.717 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.737 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.758 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.781 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.801 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.821 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.843 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.864 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.884 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.904 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.925 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.945 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.966 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:06.987 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.007 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.027 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.048 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.068 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.089 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.109 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.130 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.150 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.171 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.192 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.212 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.232 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.252 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.273 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.294 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.314 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.334 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.355 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.375 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.396 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.416 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.436 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.457 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.478 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.498 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.518 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.539 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.561 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.581 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.601 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.622 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.643 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.663 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.684 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.704 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.725 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.745 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.766 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.786 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.809 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.829 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.849 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.870 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.891 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.912 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.933 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.953 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.976 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:07.997 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.017 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.037 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.064 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.085 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.106 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.127 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.148 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.170 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.191 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.211 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.231 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.251 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.272 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.292 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.313 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.333 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.354 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.374 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.395 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.415 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.436 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.456 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.477 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.498 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.518 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.539 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.559 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.579 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.600 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.671 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.699 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.719 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.740 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.762 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.782 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.803 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.823 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.843 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.863 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.883 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.904 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.924 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.944 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.965 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:08.985 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.006 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.027 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.047 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.067 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.088 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.108 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.129 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.149 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.170 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.190 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.210 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.231 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.251 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.272 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.292 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.312 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.333 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.353 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.374 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.394 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.416 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.436 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.456 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.477 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.497 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.517 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.537 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.558 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.578 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.598 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.618 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.639 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.659 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.679 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.701 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.721 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.744 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.764 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.785 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.805 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.825 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.846 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.866 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.886 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.907 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.927 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.948 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.968 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:09.988 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.009 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.029 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.050 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.071 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.094 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.114 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.134 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.155 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.175 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.196 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.216 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.237 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.257 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.277 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.298 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.319 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.341 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.362 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.382 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.402 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.423 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.443 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.464 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.485 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.505 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.526 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.546 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.566 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.589 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.609 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.629 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.650 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.670 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.691 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.711 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.732 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.752 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.773 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.793 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.813 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.834 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.854 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.876 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.896 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.917 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.937 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.959 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.979 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:10.999 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.020 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.041 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.062 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.083 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.103 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.146 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.171 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.203 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.223 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.244 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.264 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.285 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.306 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.326 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.347 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.368 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.388 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.409 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.429 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.450 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.470 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.491 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.511 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.531 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.552 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.572 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.593 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.613 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.634 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.654 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.676 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.696 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.717 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.738 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.759 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.779 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.800 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.820 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.841 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.861 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.882 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.902 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.923 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.943 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.964 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:11.984 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.005 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.025 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.045 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.065 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.086 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.107 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.127 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.147 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.168 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.189 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.209 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.229 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.250 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.270 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.290 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.310 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.332 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.352 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.372 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.393 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.413 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.434 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.454 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.475 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.495 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.515 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.535 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.556 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.576 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.597 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.617 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.638 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.659 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.679 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.700 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.721 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.741 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.761 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.782 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.802 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.823 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.843 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.864 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.884 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.905 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.925 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.946 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.966 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:12.987 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.007 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.028 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.048 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.069 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.089 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.109 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.132 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.152 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.173 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.193 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.214 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.234 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.255 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.275 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.296 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.316 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.337 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.357 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.378 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.398 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.419 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.439 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.460 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.481 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.501 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.521 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.541 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.562 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.582 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.603 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.624 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.644 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.664 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.685 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.705 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.726 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.746 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.767 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.787 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.808 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.828 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.848 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.868 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.889 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.909 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.930 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.950 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.971 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:13.991 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.012 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.032 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.053 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.074 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.094 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.115 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.135 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.155 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.177 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.197 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.217 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.238 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.258 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.279 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.299 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.320 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.340 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.360 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.381 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.402 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.422 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.443 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.464 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.484 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.504 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.524 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.592 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.619 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.640 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.660 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.681 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.701 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.722 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.742 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.762 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.783 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.803 | ERROR    | HALService | Error reading GNSS: module 'math' has no attribute 'random'
+2026-02-09 16:21:14.811 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 16:21:14.812 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-02-09 16:21:14.812 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 16:21:14.823 | INFO     | HALService | Process HALService stopped.
+2026-02-09 16:21:14.904 | INFO     | ManagerService | Process ManagerService stopped.
+2026-02-09 16:21:15.023 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-02-09 16:21:15.109 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-02-09 16:21:15.117 | INFO     | CommsService | MAVLink bridge stopped.
+2026-02-09 16:22:16.456 | INFO     | MAIN | Starting USV Control System
+2026-02-09 16:22:16.456 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 16:22:17.396 | INFO     | ManagerService | Process ManagerService starting...
+2026-02-09 16:22:17.424 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 16:22:17.442 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 16:22:17.448 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 16:22:17.450 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 16:22:17.494 | INFO     | CommsService | Starting Web Server...
+2026-02-09 16:22:17.499 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 16:22:17.490 | INFO     | HALService | Process HALService starting...
+2026-02-09 16:22:17.490 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 16:22:17.505 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-02-09 16:22:17.505 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-02-09 16:22:17.557 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:22:17.573 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 16:22:17.604 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 16:22:17.604 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 16:22:24.991 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 16:22:25.012 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:22:25.393 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:22:25.416 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 16:23:21.521 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 16:23:21.520 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 16:23:21.521 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-02-09 16:23:21.534 | INFO     | HALService | Process HALService stopped.
+2026-02-09 16:23:21.557 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 16:23:21.558 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:23:21.600 | INFO     | ManagerService | Process ManagerService stopped.
+2026-02-09 16:23:46.353 | INFO     | MAIN | Starting USV Control System
+2026-02-09 16:23:46.354 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 16:23:47.172 | INFO     | HALService | Process HALService starting...
+2026-02-09 16:23:47.173 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 16:23:47.172 | INFO     | ManagerService | Process ManagerService starting...
+2026-02-09 16:23:47.190 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 16:23:47.240 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 16:23:47.251 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 16:23:47.253 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 16:23:47.278 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 16:23:47.280 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 16:23:47.285 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-02-09 16:23:47.285 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-02-09 16:23:47.304 | INFO     | CommsService | Starting Web Server...
+2026-02-09 16:23:47.311 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 16:23:47.479 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:23:47.494 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 16:23:51.624 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 16:23:51.625 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:23:52.006 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:23:52.029 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-02-09 16:29:41.572 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-02-09 16:29:41.572 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 16:29:41.574 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 16:29:41.580 | INFO     | HALService | Process HALService stopped.
+2026-02-09 16:29:41.592 | INFO     | ManagerService | Process ManagerService stopped.
+2026-02-09 16:29:41.621 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-02-09 16:29:41.621 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:29:43.720 | ERROR    | MAIN | Process CommsService did not stop gracefully, terminating.
+2026-02-09 16:29:43.721 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-02-09 16:29:51.007 | INFO     | MAIN | Starting USV Control System
+2026-02-09 16:29:51.007 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 16:29:52.006 | INFO     | HALService | Process HALService starting...
+2026-02-09 16:29:52.006 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 16:29:52.031 | INFO     | ManagerService | Process ManagerService starting...
+2026-02-09 16:29:52.022 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 16:29:52.041 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 16:29:52.043 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 16:29:52.043 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 16:29:52.112 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 16:29:52.112 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 16:29:52.090 | INFO     | CommsService | Starting Web Server...
+2026-02-09 16:29:52.114 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 16:29:52.139 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-02-09 16:29:52.140 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-02-09 16:30:02.180 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:30:06.738 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 16:30:06.738 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-02-09 16:30:06.738 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 16:30:06.760 | INFO     | ManagerService | Process ManagerService stopped.
+2026-02-09 16:30:06.760 | INFO     | HALService | Process HALService stopped.
+2026-02-09 16:30:06.789 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:30:06.910 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-02-09 16:30:06.915 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-02-09 16:30:06.939 | INFO     | CommsService | MAVLink bridge stopped.
+2026-02-09 16:30:07.157 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-02-09 16:30:14.152 | INFO     | MAIN | Starting USV Control System
+2026-02-09 16:30:14.152 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 16:30:14.996 | INFO     | ManagerService | Process ManagerService starting...
+2026-02-09 16:30:15.002 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 16:30:15.009 | INFO     | HALService | Process HALService starting...
+2026-02-09 16:30:15.009 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 16:30:15.009 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 16:30:15.015 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 16:30:15.016 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 16:30:15.054 | INFO     | CommsService | Starting Web Server...
+2026-02-09 16:30:15.060 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 16:30:15.108 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-02-09 16:30:15.108 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-02-09 16:30:15.114 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 16:30:15.115 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 16:30:15.755 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:32:11.484 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 16:32:11.485 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-02-09 16:32:11.485 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 16:32:11.506 | INFO     | HALService | Process HALService stopped.
+2026-02-09 16:32:11.518 | INFO     | ManagerService | Process ManagerService stopped.
+2026-02-09 16:32:11.579 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:32:11.707 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-02-09 16:32:11.710 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-02-09 16:32:11.727 | INFO     | CommsService | MAVLink bridge stopped.
+2026-02-09 16:32:11.890 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-02-09 16:32:15.842 | INFO     | MAIN | Starting USV Control System
+2026-02-09 16:32:15.843 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 16:32:17.981 | INFO     | HALService | Process HALService starting...
+2026-02-09 16:32:17.981 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 16:32:17.989 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 16:32:18.007 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 16:32:17.982 | INFO     | ManagerService | Process ManagerService starting...
+2026-02-09 16:32:18.004 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 16:32:18.010 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 16:32:18.053 | INFO     | CommsService | Starting Web Server...
+2026-02-09 16:32:18.058 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 16:32:18.087 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 16:32:18.087 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 16:32:18.108 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-02-09 16:32:18.109 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-02-09 16:32:19.376 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:33:01.771 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-02-09 16:33:01.771 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 16:33:01.771 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 16:33:01.790 | INFO     | HALService | Process HALService stopped.
+2026-02-09 16:33:01.829 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:33:01.868 | INFO     | ManagerService | Process ManagerService stopped.
+2026-02-09 16:33:01.944 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-02-09 16:33:01.947 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-02-09 16:33:01.973 | INFO     | CommsService | MAVLink bridge stopped.
+2026-02-09 16:33:02.190 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-02-09 16:33:06.087 | INFO     | MAIN | Starting USV Control System
+2026-02-09 16:33:06.088 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 16:33:08.058 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 16:33:08.065 | INFO     | ManagerService | Process ManagerService starting...
+2026-02-09 16:33:08.127 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 16:33:08.123 | INFO     | HALService | Process HALService starting...
+2026-02-09 16:33:08.123 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 16:33:08.147 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 16:33:08.149 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 16:33:08.179 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-02-09 16:33:08.191 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-02-09 16:33:08.236 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 16:33:08.237 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 16:33:08.307 | INFO     | CommsService | Starting Web Server...
+2026-02-09 16:33:08.323 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 16:33:10.556 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 16:33:13.780 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 16:33:14.179 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 17:37:29.713 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-02-09 17:37:29.710 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 17:37:29.725 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 17:37:29.743 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 17:37:29.762 | INFO     | ManagerService | Process ManagerService stopped.
+2026-02-09 17:37:29.770 | INFO     | HALService | Process HALService stopped.
+2026-02-09 17:37:29.839 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-02-09 17:37:29.857 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-02-09 17:37:29.878 | INFO     | CommsService | MAVLink bridge stopped.
+2026-02-09 17:37:30.296 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-02-09 17:37:35.669 | INFO     | MAIN | Starting USV Control System
+2026-02-09 17:37:35.670 | INFO     | MAIN | Mode: SIMULATION
+2026-02-09 17:37:37.629 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-02-09 17:37:37.642 | INFO     | CommsService | Starting Web Server on port 8000
+2026-02-09 17:37:37.644 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-02-09 17:37:37.646 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-02-09 17:37:37.775 | INFO     | ManagerService | Process ManagerService starting...
+2026-02-09 17:37:37.792 | INFO     | CommsService | Starting Web Server...
+2026-02-09 17:37:37.804 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'gnc/ekf_state', 'system/status']
+2026-02-09 17:37:37.873 | INFO     | HALService | Process HALService starting...
+2026-02-09 17:37:37.874 | INFO     | HALService | Simulated GNSS Driver initialized.
+2026-02-09 17:37:37.893 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-02-09 17:37:37.894 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-02-09 17:37:37.983 | INFO     | HALService | HAL Initialized with GNSS Driver: SimulatedGNSS
+2026-02-09 17:37:37.983 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-02-09 17:37:38.534 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-02-09 17:57:50.211 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-02-09 17:57:50.211 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-02-09 17:57:50.212 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-02-09 17:57:50.222 | INFO     | ManagerService | Process ManagerService stopped.
+2026-02-09 17:57:50.228 | INFO     | HALService | Process HALService stopped.
+2026-02-09 17:57:50.307 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-02-09 17:57:50.414 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-02-09 17:57:50.418 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-02-09 17:57:50.429 | INFO     | CommsService | MAVLink bridge stopped.
+2026-02-09 17:57:50.536 | SUCCESS  | MAIN | All services stopped. Exiting.

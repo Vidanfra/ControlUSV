@@ -108,17 +108,50 @@ async def startup_event():
     # Run the ZMQ consumer in the background
     asyncio.create_task(consume_zmq())
 
+from src.core.models import CommandMessage
+from src.core.config import settings
+
+# --- ZMQ Publisher Setup for Commands ---
+# We need a dedicated socket to publish user commands to the bus.
+# Since uvicorn is async, we can't easily share the "Publisher" class from messaging.py which is sync.
+# We'll create a simple async publisher context here or use a sync socket carefully.
+# Given low command rate, a sync socket creation per command or a global one is fine.
+# Let's create a global command publisher context.
+
+cmd_ctx = zmq.Context()
+cmd_pub = cmd_ctx.socket(zmq.PUB)
+cmd_pub.connect(f"tcp://127.0.0.1:{settings.ZMQ_PORT}") # Connect to Broker XSUB
+
+async def process_incoming_command(data_str: str):
+    """Parses and publishes commands from the UI."""
+    try:
+        data = json.loads(data_str)
+        # Validate against model
+        cmd = CommandMessage(**data)
+        
+        # Publish to ZMQ
+        topic = Topics.COMMAND_USER.value
+        msg = f"{topic} {cmd.model_dump_json()}"
+        cmd_pub.send_string(msg)
+        
+        logger.info(f"Command received and published: {cmd.type}")
+        
+    except json.JSONDecodeError:
+        logger.warning(f"Invalid JSON received from websocket: {data_str}")
+    except Exception as e:
+        logger.error(f"Error processing command: {e}")
+
 # --- Routes ---
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:
         while True:
-            # Build text channel: Client -> Server commands could go here
+            # Receive text from client
             data = await websocket.receive_text()
-            # Echo or process commands (omitted for now)
-            # await websocket.send_text(f"Message text was: {data}")
-            pass
+            # Process command
+            await process_incoming_command(data)
+            
     except WebSocketDisconnect:
         manager.disconnect(websocket)
     except Exception as e:

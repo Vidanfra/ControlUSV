@@ -9,6 +9,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
 from src.core.config import settings
 from src.core.process import setup_logging
 from src.drivers.process import HALProcess
+from src.comms.manager import CommsProcess
+from src.manager.process import ManagerProcess
 from src.core.messaging import PubSubBroker
 from loguru import logger
 
@@ -31,6 +33,8 @@ def main():
     
     # 2. Define Services
     processes = [
+        ManagerProcess(name="ManagerService", loop_rate_hz=settings.LOOP_RATES["manager"]),
+        CommsProcess(),
         HALProcess(name="HALService", loop_rate_hz=settings.LOOP_RATES["hal"]),
     ]
 

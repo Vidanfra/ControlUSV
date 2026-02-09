@@ -1,5 +1,31 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List, Dict, Any
+from enum import Enum
+
+class CommandType(str, Enum):
+    ARM = "ARM"
+    DISARM = "DISARM"
+    SET_MODE = "SET_MODE"
+    UPLOAD_MISSION = "UPLOAD_MISSION"
+    RTL = "RTL"
+    EMERGENCY_STOP = "EMERGENCY_STOP"
+
+class Waypoint(BaseModel):
+    lat: float
+    lon: float
+    radius: float = 2.0  # Acceptance radius in meters
+
+class MissionPayload(BaseModel):
+    waypoints: List[Waypoint]
+    loop: bool = False
+
+class CommandMessage(BaseModel):
+    """
+    Generic Command Message structure.
+    """
+    timestamp: float = Field(..., description="Unix timestamp of command creation")
+    type: CommandType
+    payload: Dict[str, Any] = Field(default_factory=dict)
 
 class GNSSData(BaseModel):
     """

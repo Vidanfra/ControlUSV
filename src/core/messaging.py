@@ -13,6 +13,7 @@ class Topics(str, Enum):
     STATE_ESTIMATION = "gnc/ekf_state"
     CONTROL_CMD = "gnc/control_output"
     SYSTEM_STATUS = "system/status"
+    COMMAND_USER = "command/user"
 
 class PubSubBroker:
     """
