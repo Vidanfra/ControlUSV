@@ -5,11 +5,16 @@
 // --- CONFIGURACIÓN ---
 const int PIN_M1 = 20;  // Babor (Port)
 const int PIN_M2 = 21;  // Estribor (Starboard)
-const int PIN_R1 = 38;  // Motor Relay (cable verde)
-const int PIN_R2 = 39;  // Comms Relay (Default ON) (cable amarillo)
-const int PIN_R3 = 40;  // Payload Relay (cable blanco)
+const int PIN_R1 = 38;  // Motor Relay
+const int PIN_R2 = 39;  // Comms Relay (Default ON)
+const int PIN_R3 = 40;  // Payload Relay
 
-const unsigned long TIMEOUT_MS = 1000; // 1 segundo failsafe
+// LED RGB (GPIO 48 is standard for ESP32-S3-DevKitC-1)
+#ifndef RGB_BUILTIN
+  #define RGB_BUILTIN 48
+#endif
+
+const unsigned long TIMEOUT_MS = 250; // 0.25 segundos failsafe
 const long BAUDRATE = 115200;
 
 // Objetos Servo para controlar los motores (ESCs)
@@ -23,10 +28,14 @@ unsigned long last_packet_time = 0;
 void setMotors(float p1, float p2);
 void setRelays(int v1, int v2, int v3);
 void activateFailsafe();
+void updateLed(bool isFailsafe);
 
 void setup() {
   // Inicializar Serial
   Serial.begin(BAUDRATE);
+
+  // Initial RGB (Off)
+  neopixelWrite(RGB_BUILTIN, 0, 0, 0);
 
   // Configurar Pines de Relés
   pinMode(PIN_R1, OUTPUT);
@@ -48,13 +57,18 @@ void setup() {
 
 void loop() {
   unsigned long current_time = millis();
+  bool isFailsafe = false;
 
   // --- 1. CHECK FAILSAFE ---
   if (current_time - last_packet_time > TIMEOUT_MS) {
     activateFailsafe();
+    isFailsafe = true;
   }
 
-  // --- 2. CHECK INCOMING DATA ---
+  // --- 2. UPDATE LED ---
+  updateLed(isFailsafe);
+
+  // --- 3. CHECK INCOMING DATA ---
   if (Serial.available() > 0) {
     String line = Serial.readStringUntil('\n');
     line.trim(); // Quitar espacios en blanco / \r
@@ -137,8 +151,33 @@ void setRelays(int v1, int v2, int v3) {
   digitalWrite(PIN_R3, v3 ? HIGH : LOW);
 }
 
+
+void updateLed(bool isFailsafe) {
+  static unsigned long lastBlink = 0;
+  static bool ledState = false;
+  // Blink Faster for Failsafe (200ms) vs Normal (500ms)
+  int interval = isFailsafe ? 200 : 500; 
+  
+  if (millis() - lastBlink > interval) {
+    lastBlink = millis();
+    ledState = !ledState;
+    
+    if (ledState) {
+      if (isFailsafe) {
+        // Red
+        neopixelWrite(RGB_BUILTIN, 64, 0, 0); 
+      } else {
+        // Green
+        neopixelWrite(RGB_BUILTIN, 0, 64, 0); 
+      }
+    } else {
+      // Off
+      neopixelWrite(RGB_BUILTIN, 0, 0, 0);
+    }
+  }
+}
 void activateFailsafe() {
   // Def: M1:0, M2:0, R1:0, R2:1, R3:0
   setMotors(0, 0);
-  setRelays(0, 1, 0);
+  //setRelays(0, 1, 0);
 }

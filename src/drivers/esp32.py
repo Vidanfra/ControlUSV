@@ -7,9 +7,9 @@ ESP32 pinout:
 
 const int PIN_M1 = 20;  // Babor (Port)
 const int PIN_M2 = 21;  // Estribor (Starboard)
-const int PIN_R1 = 38;  // Motor Relay
-const int PIN_R2 = 39;  // Comms Relay (Default ON)
-const int PIN_R3 = 40;  // Payload Relay
+const int PIN_R1 = 38;  // Motor Relay [WHITE]
+const int PIN_R2 = 39;  // Comms Relay (Default ON) [GREEN]
+const int PIN_R3 = 40;  // Payload Relay [YELLOW]
 '''
 
 class ESP32Driver:
@@ -64,12 +64,12 @@ class ESP32Driver:
 if __name__ == "__main__":
     # Test Script
     try:
-        driver = ESP32Driver("COM3") # Change COM port as needed
+        driver = ESP32Driver("COM5") # Change COM port as needed
         print("Driver Started. Sending Sine Wave...")
         import math
         t = 0
         while True:
-            val = 50 * math.sin(t)
+            val = 100 * math.sin(t)
             try:
                 if int(val) % 2 == 0:
                     driver.send_command(val, -val, 1, 1, 1)
