@@ -278,7 +278,7 @@ const updateTrail = () => {
 <style scoped>
 .map-container {
   width: 100%;
-  height: 100vh; /* Full viewport height */
+  height: 100%; /* Fill parent instead of strict 100vh */
   position: relative;
 }
 

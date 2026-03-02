@@ -12,7 +12,22 @@ export const useTelemetryStore = defineStore('telemetry', {
     isArmed: false,
     mode: 'MANUAL',
     missionWaypoints: [],
-    pathHistory: []
+    pathHistory: [],
+    
+    // GNC additions
+    targetHeading: 0.0,
+    headingError: 0.0,
+    crossTrackError: 0.0,
+    motorPort: 0.0,
+    motorStarboard: 0.0,
+
+    // Power additions
+    batteryVoltage: 0.0,
+    batteryCurrent: 0.0,
+    batteryPower: 0.0, // Calculated V * I
+    batteryLevelPct: 0.0,
+    batteryCapacityWh: 0.0,
+    batteryAccumulatedWh: 0.0
   }),
 
   actions: {
@@ -98,6 +113,23 @@ export const useTelemetryStore = defineStore('telemetry', {
           else if (topic === 'system/status') {
              this.isArmed = data.is_armed
              this.mode = data.mode
+          }
+          else if (topic === 'gnc/control_debug') {
+             this.targetHeading = data.target_heading
+             this.headingError = data.heading_error
+             this.crossTrackError = data.cross_track_error
+          }
+          else if (topic === 'gnc/control_output') {
+             this.motorPort = data.port_pct
+             this.motorStarboard = data.starboard_pct
+          }
+          else if (topic === 'sensor/battery') {
+             this.batteryVoltage = data.voltage
+             this.batteryCurrent = data.current
+             this.batteryPower = data.voltage * data.current
+             this.batteryLevelPct = data.level_pct
+             this.batteryCapacityWh = data.capacity_wh
+             this.batteryAccumulatedWh = data.accumulated_wh
           }
 
           // Update Path History if we have a new position

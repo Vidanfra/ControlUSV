@@ -10,8 +10,10 @@ import multiprocessing
 class Topics(str, Enum):
     SENSOR_GNSS = "sensor/gnss"
     SENSOR_IMU = "sensor/imu"
+    SENSOR_BATTERY = "sensor/battery"
     STATE_ESTIMATION = "gnc/ekf_state"
     CONTROL_CMD = "gnc/control_output"
+    CONTROL_DEBUG = "gnc/control_debug"
     SYSTEM_STATUS = "system/status"
     COMMAND_USER = "command/user"
 

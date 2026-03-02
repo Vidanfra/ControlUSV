@@ -82,3 +82,23 @@ class USVState(BaseModel):
     # System status
     battery_voltage: float = 0.0
     system_status: str = "INIT"
+
+class BatteryMessage(BaseModel):
+    """
+    Battery status telemetry.
+    """
+    timestamp: float = Field(..., description="Unix timestamp of the measurement")
+    voltage: float = Field(..., description="Battery voltage in V")
+    current: float = Field(..., description="Battery current in A")
+    level_pct: float = Field(..., description="Battery level in percentage 0-100")
+    capacity_wh: float = Field(..., description="Total battery capacity in Wh")
+    accumulated_wh: float = Field(..., description="Consumed energy in Wh")
+
+class ControlDebugMessage(BaseModel):
+    """
+    GNC Control Debugging data for charts/UI.
+    """
+    timestamp: float = Field(..., description="Unix timestamp of the calculation")
+    target_heading: float = Field(..., description="Target heading in radians")
+    heading_error: float = Field(..., description="Heading error in radians")
+    cross_track_error: float = Field(..., description="Cross-track error in meters")

@@ -59,7 +59,14 @@ async def consume_zmq():
     sub_socket.connect(zmq_url)
     
     # Subscribe to relevant topics
-    topics_to_subscribe = [Topics.SENSOR_GNSS, Topics.STATE_ESTIMATION, Topics.SYSTEM_STATUS]
+    topics_to_subscribe = [
+        Topics.SENSOR_GNSS, 
+        Topics.STATE_ESTIMATION, 
+        Topics.SYSTEM_STATUS,
+        Topics.SENSOR_BATTERY,
+        Topics.CONTROL_DEBUG,
+        Topics.CONTROL_CMD
+    ]
     for t in topics_to_subscribe:
         sub_socket.setsockopt_string(zmq.SUBSCRIBE, t.value)
         
