@@ -33,6 +33,30 @@ export const useTelemetryStore = defineStore('telemetry', {
     batteryHighAlarm: 0,
     batteryLowAlarm: 0,
 
+    // GNSS additions
+    gnssAlt: 0.0,
+    gnssFixType: 0,
+    gnssNumSats: 0,
+    gnssHdop: 99.99,
+    gnssVdop: 99.99,
+    gnssHeading: 0.0,
+    gnssHeadingStatus: '',
+    gnssCog: 0.0,
+    gnssSogKnots: 0.0,
+    gnssSogKmh: 0.0,
+    gnssUtcTime: '',
+    gnssUtcDate: '',
+
+    // GNSS settings (sent as commands)
+    gnssSerialPort: '/dev/gnss',
+    gnssBaudRate: 115200,
+    gnssNtripCaster: '',
+    gnssNtripPort: 2101,
+    gnssMountpoint: '',
+    gnssUsername: '',
+    gnssPassword: '',
+    gnssCommandFreq: 1.0,
+
     // IMU additions
     imuRoll: 0.0,
     imuPitch: 0.0,
@@ -42,8 +66,42 @@ export const useTelemetryStore = defineStore('telemetry', {
     imuAz: 0.0,
     imuP: 0.0,
     imuQ: 0.0,
-    imuR: 0.0
+    imuR: 0.0,
+    imuMagHeading: 0.0,
+
+    // Sensor connection status
+    sensorStatus: {
+      gnss:  { status: 'disconnected', message: 'Waiting...', timestamp: 0 },
+      imu:   { status: 'disconnected', message: 'Waiting...', timestamp: 0 },
+      power: { status: 'disconnected', message: 'Waiting...', timestamp: 0 },
+    },
   }),
+
+  getters: {
+    // Best heading: prefer GNSS dual-antenna heading if available, fallback to magnetic
+    bestHeading(state) {
+      if (state.gnssHeadingStatus === 'A' && state.gnssHeading !== 0) {
+        return state.gnssHeading
+      }
+      return state.imuMagHeading
+    },
+    headingSource(state) {
+      if (state.gnssHeadingStatus === 'A' && state.gnssHeading !== 0) {
+        return 'GNSS'
+      }
+      return 'MAG'
+    },
+    // Fix quality color: green for RTK fixed (4), yellow-green for float (5), 
+    // yellow for DGPS (2), orange for GPS only (1), red for no fix (0)
+    fixColor(state) {
+      const f = state.gnssFixType
+      if (f >= 4) return '#00cc00'   // RTK Fixed
+      if (f === 3) return '#88cc00'  // PPS
+      if (f === 2) return '#aacc00'  // DGPS
+      if (f === 1) return '#FFA500'  // GPS
+      return '#ff4444'               // No fix
+    },
+  },
 
   actions: {
     addWaypoint(lat, lon) {
@@ -93,6 +151,20 @@ export const useTelemetryStore = defineStore('telemetry', {
       this.sendCommand('SET_BATTERY_CAPACITY', { capacity_wh: capacityWh })
     },
 
+    setGnssConfig(config) {
+      // config: { serial_port, baud_rate, ntrip_caster, ntrip_port, mountpoint, username, password, command_freq }
+      // Also update local state
+      if (config.serial_port !== undefined) this.gnssSerialPort = config.serial_port
+      if (config.baud_rate !== undefined) this.gnssBaudRate = config.baud_rate
+      if (config.ntrip_caster !== undefined) this.gnssNtripCaster = config.ntrip_caster
+      if (config.ntrip_port !== undefined) this.gnssNtripPort = config.ntrip_port
+      if (config.mountpoint !== undefined) this.gnssMountpoint = config.mountpoint
+      if (config.username !== undefined) this.gnssUsername = config.username
+      if (config.password !== undefined) this.gnssPassword = config.password
+      if (config.command_freq !== undefined) this.gnssCommandFreq = config.command_freq
+      this.sendCommand('SET_GNSS_CONFIG', config)
+    },
+
     connectWebSocket() {
       // Avoid multiple connections
       if (this.socket && this.socket.readyState === WebSocket.OPEN) {
@@ -122,6 +194,20 @@ export const useTelemetryStore = defineStore('telemetry', {
           if (topic === 'sensor/gnss') {
             this.lat = data.lat
             this.lon = data.lon
+            this.gnssAlt = data.alt
+            this.gnssFixType = data.fix_type
+            this.gnssNumSats = data.num_satellites
+            this.gnssHdop = data.hdop
+            this.gnssVdop = data.vdop
+            this.gnssHeading = data.heading
+            this.gnssHeadingStatus = data.heading_status
+            this.gnssCog = data.cog
+            this.gnssSogKnots = data.sog_knots
+            this.gnssSogKmh = data.sog_kmh
+            this.gnssUtcTime = data.utc_time
+            this.gnssUtcDate = data.utc_date
+            // Update top-level speed from GNSS SOG (knots -> m/s)
+            this.speed = data.sog_knots * 0.514444
             newLat = data.lat
             newLon = data.lon
           } 
@@ -169,6 +255,19 @@ export const useTelemetryStore = defineStore('telemetry', {
              this.imuP = data.wx
              this.imuQ = data.wy
              this.imuR = data.wz
+             this.imuMagHeading = data.mag_heading ?? 0.0
+          }
+          else if (topic === 'sensor/status') {
+             const sensor = data.sensor  // 'gnss', 'imu', or 'power'
+             console.log(`[Telemetry] Received sensor/status: ${sensor} = ${data.status}`)
+             if (this.sensorStatus[sensor]) {
+               this.sensorStatus[sensor].status = data.status
+               this.sensorStatus[sensor].message = data.message || ''
+               this.sensorStatus[sensor].timestamp = data.timestamp
+               console.log(`[Telemetry] Updated ${sensor} status to:`, this.sensorStatus[sensor])
+             } else {
+               console.warn(`[Telemetry] Unknown sensor: ${sensor}`)
+             }
           }
 
           // Update Path History if we have a new position

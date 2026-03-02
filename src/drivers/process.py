@@ -1,9 +1,9 @@
 from src.core.process import ServiceProcess
 from src.core.messaging import Publisher, Topics
 from src.core.models import BatteryMessage, ControlDebugMessage
-from src.drivers.manager import get_gnss_driver
 from src.drivers.imu import ImuNode
 from src.drivers.power_pzem import PowerNode
+from src.drivers.gnss_um982 import GnssNode
 from src.core.config import settings
 from loguru import logger
 import time
@@ -13,13 +13,29 @@ import threading
 
 class HALProcess(ServiceProcess):
     def setup(self):
-        self.gnss_driver = get_gnss_driver()
-        self.gnss_pub = Publisher(Topics.SENSOR_GNSS)
         self.control_debug_pub = Publisher(Topics.CONTROL_DEBUG)
         self.control_cmd_pub = Publisher(Topics.CONTROL_CMD)
         
         self.start_time = time.time()
-        logger.info(f"HAL Initialized with GNSS Driver: {self.gnss_driver.__class__.__name__}")
+
+        # Start GNSS Node (UM982) in a background thread
+        try:
+            self.gnss_node = GnssNode(
+                serial_port="/dev/gnss_um982",
+                baud_rate=115200,
+                ntrip_caster="",     # Set via Settings UI
+                ntrip_port=2101,
+                mountpoint="",
+                username="",
+                password="",
+                command_freq=1.0,
+            )
+            self.gnss_thread = threading.Thread(target=self.gnss_node.run, daemon=True)
+            self.gnss_thread.start()
+            logger.info("GNSS Node (UM982) started on /dev/gnss_um982")
+        except Exception as e:
+            logger.warning(f"Could not start GNSS Node: {e}. GNSS data will not be available.")
+            self.gnss_node = None
 
         # Start IMU Node in a background thread
         try:
@@ -34,25 +50,18 @@ class HALProcess(ServiceProcess):
         # Start Power Node (PZEM-017) in a background thread
         try:
             self.power_node = PowerNode(
-                port="/dev/ttyUSB0", device_address=1,
+                port="/dev/power_pzem", device_address=1,
                 baud_rate=9600, update_hz=1, battery_capacity_wh=500.0
             )
             self.power_thread = threading.Thread(target=self.power_node.run, daemon=True)
             self.power_thread.start()
-            logger.info("Power Node (PZEM-017) started on /dev/ttyUSB0")
+            logger.info("Power Node (PZEM-017) started on /dev/power_pzem")
         except Exception as e:
             logger.warning(f"Could not start Power Node: {e}. Power data will not be available.")
             self.power_node = None
 
     def loop(self):
         now = time.time()
-        
-        # Read GNSS
-        try:
-            gnss_data = self.gnss_driver.read()
-            self.gnss_pub.publish(gnss_data.model_dump())
-        except Exception as e:
-            logger.error(f"Error reading GNSS: {e}")
 
         # Dummy Control Debug Data
         try:

@@ -7,24 +7,24 @@
     
     <div class="data-grid">
       <div class="data-item">
-        <label>Latitude</label>
-        <span>{{ lat.toFixed(7) }}</span>
+        <label>Lat</label>
+        <span :style="{ color: store.fixColor }">{{ lat.toFixed(7) }}</span>
       </div>
       <div class="data-item">
-        <label>Longitude</label>
-        <span>{{ lon.toFixed(7) }}</span>
+        <label>Lon</label>
+        <span :style="{ color: store.fixColor }">{{ lon.toFixed(7) }}</span>
       </div>
       <div class="data-item">
         <label>Heading</label>
-        <span>{{ (heading * 180 / Math.PI).toFixed(1) }}°</span>
+        <span>{{ store.bestHeading.toFixed(1) }}° <small class="src-tag">{{ store.headingSource }}</small></span>
       </div>
       <div class="data-item">
         <label>Speed</label>
-        <span>{{ speed.toFixed(1) }} m/s</span>
+        <span>{{ store.gnssSogKnots.toFixed(1) }} kn</span>
       </div>
       <div class="data-item">
         <label>Battery</label>
-        <span>{{ battery.toFixed(1) }} V</span>
+        <span>{{ store.batteryVoltage.toFixed(1) }} V</span>
       </div>
     </div>
   </div>
@@ -35,7 +35,7 @@ import { useTelemetryStore } from '../stores/telemetry'
 import { storeToRefs } from 'pinia'
 
 const store = useTelemetryStore()
-const { lat, lon, heading, speed, battery, isConnected } = storeToRefs(store)
+const { lat, lon, isConnected } = storeToRefs(store)
 </script>
 
 <style scoped>
@@ -54,7 +54,7 @@ h3 {
   margin-bottom: 10px;
   font-size: 1.1rem;
   border-bottom: 1px solid #555;
-  padding-bottom: 5px;
+  padding-bottom: 8px;
 }
 
 .status-indicator {
@@ -64,11 +64,11 @@ h3 {
   padding: 4px;
   border-radius: 4px;
   text-align: center;
-  background: #ff4444; /* Red for disconnected */
+  background: #ff4444;
 }
 
 .status-indicator.connected {
-  background: #00C851; /* Green for connected */
+  background: #00C851;
 }
 
 .data-grid {
@@ -92,5 +92,12 @@ h3 {
 .data-item span {
   font-family: monospace;
   font-weight: bold;
+}
+
+.src-tag {
+  font-size: 0.7rem;
+  color: #888;
+  font-weight: normal;
+  margin-left: 3px;
 }
 </style>

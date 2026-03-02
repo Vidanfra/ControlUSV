@@ -15,8 +15,9 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from src.core.models import BatteryMessage
+from src.core.models import BatteryMessage, SensorStatusMessage, SensorStatus
 from src.core.messaging import Topics, get_zmq_url
+from loguru import logger
 
 
 class PZEMDriver:
@@ -64,6 +65,8 @@ class PZEMDriver:
             self.thread.join()
 
     def _read_loop(self):
+        consecutive_errors = 0
+        MAX_CONSECUTIVE_ERRORS = 5
         while self.running:
             try:
                 voltage = self.instrument.read_register(0x0000, number_of_decimals=2, functioncode=4)
@@ -85,14 +88,24 @@ class PZEMDriver:
                     "high_voltage_alarm": high_voltage_alarm,
                     "low_voltage_alarm": low_voltage_alarm
                 })
+                consecutive_errors = 0  # Reset on success
 
                 if self.on_data_callback:
                     self.on_data_callback(self.data)
 
             except minimalmodbus.IllegalRequestError as e:
-                print(f"[PZEM] Modbus read error: {e}")
+                logger.warning(f"[PZEM] Modbus read error: {e}")
+            except (OSError, IOError) as e:
+                consecutive_errors += 1
+                if consecutive_errors >= MAX_CONSECUTIVE_ERRORS:
+                    logger.error(f"[PZEM] Too many I/O errors ({e}). Stopping read loop for reconnect.")
+                    self.running = False
+                    break
+                logger.warning(f"[PZEM] I/O error ({consecutive_errors}/{MAX_CONSECUTIVE_ERRORS}): {e}")
+                time.sleep(2)
+                continue
             except Exception as e:
-                print(f"[PZEM] Read error: {e}")
+                logger.warning(f"[PZEM] Read error: {e}")
                 time.sleep(1)
 
             time.sleep(self.update_interval)
@@ -104,9 +117,22 @@ class PowerNode:
     Tracks energy consumption with reset capability and computes battery level.
     """
 
+    _RETRY_INTERVAL = 5.0
+    _STATUS_TIMEOUT = 5.0
+    _STATUS_PUBLISH_INTERVAL = 5.0  # Publish status every 5 seconds for health heartbeat
+
     def __init__(self, port="/dev/power_pzem", device_address=0x01, baud_rate=9600,
                  update_hz=1, battery_capacity_wh=500.0):
         self.battery_capacity_wh = battery_capacity_wh
+        self._port = port
+        self._device_address = device_address
+        self._baud_rate = baud_rate
+        self._update_hz = update_hz
+
+        # Connection status tracking
+        self._connected = False
+        self._last_data_time = 0.0
+        self._last_status_publish_time = 0.0
 
         # Energy tracking
         self._energy_start_time = time.time()
@@ -120,7 +146,7 @@ class PowerNode:
         self.pub_socket = self.context.socket(zmq.PUB)
         bus_url = get_zmq_url()
         self.pub_socket.connect(bus_url)
-        print(f"[Power Node] Publisher connected to ZMQ Bus: {bus_url}")
+        logger.info(f"[Power Node] Publisher connected to ZMQ Bus: {bus_url}")
 
         # ZMQ Subscriber (for reset commands from the UI)
         self.sub_socket = self.context.socket(zmq.SUB)
@@ -128,7 +154,7 @@ class PowerNode:
         self.sub_socket.connect(sub_url)
         self.sub_socket.setsockopt_string(zmq.SUBSCRIBE, Topics.COMMAND_USER.value)
         self.sub_socket.setsockopt(zmq.RCVTIMEO, 10)  # 10ms timeout
-        print(f"[Power Node] Subscriber connected to {sub_url} for commands")
+        logger.info(f"[Power Node] Subscriber connected to {sub_url} for commands")
 
         # Instantiate driver
         self.driver = PZEMDriver(
@@ -139,22 +165,41 @@ class PowerNode:
             on_data_callback=self._on_pzem_data
         )
 
+    def _publish_status(self, status: SensorStatus, message: str = ""):
+        try:
+            msg = SensorStatusMessage(
+                timestamp=time.time(),
+                sensor="power",
+                status=status,  # Pass enum directly, not .value
+                message=message,
+            )
+            json_str = msg.model_dump_json()
+            self.pub_socket.send_string(f"{Topics.SENSOR_STATUS.value} {json_str}")
+            #logger.info(f"[Power Node] Published status: {status.value} — {message}")
+        except Exception as e:
+            logger.error(f"[Power Node] Failed to publish status: {e}", exc_info=True)
+
     def reset_energy(self):
         """Reset the accumulated energy counter and start time."""
         with self._lock:
             self._accumulated_wh = 0.0
             self._energy_start_time = time.time()
             self._last_sample_time = time.time()
-            print("[Power Node] Energy consumption counter reset.")
+            logger.info("[Power Node] Energy consumption counter reset.")
 
     def set_battery_capacity(self, capacity_wh):
         """Update battery capacity (called from settings)."""
         self.battery_capacity_wh = capacity_wh
-        print(f"[Power Node] Battery capacity set to {capacity_wh} Wh")
+        logger.info(f"[Power Node] Battery capacity set to {capacity_wh} Wh")
 
     def _on_pzem_data(self, raw_data):
         """Called by PZEMDriver each time new readings are available."""
         ts = time.time()
+        self._last_data_time = ts
+        if not self._connected:
+            self._connected = True
+            logger.info("[Power Node] First data received - publishing OK status")
+            self._publish_status(SensorStatus.OK, "Receiving data")
 
         voltage = raw_data["voltage"]
         current = raw_data["current"]
@@ -192,7 +237,7 @@ class PowerNode:
             self.pub_socket.send_string(f"{Topics.SENSOR_BATTERY.value} {json_str}")
 
         except ValidationError as e:
-            print(f"[Power Node] Validation error: {e}")
+            logger.warning(f"[Power Node] Validation error: {e}")
 
     def _check_commands(self):
         """Poll for incoming commands (reset energy, set capacity)."""
@@ -211,25 +256,87 @@ class PowerNode:
         except zmq.Again:
             pass  # No message available
         except Exception as e:
-            print(f"[Power Node] Command parse error: {e}")
+            logger.warning(f"[Power Node] Command parse error: {e}")
 
     def run(self):
-        print("[Power Node] Starting PZEM driver thread...")
-        self.driver.start()
-        try:
-            while True:
-                self._check_commands()
-                time.sleep(0.1)
-        except KeyboardInterrupt:
-            print("\n[Power Node] Shutting down...")
-            self.shutdown()
+        logger.info("[Power Node] Starting (with auto-retry)...")
+        while True:
+            # Try to start the driver
+            try:
+                self.driver.start()
+                self._connected = False  # Will become True when first data arrives
+                self._last_data_time = time.time()
+                logger.info(f"[Power Node] Driver started on {self._port}, waiting for data...")
+            except Exception as e:
+                self._connected = False
+                self._publish_status(SensorStatus.DISCONNECTED, str(e))
+                logger.warning(f"[Power Node] Cannot open {self._port}: {e}. Retrying in {self._RETRY_INTERVAL}s...")
+                deadline = time.time() + self._RETRY_INTERVAL
+                while time.time() < deadline:
+                    self._check_commands()
+                    time.sleep(0.2)
+                # Recreate driver for next attempt
+                self.driver = PZEMDriver(
+                    port=self._port,
+                    device_address=self._device_address,
+                    baud_rate=self._baud_rate,
+                    update_hz=self._update_hz,
+                    on_data_callback=self._on_pzem_data,
+                )
+                continue
+
+            # Main loop — monitor health and check commands
+            try:
+                while True:
+                    self._check_commands()
+                    # Periodic status heartbeat (5 seconds)
+                    now = time.time()
+                    if now - self._last_status_publish_time > self._STATUS_PUBLISH_INTERVAL:
+                        if self._connected:
+                            self._publish_status(SensorStatus.OK, "Receiving data")
+                        else:
+                            self._publish_status(SensorStatus.DISCONNECTED, "No data")
+                        self._last_status_publish_time = now
+                    # Check if the read loop died (device unplugged)
+                    if not self.driver.running:
+                        logger.warning("[Power Node] Driver read loop stopped — device likely disconnected")
+                        self._connected = False
+                        self._publish_status(SensorStatus.DISCONNECTED, "Device disconnected (I/O errors)")
+                        break
+                    # Check for data timeout
+                    if self._connected and self._last_data_time > 0:
+                        if time.time() - self._last_data_time > self._STATUS_TIMEOUT:
+                            self._connected = False
+                            self._publish_status(SensorStatus.DISCONNECTED, "No data received (timeout)")
+                            logger.warning("[Power Node] No data timeout")
+                    time.sleep(0.2)
+            except KeyboardInterrupt:
+                logger.info("[Power Node] Keyboard interrupt")
+                self.shutdown()
+                return
+            except Exception as e:
+                logger.error(f"[Power Node] Unexpected error: {e}")
+                self._connected = False
+                self._publish_status(SensorStatus.ERROR, str(e))
+
+            # Clean up before retry
+            self.driver.stop()
+            logger.info(f"[Power Node] Reconnecting in {self._RETRY_INTERVAL}s...")
+            time.sleep(self._RETRY_INTERVAL)
+            self.driver = PZEMDriver(
+                port=self._port,
+                device_address=self._device_address,
+                baud_rate=self._baud_rate,
+                update_hz=self._update_hz,
+                on_data_callback=self._on_pzem_data,
+            )
 
     def shutdown(self):
         self.driver.stop()
         self.pub_socket.close()
         self.sub_socket.close()
         self.context.term()
-        print("[Power Node] Shutdown complete.")
+        logger.info("[Power Node] Shutdown complete.")
 
 
 if __name__ == '__main__':

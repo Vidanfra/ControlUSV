@@ -11,8 +11,9 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 # System imports
-from src.core.models import ImuMessage
+from src.core.models import ImuMessage, SensorStatusMessage, SensorStatus
 from src.core.messaging import Topics, get_zmq_url
+from loguru import logger
 
 
 class WT901Driver:
@@ -138,12 +139,23 @@ class WT901Driver:
 
 
 class ImuNode:
+    _RETRY_INTERVAL = 5.0
+    _STATUS_TIMEOUT = 5.0
+    _STATUS_PUBLISH_INTERVAL = 5.0  # Publish status every 5 seconds for health heartbeat
+
     def __init__(self, serial_port="/dev/serial0", baud_rate=9600, mag_declination=0.0, user_offset=0.0):
         """
         Connects the WT901 IMU to the internal ZMQ data bus.
         """
         self.mag_declination = mag_declination
         self.user_offset = user_offset
+        self._serial_port = serial_port
+        self._baud_rate = baud_rate
+
+        # Connection status tracking
+        self._connected = False
+        self._last_data_time = 0.0
+        self._last_status_publish_time = 0.0
         
         # QGC / MAVLink NED body frame mapping (copied from old parser)
         self.QGC_AXIS_MAP = {
@@ -158,7 +170,7 @@ class ImuNode:
         
         bus_url = get_zmq_url() # Gets the central IPC/TCP URL
         self.pub_socket.connect(bus_url)
-        print(f"[IMU Node] Publisher connected to ZMQ Bus: {bus_url}")
+        logger.info(f"[IMU Node] Publisher connected to ZMQ Bus: {bus_url}")
 
         # Instantiate Driver and register callback
         self.driver = WT901Driver(
@@ -166,6 +178,20 @@ class ImuNode:
             baud_rate=baud_rate, 
             on_data_callback=self.publish_imu_data
         )
+
+    def _publish_status(self, status: SensorStatus, message: str = ""):
+        try:
+            msg = SensorStatusMessage(
+                timestamp=time.time(),
+                sensor="imu",
+                status=status,  # Pass enum directly, not .value
+                message=message,
+            )
+            json_str = msg.model_dump_json()
+            self.pub_socket.send_string(f"{Topics.SENSOR_STATUS.value} {json_str}")
+            #logger.info(f"[IMU Node] Published status: {status.value} — {message}")
+        except Exception as e:
+            logger.error(f"[IMU Node] Failed to publish status: {e}", exc_info=True)
 
     def calculate_mag_heading(self, mx, my):
         """
@@ -191,6 +217,11 @@ class ImuNode:
         Driver invokes this every time an 'Angles (0x53)' frame is fully parsed.
         """
         ts = time.time()
+        self._last_data_time = ts
+        if not self._connected:
+            self._connected = True
+            logger.info("[IMU Node] First data received - publishing OK status")
+            self._publish_status(SensorStatus.OK, "Receiving data")
         
         # Calculate heading
         m_heading = self.calculate_mag_heading(raw_data_dict["mx"], raw_data_dict["my"])
@@ -223,24 +254,73 @@ class ImuNode:
             self.pub_socket.send_string(f"{Topics.SENSOR_IMU.value} {json_str}")
             
         except ValidationError as e:
-            print(f"[IMU Node] Data validation error dropping frame: {e}")
+            logger.warning(f"[IMU Node] Data validation error dropping frame: {e}")
 
     def run(self):
-        print("[IMU Node] Starting driver thread...")
-        self.driver.start()
-        try:
-            while True:
-                # Node loop simply sleeps, the worker thread triggers the callback
-                time.sleep(1.0)
-        except KeyboardInterrupt:
-            print("\n[IMU Node] Keyboard Interrupt detected. Shutting down...")
-            self.shutdown()
+        logger.info("[IMU Node] Starting (with auto-retry)...")
+        while True:
+            # Try to start the driver
+            try:
+                self.driver.start()
+                self._connected = False  # Will become True when first data arrives
+                self._last_data_time = time.time()
+                logger.info(f"[IMU Node] Driver started on {self._serial_port}, waiting for data...")
+            except Exception as e:
+                self._connected = False
+                self._publish_status(SensorStatus.DISCONNECTED, str(e))
+                logger.warning(f"[IMU Node] Cannot open {self._serial_port}: {e}. Retrying in {self._RETRY_INTERVAL}s...")
+                time.sleep(self._RETRY_INTERVAL)
+                # Recreate driver for next attempt
+                self.driver = WT901Driver(
+                    serial_port=self._serial_port,
+                    baud_rate=self._baud_rate,
+                    on_data_callback=self.publish_imu_data,
+                )
+                continue
+
+            # Main loop — monitor health
+            try:
+                while True:
+                    # Periodic status heartbeat (5 seconds)
+                    now = time.time()
+                    if now - self._last_status_publish_time > self._STATUS_PUBLISH_INTERVAL:
+                        if self._connected:
+                            self._publish_status(SensorStatus.OK, "Receiving data")
+                        else:
+                            self._publish_status(SensorStatus.DISCONNECTED, "No data")
+                        self._last_status_publish_time = now
+                    
+                    # Check for data timeout (device unplugged)
+                    if self._connected and self._last_data_time > 0:
+                        if time.time() - self._last_data_time > self._STATUS_TIMEOUT:
+                            self._connected = False
+                            self._publish_status(SensorStatus.DISCONNECTED, "No data received (timeout)")
+                            logger.warning("[IMU Node] No data timeout — device may be disconnected")
+                    time.sleep(0.5)
+            except KeyboardInterrupt:
+                logger.info("[IMU Node] Keyboard interrupt")
+                self.shutdown()
+                return
+            except Exception as e:
+                logger.error(f"[IMU Node] Unexpected error: {e}")
+                self._connected = False
+                self._publish_status(SensorStatus.ERROR, str(e))
+
+            # Clean up before retry
+            self.driver.stop()
+            logger.info(f"[IMU Node] Reconnecting in {self._RETRY_INTERVAL}s...")
+            time.sleep(self._RETRY_INTERVAL)
+            self.driver = WT901Driver(
+                serial_port=self._serial_port,
+                baud_rate=self._baud_rate,
+                on_data_callback=self.publish_imu_data,
+            )
 
     def shutdown(self):
         self.driver.stop()
         self.pub_socket.close()
         self.context.term()
-        print("[IMU Node] Shutdown complete.")
+        logger.info("[IMU Node] Shutdown complete.")
 
 
 if __name__ == '__main__':

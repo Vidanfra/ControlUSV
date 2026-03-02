@@ -24,6 +24,19 @@
         CLEAR
       </button>
     </div>
+
+    <button
+      class="follow-btn"
+      :class="{ active: followVehicle }"
+      @click="followVehicle = !followVehicle"
+      title="Follow vehicle"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="4" :fill="followVehicle ? '#1a73e8' : '#666'" />
+        <path d="M12 2v3M12 19v3M2 12h3M19 12h3" :stroke="followVehicle ? '#1a73e8' : '#666'" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="12" cy="12" r="8" :stroke="followVehicle ? '#1a73e8' : '#666'" stroke-width="1.5" fill="none"/>
+      </svg>
+    </button>
   </div>
 </template>
 
@@ -35,10 +48,12 @@ import { useTelemetryStore } from '../stores/telemetry'
 import { storeToRefs } from 'pinia'
 
 const telemetry = useTelemetryStore()
-const { lat, lon, heading, missionWaypoints, pathHistory } = storeToRefs(telemetry)
+const { lat, lon, missionWaypoints, pathHistory } = storeToRefs(telemetry)
 
 const isPlanMode = ref(false)
-const isSatellite = ref(false)
+const isSatellite = ref(true)
+const followVehicle = ref(true)
+const FOLLOW_ZOOM = 16.5  // ~200m north-south view
 
 let map = null
 let boatMarker = null
@@ -83,20 +98,20 @@ onMounted(() => {
       })
 
       // 2. Add Base Layers
-      // Satellite (hidden by default)
+      // Satellite (visible by default)
       map.addLayer({
           id: 'satellite',
           type: 'raster',
           source: 'satellite',
-          layout: { visibility: 'none' }
+          layout: { visibility: 'visible' }
       })
       
-      // OSM (visible by default)
+      // OSM (hidden by default)
       map.addLayer({
           id: 'osm',
           type: 'raster',
           source: 'osm',
-          layout: { visibility: 'visible' }
+          layout: { visibility: 'none' }
       })
 
       // 3. Add Mission Source
@@ -185,6 +200,11 @@ onMounted(() => {
       }
   })
 
+  // Disable follow mode when user manually drags/pans the map
+  map.on('dragstart', () => {
+      followVehicle.value = false
+  })
+
   // Connect
   
   // Start trail update loop (throttle updates to 5Hz)
@@ -208,13 +228,18 @@ watch(isSatellite, (val) => {
 })
 
 // Watch for changes in telemetry to update marker
-watch([lat, lon, heading], ([newLat, newLon, newHeading]) => {
+watch([lat, lon, () => telemetry.bestHeading], ([newLat, newLon, newHeading]) => {
   if (!map || !boatMarker) return
   if (newLat !== 0 && newLon !== 0) {
     boatMarker.setLngLat([newLon, newLat])
+    if (followVehicle.value) {
+      map.setCenter([newLon, newLat])
+      if (Math.abs(map.getZoom() - FOLLOW_ZOOM) > 1) {
+        map.setZoom(FOLLOW_ZOOM)
+      }
+    }
   }
-  const headingDegrees = newHeading * (180 / Math.PI)
-  boatMarker.setRotation(headingDegrees)
+  boatMarker.setRotation(newHeading)
 })
 
 // Watch for changes in waypoints to update map drawing
@@ -324,5 +349,29 @@ button {
   justify-content: center;
   align-items: center;
   cursor: pointer;
+}
+
+.follow-btn {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  z-index: 10;
+  width: 36px;
+  height: 36px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.follow-btn.active {
+  background: #e8f0fe;
+  box-shadow: 0 2px 6px rgba(26,115,232,0.4);
 }
 </style>

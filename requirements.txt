@@ -7,4 +7,7 @@ loguru
 tornado
 pymavlink
 websockets
+pyserial
+minimalmodbus
+pynmea2
 pyserialminimalmodbus

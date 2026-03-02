@@ -15,6 +15,7 @@ class Topics(str, Enum):
     SENSOR_GNSS = "sensor/gnss"
     SENSOR_IMU = "sensor/imu"
     SENSOR_BATTERY = "sensor/battery"
+    SENSOR_STATUS = "sensor/status"
     STATE_ESTIMATION = "gnc/ekf_state"
     CONTROL_CMD = "gnc/control_output"
     CONTROL_DEBUG = "gnc/control_debug"

@@ -318,7 +318,7 @@ class GNSSParser:
 # === Example usage ===
 if __name__ == '__main__':
     parser = GNSSParser(
-        serial_port='/dev/ttyUSB0',
+        serial_port='/dev/gnss_um982',
         baud_rate=115200,
         ntrip_caster='192.148.213.42',
         ntrip_port=2101,

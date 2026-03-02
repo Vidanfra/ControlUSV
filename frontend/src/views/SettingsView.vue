@@ -72,6 +72,83 @@
         </div>
       </section>
 
+      <!-- GNSS / NTRIP Section -->
+      <section class="settings-section">
+        <h3>GNSS / NTRIP Configuration</h3>
+
+        <div class="setting-row">
+          <label for="gnssSerial">Serial Port</label>
+          <div class="input-group">
+            <input id="gnssSerial" v-model="gnssForm.serial_port" type="text" class="text-input" placeholder="/dev/gnss" />
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <label for="gnssBaud">Baud Rate</label>
+          <div class="input-group">
+            <select id="gnssBaud" v-model.number="gnssForm.baud_rate" class="text-input">
+              <option :value="9600">9600</option>
+              <option :value="38400">38400</option>
+              <option :value="57600">57600</option>
+              <option :value="115200">115200</option>
+              <option :value="230400">230400</option>
+              <option :value="460800">460800</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <label for="ntripCaster">NTRIP Caster</label>
+          <div class="input-group">
+            <input id="ntripCaster" v-model="gnssForm.ntrip_caster" type="text" class="text-input" placeholder="e.g. 192.168.1.100" />
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <label for="ntripPort">NTRIP Port</label>
+          <div class="input-group">
+            <input id="ntripPort" v-model.number="gnssForm.ntrip_port" type="number" min="1" max="65535" class="text-input" placeholder="2101" />
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <label for="ntripMount">Mountpoint</label>
+          <div class="input-group">
+            <input id="ntripMount" v-model="gnssForm.mountpoint" type="text" class="text-input" placeholder="e.g. VRS3M" />
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <label for="ntripUser">Username</label>
+          <div class="input-group">
+            <input id="ntripUser" v-model="gnssForm.username" type="text" class="text-input" placeholder="NTRIP username" />
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <label for="ntripPass">Password</label>
+          <div class="input-group">
+            <input id="ntripPass" v-model="gnssForm.password" type="password" class="text-input" placeholder="NTRIP password" />
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <label for="gnssFreq">Update Frequency (Hz)</label>
+          <div class="input-group">
+            <input id="gnssFreq" v-model.number="gnssForm.command_freq" type="number" min="0.1" max="20" step="0.5" class="text-input" placeholder="1" />
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="input-group">
+            <button class="btn btn-primary" @click="saveGnssConfig" :disabled="!gnssConfigChanged">
+              Apply & Reconnect
+            </button>
+          </div>
+          <p class="hint">Sends configuration to the GNSS node. The receiver will reconnect with the new settings.</p>
+        </div>
+      </section>
+
       <!-- Reset Confirmation Dialog -->
       <div v-if="showResetConfirm" class="confirm-overlay" @click.self="showResetConfirm = false">
         <div class="confirm-dialog">
@@ -96,12 +173,46 @@ const telemetry = useTelemetryStore()
 const capacityInput = ref(500)
 const showResetConfirm = ref(false)
 
+// GNSS config form
+const gnssForm = ref({
+  serial_port: '/dev/gnss',
+  baud_rate: 115200,
+  ntrip_caster: '',
+  ntrip_port: 2101,
+  mountpoint: '',
+  username: '',
+  password: '',
+  command_freq: 1.0
+})
+
 onMounted(() => {
   capacityInput.value = telemetry.batteryCapacityWh || 500
+  // Load GNSS config from store
+  gnssForm.value.serial_port = telemetry.gnssSerialPort || '/dev/gnss'
+  gnssForm.value.baud_rate = telemetry.gnssBaudRate || 115200
+  gnssForm.value.ntrip_caster = telemetry.gnssNtripCaster || ''
+  gnssForm.value.ntrip_port = telemetry.gnssNtripPort || 2101
+  gnssForm.value.mountpoint = telemetry.gnssMountpoint || ''
+  gnssForm.value.username = telemetry.gnssUsername || ''
+  gnssForm.value.password = telemetry.gnssPassword || ''
+  gnssForm.value.command_freq = telemetry.gnssCommandFreq || 1.0
 })
 
 const capacityChanged = computed(() => {
   return capacityInput.value !== telemetry.batteryCapacityWh && capacityInput.value > 0
+})
+
+const gnssConfigChanged = computed(() => {
+  return (
+    gnssForm.value.serial_port !== telemetry.gnssSerialPort ||
+    gnssForm.value.baud_rate !== telemetry.gnssBaudRate ||
+    gnssForm.value.ntrip_caster !== telemetry.gnssNtripCaster ||
+    gnssForm.value.ntrip_port !== telemetry.gnssNtripPort ||
+    gnssForm.value.mountpoint !== telemetry.gnssMountpoint ||
+    gnssForm.value.username !== telemetry.gnssUsername ||
+    gnssForm.value.password !== telemetry.gnssPassword ||
+    gnssForm.value.command_freq !== telemetry.gnssCommandFreq
+  )
 })
 
 const measurementStartStr = computed(() => {
@@ -134,6 +245,10 @@ function confirmReset() {
 function doReset() {
   telemetry.resetEnergy()
   showResetConfirm.value = false
+}
+
+function saveGnssConfig() {
+  telemetry.setGnssConfig({ ...gnssForm.value })
 }
 </script>
 
@@ -208,6 +323,25 @@ function doReset() {
 .input-group input[type="number"]:focus {
   outline: none;
   border-color: #FFA500;
+}
+
+.text-input {
+  background-color: #2a2a2a;
+  color: white;
+  border: 1px solid #555;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 1em;
+  width: 280px;
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: #FFA500;
+}
+
+select.text-input {
+  cursor: pointer;
 }
 
 .status-text {

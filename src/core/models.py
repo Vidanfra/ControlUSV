@@ -2,6 +2,20 @@ from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from enum import Enum
 
+class SensorStatus(str, Enum):
+    OK = "ok"
+    DISCONNECTED = "disconnected"
+    ERROR = "error"
+
+class SensorStatusMessage(BaseModel):
+    """
+    Health status of a sensor node. Published on sensor/status.
+    """
+    timestamp: float = Field(..., description="Unix timestamp")
+    sensor: str = Field(..., description="Sensor identifier: gnss, imu, power")
+    status: SensorStatus = Field(..., description="Current status")
+    message: str = Field("", description="Human-readable status detail")
+
 class CommandType(str, Enum):
     ARM = "ARM"
     DISARM = "DISARM"
@@ -11,6 +25,7 @@ class CommandType(str, Enum):
     EMERGENCY_STOP = "EMERGENCY_STOP"
     RESET_ENERGY = "RESET_ENERGY"
     SET_BATTERY_CAPACITY = "SET_BATTERY_CAPACITY"
+    SET_GNSS_CONFIG = "SET_GNSS_CONFIG"
 
 class Waypoint(BaseModel):
     lat: float
@@ -31,15 +46,23 @@ class CommandMessage(BaseModel):
 
 class GNSSData(BaseModel):
     """
-    Raw data from GNSS/GPS sensor.
+    Raw data from GNSS/GPS sensor (UM982 dual-antenna receiver).
     """
     timestamp: float = Field(..., description="Unix timestamp of the measurement")
-    lat: float = Field(..., description="Latitude in degrees")
-    lon: float = Field(..., description="Longitude in degrees")
+    lat: float = Field(0.0, description="Latitude in degrees")
+    lon: float = Field(0.0, description="Longitude in degrees")
     alt: float = Field(0.0, description="Altitude in meters (AMSL)")
-    fix_type: int = Field(0, description="0: No fix, 1: 2D, 2: 3D, etc.")
+    fix_type: int = Field(0, description="GGA quality: 0=No fix, 1=GPS, 2=DGPS, 4=RTK Fix, 5=RTK Float")
     num_satellites: int = Field(0, description="Number of satellites used")
     hdop: float = Field(99.99, description="Horizontal Dilution of Precision")
+    vdop: float = Field(99.99, description="Vertical Dilution of Precision")
+    heading: float = Field(0.0, description="True heading from dual-antenna THS (degrees)")
+    heading_status: str = Field("", description="THS status: A=autonomous, E=estimated, M=manual, V=void")
+    cog: float = Field(0.0, description="Course over ground (degrees true)")
+    sog_knots: float = Field(0.0, description="Speed over ground in knots")
+    sog_kmh: float = Field(0.0, description="Speed over ground in km/h")
+    utc_time: str = Field("", description="UTC time string from ZDA (HH:MM:SS)")
+    utc_date: str = Field("", description="UTC date string from ZDA (DD/MM/YYYY)")
 
 class ImuMessage(BaseModel):
     """

@@ -13,6 +13,19 @@
           {{ tab.name }}
         </button>
       </div>
+      <div class="sensor-status-bar">
+        <span
+          v-for="s in sensors"
+          :key="s.key"
+          class="sensor-dot"
+          :class="{
+            'status-ok': telemetry.sensorStatus[s.key].status === 'ok',
+            'status-error': telemetry.sensorStatus[s.key].status === 'error',
+            'status-disconnected': telemetry.sensorStatus[s.key].status !== 'ok' && telemetry.sensorStatus[s.key].status !== 'error'
+          }"
+          :title="s.label + ': ' + telemetry.sensorStatus[s.key].status + ' — ' + telemetry.sensorStatus[s.key].message"
+        >{{ s.label }}</span>
+      </div>
       <div class="nav-status" :class="{ connected: telemetry.isConnected }">
         {{ telemetry.isConnected ? 'Connected' : 'Disconnected' }}
       </div>
@@ -34,18 +47,27 @@ import { useTelemetryStore } from './stores/telemetry'
 // Import Views
 import MapView from './views/MapView.vue'
 import GncView from './views/GncView.vue'
+import GnssView from './views/GnssView.vue'
 import PowerView from './views/PowerView.vue'
 import ImuView from './views/ImuView.vue'
 import SettingsView from './views/SettingsView.vue'
 
 const telemetry = useTelemetryStore()
 
+// Sensor status indicators
+const sensors = [
+  { key: 'gnss',  label: 'GNSS' },
+  { key: 'imu',   label: 'IMU' },
+  { key: 'power', label: 'PWR' },
+]
+
 // Tabs Configuration
 const tabs = [
   { id: 'map', name: 'Map & Pilot', component: MapView },
-  { id: 'gnc', name: 'GNC / Debug', component: GncView },
-  { id: 'power', name: 'Power / Battery', component: PowerView },
-  { id: 'imu', name: 'IMU / Inertial', component: ImuView },
+  { id: 'gnss', name: 'GNSS', component: GnssView },
+  { id: 'gnc', name: 'GNC', component: GncView },
+  { id: 'power', name: 'Power', component: PowerView },
+  { id: 'imu', name: 'IMU', component: ImuView },
   { id: 'settings', name: 'Settings', component: SettingsView }
 ]
 
@@ -140,6 +162,40 @@ body, html {
 
 .nav-status.connected {
   color: #00cc00;
+}
+
+/* Sensor status bar */
+.sensor-status-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-right: 15px;
+  border-right: 1px solid #444;
+  padding-right: 15px;
+}
+
+.sensor-dot {
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 10px;
+  cursor: default;
+  user-select: none;
+}
+
+.sensor-dot.status-ok {
+  background-color: #00cc00;
+  color: #000;
+}
+
+.sensor-dot.status-disconnected {
+  background-color: #666;
+  color: #ccc;
+}
+
+.sensor-dot.status-error {
+  background-color: #ff4444;
+  color: #fff;
 }
 
 .main-content {

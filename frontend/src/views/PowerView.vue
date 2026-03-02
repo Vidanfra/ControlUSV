@@ -303,34 +303,35 @@ watch(timeWindow, () => {
   max-width: 350px;
   background-color: #1a1a1a;
   border-left: 2px solid #333;
-  padding: 15px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   overflow-y: auto;
 }
 
 .sidebar h3 {
   margin-top: 0;
-  margin-bottom: 5px;
+  margin-bottom: 3px;
   color: #FFA500;
   border-bottom: 1px solid #333;
-  padding-bottom: 10px;
+  padding-bottom: 6px;
+  font-size: 0.85rem;
 }
 
 .mt-3 {
-  margin-top: 20px !important;
+  margin-top: 12px !important;
 }
 
 .stat-group {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 8px;
+  gap: 4px;
 }
 
 .stat-box {
   background-color: #252525;
-  padding: 12px 15px;
+  padding: 8px 10px;
   border-radius: 6px;
   display: flex;
   justify-content: space-between;
@@ -345,22 +346,22 @@ watch(timeWindow, () => {
 .stat-box h4 {
   margin: 0;
   color: #aaa;
-  font-size: 0.85em;
+  font-size: 0.75em;
   text-transform: uppercase;
   letter-spacing: 1px;
   flex: 1;
-  padding-right: 10px;
+  padding-right: 8px;
 }
 
 .value {
-  font-size: 1.2em;
+  font-size: 1em;
   font-weight: bold;
   color: white;
   white-space: nowrap;
 }
 
 .value.small {
-  font-size: 0.95em;
+  font-size: 0.85em;
 }
 
 .value.level-ok {

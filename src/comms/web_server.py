@@ -62,9 +62,10 @@ async def consume_zmq():
     topics_to_subscribe = [
         Topics.SENSOR_GNSS, 
         Topics.SENSOR_IMU,
+        Topics.SENSOR_BATTERY,
+        Topics.SENSOR_STATUS,
         Topics.STATE_ESTIMATION, 
         Topics.SYSTEM_STATUS,
-        Topics.SENSOR_BATTERY,
         Topics.CONTROL_DEBUG,
         Topics.CONTROL_CMD
     ]
@@ -96,11 +97,15 @@ async def consume_zmq():
                     data = json.loads(payload_str)
                     ws_payload = json.dumps({"topic": topic_str, "data": data})
                     
+                    # Log sensor status messages for debugging
+                    #if "sensor/status" in topic_str:
+                        #logger.info(f"[Web Server] Broadcasting sensor/status: {data}")
+                    
                     await manager.broadcast(ws_payload)
                     
-                except ValueError:
+                except (ValueError, json.JSONDecodeError) as e:
                     # Malformed message
-                    pass
+                    logger.warning(f"[Web Server] Failed to parse message: {e}")
             else:
                 await asyncio.sleep(0.01)
                 
