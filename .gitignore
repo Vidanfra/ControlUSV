@@ -1,0 +1,25 @@
+# Ignore Python virtual environment
+.venv/
+
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+
+# Environment files
+.env
+
+# VS Code workspace settings
+.vscode/
+
+# Node modules (frontend)
+node_modules/
+
+# Logs
+logs/
+
+# Build outputs
+dist/
+
+# Firmware build artifacts
+*.bin
+*.elf
