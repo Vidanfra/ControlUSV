@@ -39,26 +39,37 @@ class GNSSData(BaseModel):
     num_satellites: int = Field(0, description="Number of satellites used")
     hdop: float = Field(99.99, description="Horizontal Dilution of Precision")
 
-class IMUData(BaseModel):
+class ImuMessage(BaseModel):
     """
-    Raw data from IMU (Inertial Measurement Unit).
+    Detailed data from IMU (Inertial Measurement Unit), adapted for WT901C but universalized.
     """
     timestamp: float = Field(..., description="Unix timestamp of the measurement")
-    
+
+    # Angles (deg or rad, typically we use deg for raw messages until EKF)
+    roll: float = 0.0
+    pitch: float = 0.0
+    yaw: float = 0.0
+
     # Accelerometer (m/s^2)
-    accel_x: float
-    accel_y: float
-    accel_z: float
+    ax: float = 0.0
+    ay: float = 0.0
+    az: float = 0.0
+
+    # Gyroscope (deg/s)
+    wx: float = 0.0
+    wy: float = 0.0
+    wz: float = 0.0
+
+    # Magnetometer
+    mx: float = 0.0
+    my: float = 0.0
+    mz: float = 0.0
     
-    # Gyroscope (rad/s)
-    gyro_x: float
-    gyro_y: float
-    gyro_z: float
+    # Internal Temp
+    temp: float = 0.0
     
-    # Magnetometer (uT typically, units depend on driver, assuming normalized or raw)
-    mag_x: Optional[float] = None
-    mag_y: Optional[float] = None
-    mag_z: Optional[float] = None
+    # Computed mag compass heading
+    mag_heading: float = 0.0
 
 class USVState(BaseModel):
     """
