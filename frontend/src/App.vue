@@ -35,6 +35,7 @@ import { useTelemetryStore } from './stores/telemetry'
 import MapView from './views/MapView.vue'
 import GncView from './views/GncView.vue'
 import PowerView from './views/PowerView.vue'
+import ImuView from './views/ImuView.vue'
 import SettingsView from './views/SettingsView.vue'
 
 const telemetry = useTelemetryStore()
@@ -44,6 +45,7 @@ const tabs = [
   { id: 'map', name: 'Map & Pilot', component: MapView },
   { id: 'gnc', name: 'GNC / Debug', component: GncView },
   { id: 'power', name: 'Power / Battery', component: PowerView },
+  { id: 'imu', name: 'IMU / Inertial', component: ImuView },
   { id: 'settings', name: 'Settings', component: SettingsView }
 ]
 

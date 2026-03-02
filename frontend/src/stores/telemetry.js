@@ -24,10 +24,25 @@ export const useTelemetryStore = defineStore('telemetry', {
     // Power additions
     batteryVoltage: 0.0,
     batteryCurrent: 0.0,
-    batteryPower: 0.0, // Calculated V * I
+    batteryPower: 0.0,
     batteryLevelPct: 0.0,
-    batteryCapacityWh: 0.0,
-    batteryAccumulatedWh: 0.0
+    batteryCapacityWh: 500.0,
+    batteryAccumulatedWh: 0.0,
+    batteryEnergyWh: 0,
+    batteryMeasurementStart: 0,
+    batteryHighAlarm: 0,
+    batteryLowAlarm: 0,
+
+    // IMU additions
+    imuRoll: 0.0,
+    imuPitch: 0.0,
+    imuYaw: 0.0,
+    imuAx: 0.0,
+    imuAy: 0.0,
+    imuAz: 0.0,
+    imuP: 0.0,
+    imuQ: 0.0,
+    imuR: 0.0
   }),
 
   actions: {
@@ -67,6 +82,15 @@ export const useTelemetryStore = defineStore('telemetry', {
       
       this.socket.send(JSON.stringify(message))
       console.log("Sent Command:", message)
+    },
+
+    resetEnergy() {
+      this.sendCommand('RESET_ENERGY')
+    },
+
+    setBatteryCapacity(capacityWh) {
+      this.batteryCapacityWh = capacityWh
+      this.sendCommand('SET_BATTERY_CAPACITY', { capacity_wh: capacityWh })
     },
 
     connectWebSocket() {
@@ -126,10 +150,25 @@ export const useTelemetryStore = defineStore('telemetry', {
           else if (topic === 'sensor/battery') {
              this.batteryVoltage = data.voltage
              this.batteryCurrent = data.current
-             this.batteryPower = data.voltage * data.current
+             this.batteryPower = data.power
              this.batteryLevelPct = data.level_pct
              this.batteryCapacityWh = data.capacity_wh
              this.batteryAccumulatedWh = data.accumulated_wh
+             this.batteryEnergyWh = data.energy_wh
+             this.batteryMeasurementStart = data.measurement_start
+             this.batteryHighAlarm = data.high_voltage_alarm
+             this.batteryLowAlarm = data.low_voltage_alarm
+          }
+          else if (topic === 'sensor/imu') {
+             this.imuRoll = data.roll
+             this.imuPitch = data.pitch
+             this.imuYaw = data.yaw
+             this.imuAx = data.ax
+             this.imuAy = data.ay
+             this.imuAz = data.az
+             this.imuP = data.wx
+             this.imuQ = data.wy
+             this.imuR = data.wz
           }
 
           // Update Path History if we have a new position

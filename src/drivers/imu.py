@@ -5,9 +5,14 @@ import threading
 import zmq
 from pydantic import ValidationError
 
+import sys
+import os
+# Add the project root to sys.path to resolve 'src' when running directly
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
 # System imports
-from core.models import ImuMessage
-from core.messaging import Topics, get_zmq_url
+from src.core.models import ImuMessage
+from src.core.messaging import Topics, get_zmq_url
 
 
 class WT901Driver:
@@ -133,7 +138,7 @@ class WT901Driver:
 
 
 class ImuNode:
-    def __init__(self, serial_port="COM3", baud_rate=9600, mag_declination=0.0, user_offset=0.0):
+    def __init__(self, serial_port="/dev/serial0", baud_rate=9600, mag_declination=0.0, user_offset=0.0):
         """
         Connects the WT901 IMU to the internal ZMQ data bus.
         """
@@ -215,7 +220,7 @@ class ImuNode:
             
             # Publish!
             # Format: 'topic payload'
-            self.pub_socket.send_string(f"{Topics.SENSOR_IMU} {json_str}")
+            self.pub_socket.send_string(f"{Topics.SENSOR_IMU.value} {json_str}")
             
         except ValidationError as e:
             print(f"[IMU Node] Data validation error dropping frame: {e}")
@@ -239,6 +244,44 @@ class ImuNode:
 
 
 if __name__ == '__main__':
-    # Start the node (adjust COM port for Windows /dev/ttyUSB0 for linux)
-    node = ImuNode(serial_port="serial0", baud_rate=9600, mag_declination=2.5)
-    node.run()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="WT901 IMU Driver - standalone test or ZMQ node")
+    parser.add_argument("--mode", choices=["test", "node"], default="test",
+                        help="'test' = standalone serial read (no ZMQ), 'node' = full ZMQ publisher")
+    parser.add_argument("--port", default="/dev/serial0", help="Serial port (default: /dev/serial0)")
+    parser.add_argument("--baud", type=int, default=9600, help="Baud rate (default: 9600)")
+    parser.add_argument("--declination", type=float, default=2.5, help="Magnetic declination in degrees")
+    args = parser.parse_args()
+
+    if args.mode == "node":
+        # Full ZMQ publisher mode
+        node = ImuNode(serial_port=args.port, baud_rate=args.baud, mag_declination=args.declination)
+        node.run()
+    else:
+        # Standalone test - read and print sensor data (no ZMQ needed)
+        received_count = [0]
+
+        def on_data(data):
+            received_count[0] += 1
+            print(
+                f"Accel: {data['ax']:7.2f}, {data['ay']:7.2f}, {data['az']:7.2f} | "
+                f"Angles: {data['roll']:7.2f}, {data['pitch']:7.2f}, {data['yaw']:7.2f} | "
+                f"Gyro: {data['wx']:7.2f}, {data['wy']:7.2f}, {data['wz']:7.2f} | "
+                f"Mag: {data['mx']:6.0f}, {data['my']:6.0f}, {data['mz']:6.0f} | "
+                f"Temp: {data['temp']:.2f} °C"
+            )
+
+        driver = WT901Driver(args.port, baud_rate=args.baud, on_data_callback=on_data)
+        driver.start()
+        print(f"[TEST] WT901 driver started on {args.port} @ {args.baud} baud")
+        print("[TEST] Waiting for data (Ctrl+C to stop)...\n")
+
+        try:
+            while True:
+                time.sleep(1.0)
+        except KeyboardInterrupt:
+            pass
+
+        driver.stop()
+        print(f"\n[TEST] Stopped. Total frames received: {received_count[0]}")

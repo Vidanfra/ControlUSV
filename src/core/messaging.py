@@ -7,6 +7,10 @@ from loguru import logger
 from src.core.config import settings
 import multiprocessing
 
+def get_zmq_url() -> str:
+    """Get the ZMQ broker URL for publishers to connect to."""
+    return f"tcp://127.0.0.1:{settings.ZMQ_PORT}"
+
 class Topics(str, Enum):
     SENSOR_GNSS = "sensor/gnss"
     SENSOR_IMU = "sensor/imu"

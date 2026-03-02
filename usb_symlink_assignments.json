@@ -1,0 +1,6 @@
+{
+  "rules": [
+    "SUBSYSTEM==\"tty\", KERNEL==\"ttyUSB*\", ATTRS{idVendor}==\"1a86\", ATTRS{idProduct}==\"7523\", SYMLINK+=\"power_pzem\", MODE=\"0660\", GROUP=\"dialout\"",
+    "SUBSYSTEM==\"tty\", KERNEL==\"ttyACM*\", ATTRS{idVendor}==\"1a86\", ATTRS{idProduct}==\"55d3\", SYMLINK+=\"esp32\", MODE=\"0660\", GROUP=\"dialout\""
+  ]
+}

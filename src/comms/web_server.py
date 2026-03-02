@@ -61,6 +61,7 @@ async def consume_zmq():
     # Subscribe to relevant topics
     topics_to_subscribe = [
         Topics.SENSOR_GNSS, 
+        Topics.SENSOR_IMU,
         Topics.STATE_ESTIMATION, 
         Topics.SYSTEM_STATUS,
         Topics.SENSOR_BATTERY,

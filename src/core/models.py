@@ -9,6 +9,8 @@ class CommandType(str, Enum):
     UPLOAD_MISSION = "UPLOAD_MISSION"
     RTL = "RTL"
     EMERGENCY_STOP = "EMERGENCY_STOP"
+    RESET_ENERGY = "RESET_ENERGY"
+    SET_BATTERY_CAPACITY = "SET_BATTERY_CAPACITY"
 
 class Waypoint(BaseModel):
     lat: float
@@ -96,14 +98,19 @@ class USVState(BaseModel):
 
 class BatteryMessage(BaseModel):
     """
-    Battery status telemetry.
+    Battery / Power telemetry from PZEM-017 or simulation.
     """
     timestamp: float = Field(..., description="Unix timestamp of the measurement")
     voltage: float = Field(..., description="Battery voltage in V")
     current: float = Field(..., description="Battery current in A")
-    level_pct: float = Field(..., description="Battery level in percentage 0-100")
-    capacity_wh: float = Field(..., description="Total battery capacity in Wh")
-    accumulated_wh: float = Field(..., description="Consumed energy in Wh")
+    power: float = Field(0.0, description="Instantaneous power in W")
+    energy_wh: int = Field(0, description="PZEM hardware energy counter in Wh")
+    level_pct: float = Field(0.0, description="Estimated battery level 0-100%")
+    capacity_wh: float = Field(500.0, description="Total battery capacity in Wh")
+    accumulated_wh: float = Field(0.0, description="Software-integrated consumed energy in Wh")
+    measurement_start: float = Field(0.0, description="Unix timestamp when energy measurement started")
+    high_voltage_alarm: int = Field(0, description="High voltage alarm status")
+    low_voltage_alarm: int = Field(0, description="Low voltage alarm status")
 
 class ControlDebugMessage(BaseModel):
     """

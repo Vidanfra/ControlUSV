@@ -4,10 +4,10 @@
       <div class="chart-controls">
         <label>Time Window:</label>
         <select v-model="timeWindow">
-          <option :value="5">5s</option>
-          <option :value="10">10s</option>
-          <option :value="20">20s</option>
-          <option :value="60">60s</option>
+          <option :value="30">30s</option>
+          <option :value="60">1 min</option>
+          <option :value="120">2 min</option>
+          <option :value="300">5 min</option>
         </select>
       </div>
 
@@ -18,46 +18,83 @@
       <div class="chart-wrapper">
         <Line :data="currentChartData" :options="currentChartOptions" />
       </div>
+
+      <div class="chart-wrapper">
+        <Line :data="powerChartData" :options="powerChartOptions" />
+      </div>
     </div>
 
     <div class="sidebar">
-      <h3>Battery Status</h3>
+      <h3>Power Status</h3>
 
-      <div class="stat-box">
-        <h4>Voltage</h4>
-        <div class="value">{{ telemetry.batteryVoltage.toFixed(2) }} V</div>
+      <div class="stat-group">
+        <div class="stat-box">
+          <h4>Voltage</h4>
+          <div class="value">{{ telemetry.batteryVoltage?.toFixed(2) ?? '0.00' }} V</div>
+        </div>
+        <div class="stat-box">
+          <h4>Current</h4>
+          <div class="value">{{ telemetry.batteryCurrent?.toFixed(2) ?? '0.00' }} A</div>
+        </div>
+        <div class="stat-box">
+          <h4>Power</h4>
+          <div class="value">{{ telemetry.batteryPower?.toFixed(1) ?? '0.0' }} W</div>
+        </div>
       </div>
 
-      <div class="stat-box">
-        <h4>Current</h4>
-        <div class="value">{{ telemetry.batteryCurrent.toFixed(2) }} A</div>
+      <h3 class="mt-3">Energy</h3>
+      <div class="stat-group">
+        <div class="stat-box">
+          <h4>Consumed (SW)</h4>
+          <div class="value">{{ telemetry.batteryAccumulatedWh?.toFixed(2) ?? '0.00' }} Wh</div>
+        </div>
+        <div class="stat-box">
+          <h4>Consumed (HW)</h4>
+          <div class="value">{{ telemetry.batteryEnergyWh ?? 0 }} Wh</div>
+        </div>
+        <div class="stat-box">
+          <h4>Battery Level</h4>
+          <div class="value" :class="levelClass">{{ telemetry.batteryLevelPct?.toFixed(1) ?? '0.0' }} %</div>
+        </div>
+        <div class="stat-box">
+          <h4>Capacity</h4>
+          <div class="value">{{ telemetry.batteryCapacityWh?.toFixed(0) ?? '500' }} Wh</div>
+        </div>
       </div>
 
-      <div class="stat-box">
-        <h4>Instant Power</h4>
-        <div class="value">{{ telemetry.batteryPower.toFixed(1) }} W</div>
+      <h3 class="mt-3">Measurement</h3>
+      <div class="stat-group">
+        <div class="stat-box">
+          <h4>Started</h4>
+          <div class="value small">{{ measurementStartStr }}</div>
+        </div>
+        <div class="stat-box">
+          <h4>Duration</h4>
+          <div class="value">{{ measurementDuration }}</div>
+        </div>
       </div>
 
-      <div class="stat-box">
-        <h4>Capacity</h4>
-        <div class="value">{{ telemetry.batteryCapacityWh.toFixed(0) }} Wh</div>
-      </div>
-      
-      <div class="stat-box">
-        <h4>Consumed Energy</h4>
-        <div class="value">{{ telemetry.batteryAccumulatedWh.toFixed(1) }} Wh</div>
-      </div>
-
-      <div class="stat-box">
-        <h4>Level</h4>
-        <div class="value" :class="levelClass">{{ telemetry.batteryLevelPct.toFixed(1) }}%</div>
+      <h3 class="mt-3">Alarms</h3>
+      <div class="stat-group">
+        <div class="stat-box" :class="{ alarm: telemetry.batteryHighAlarm }">
+          <h4>High Voltage</h4>
+          <div class="value" :class="{ 'alarm-text': telemetry.batteryHighAlarm }">
+            {{ telemetry.batteryHighAlarm ? 'ALARM' : 'OK' }}
+          </div>
+        </div>
+        <div class="stat-box" :class="{ alarm: telemetry.batteryLowAlarm }">
+          <h4>Low Voltage</h4>
+          <div class="value" :class="{ 'alarm-text': telemetry.batteryLowAlarm }">
+            {{ telemetry.batteryLowAlarm ? 'ALARM' : 'OK' }}
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useTelemetryStore } from '../stores/telemetry'
 import {
   Chart as ChartJS,
@@ -83,30 +120,44 @@ ChartJS.register(
 
 const telemetry = useTelemetryStore()
 
-// State
-const timeWindow = ref(60) // seconds
-
-// History array
+const timeWindow = ref(120)
 const history = ref([])
 
-const levelClass = computed(() => {
-    if (telemetry.batteryLevelPct > 50) return 'level-high'
-    if (telemetry.batteryLevelPct > 20) return 'level-med'
-    return 'level-low'
+// --- Computed helpers ---
+const measurementStartStr = computed(() => {
+  const ts = telemetry.batteryMeasurementStart
+  if (!ts || ts === 0) return '--'
+  return new Date(ts * 1000).toLocaleTimeString()
 })
 
-// Chart Options base
+const measurementDuration = computed(() => {
+  const ts = telemetry.batteryMeasurementStart
+  if (!ts || ts === 0) return '--'
+  const elapsed = Math.floor(Date.now() / 1000 - ts)
+  if (elapsed < 0) return '--'
+  const h = Math.floor(elapsed / 3600)
+  const m = Math.floor((elapsed % 3600) / 60)
+  const s = elapsed % 60
+  if (h > 0) return `${h}h ${m}m ${s}s`
+  if (m > 0) return `${m}m ${s}s`
+  return `${s}s`
+})
+
+const levelClass = computed(() => {
+  const pct = telemetry.batteryLevelPct || 0
+  if (pct < 20) return 'level-critical'
+  if (pct < 40) return 'level-low'
+  return 'level-ok'
+})
+
+// --- Chart options ---
 const chartBaseOptions = {
   responsive: true,
   maintainAspectRatio: false,
-  animation: false, // Turn off animation for realtime performance
-  elements: {
-    point: { radius: 0 } // hide points, only lines
-  },
+  animation: false,
+  elements: { point: { radius: 0 } },
   plugins: {
-    legend: {
-      labels: { color: 'white' }
-    }
+    legend: { labels: { color: 'white' } }
   },
   scales: {
     x: {
@@ -120,89 +171,79 @@ const chartBaseOptions = {
   }
 }
 
-// Setup custom charts options
 const voltageChartOptions = {
   ...chartBaseOptions,
-  scales: {
-    ...chartBaseOptions.scales,
-    y: {
-      ...chartBaseOptions.scales.y,
-      min: 10,
-      max: 15
-    }
+  plugins: {
+    ...chartBaseOptions.plugins,
+    title: { display: true, text: 'Voltage (V)', color: '#aaa' }
   }
 }
 
 const currentChartOptions = {
   ...chartBaseOptions,
-  scales: {
-    ...chartBaseOptions.scales,
-    y: {
-      ...chartBaseOptions.scales.y,
-      // Leaving y axis auto-scale for current, since it can vary widely
-    }
+  plugins: {
+    ...chartBaseOptions.plugins,
+    title: { display: true, text: 'Current (A)', color: '#aaa' }
   }
 }
 
-// Chart Data Structures (Reactive Refs attached to the Line component)
-const voltageChartData = ref({
-  labels: [],
-  datasets: [
-    { label: 'Voltage (V)', borderColor: '#FFA500', data: [], borderWidth: 2, tension: 0.1 }
-  ]
-})
+const powerChartOptions = {
+  ...chartBaseOptions,
+  plugins: {
+    ...chartBaseOptions.plugins,
+    title: { display: true, text: 'Power (W)', color: '#aaa' }
+  }
+}
 
-const currentChartData = ref({
-  labels: [],
-  datasets: [
-    { label: 'Current (A)', borderColor: '#42A5F5', data: [], borderWidth: 2, tension: 0.1 }
-  ]
-})
+// --- Chart data refs ---
+const voltageChartData = ref({ labels: [], datasets: [] })
+const currentChartData = ref({ labels: [], datasets: [] })
+const powerChartData = ref({ labels: [], datasets: [] })
 
 let updateInterval = null
 
-// Real-time Update Logic
 const updateCharts = () => {
-    const now = Date.now()
-    
-    let voltage = telemetry.batteryVoltage || 0.0
-    let current = telemetry.batteryCurrent || 0.0
+  const now = Date.now()
 
-    // Push new point
-    history.value.push({
-      timeMs: now,
-      label: new Date(now).toISOString().substr(11, 8), // HH:mm:ss
-      voltage: voltage,
-      current: current
-    })
+  history.value.push({
+    timeMs: now,
+    label: new Date(now).toISOString().substr(11, 8),
+    voltage: telemetry.batteryVoltage || 0,
+    current: telemetry.batteryCurrent || 0,
+    power: telemetry.batteryPower || 0
+  })
 
-    // Filter old points based on timeWindow
-    const cutoff = now - (timeWindow.value * 1000)
-    
-    // Shift buffer logic to prevent memory leaks
-    while (history.value.length > 0 && history.value[0].timeMs < cutoff) {
-        history.value.shift()
-    }
+  const cutoff = now - (timeWindow.value * 1000)
+  while (history.value.length > 0 && history.value[0].timeMs < cutoff) {
+    history.value.shift()
+  }
 
-    // Map history to chart data
-    voltageChartData.value = {
-      labels: history.value.map(pt => pt.label),
-      datasets: [
-        { label: 'Voltage (V)', borderColor: '#FFA500', data: history.value.map(pt => pt.voltage), borderWidth: 2, tension: 0.1 }
-      ]
-    }
-    
-    currentChartData.value = {
-      labels: history.value.map(pt => pt.label),
-      datasets: [
-        { label: 'Current (A)', borderColor: '#42A5F5', data: history.value.map(pt => pt.current), borderWidth: 2, tension: 0.1 }
-      ]
-    }
+  const labels = history.value.map(pt => pt.label)
+
+  voltageChartData.value = {
+    labels,
+    datasets: [
+      { label: 'Voltage', borderColor: '#FFA500', data: history.value.map(pt => pt.voltage), borderWidth: 2, tension: 0.2, fill: false }
+    ]
+  }
+
+  currentChartData.value = {
+    labels,
+    datasets: [
+      { label: 'Current', borderColor: '#33b5e5', data: history.value.map(pt => pt.current), borderWidth: 2, tension: 0.2, fill: false }
+    ]
+  }
+
+  powerChartData.value = {
+    labels,
+    datasets: [
+      { label: 'Power', borderColor: '#ff4444', data: history.value.map(pt => pt.power), borderWidth: 2, tension: 0.2, fill: false }
+    ]
+  }
 }
 
 onMounted(() => {
-  // Update at 10Hz
-  updateInterval = setInterval(updateCharts, 100)
+  updateInterval = setInterval(updateCharts, 500)
 })
 
 onUnmounted(() => {
@@ -210,9 +251,8 @@ onUnmounted(() => {
 })
 
 watch(timeWindow, () => {
-    updateCharts()
+  updateCharts()
 })
-
 </script>
 
 <style scoped>
@@ -267,7 +307,7 @@ watch(timeWindow, () => {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .sidebar h3 {
@@ -278,6 +318,16 @@ watch(timeWindow, () => {
   padding-bottom: 10px;
 }
 
+.mt-3 {
+  margin-top: 20px !important;
+}
+
+.stat-group {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
 .stat-box {
   background-color: #252525;
   padding: 12px 15px;
@@ -285,7 +335,11 @@ watch(timeWindow, () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  text-align: left;
+}
+
+.stat-box.alarm {
+  background-color: #3a1a1a;
+  border: 1px solid #ff4444;
 }
 
 .stat-box h4 {
@@ -294,28 +348,34 @@ watch(timeWindow, () => {
   font-size: 0.85em;
   text-transform: uppercase;
   letter-spacing: 1px;
-  line-height: 1.3;
   flex: 1;
   padding-right: 10px;
-  word-wrap: break-word;
 }
 
 .value {
-  font-size: 1.4em;
+  font-size: 1.2em;
   font-weight: bold;
   color: white;
   white-space: nowrap;
 }
 
-.level-high {
-  color: #00C851;
+.value.small {
+  font-size: 0.95em;
 }
 
-.level-med {
+.value.level-ok {
+  color: #00cc00;
+}
+
+.value.level-low {
   color: #FFA500;
 }
 
-.level-low {
+.value.level-critical {
+  color: #ff4444;
+}
+
+.value.alarm-text {
   color: #ff4444;
 }
 </style>
