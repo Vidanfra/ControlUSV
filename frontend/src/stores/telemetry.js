@@ -75,6 +75,12 @@ export const useTelemetryStore = defineStore('telemetry', {
       imu:   { status: 'disconnected', message: 'Waiting...', timestamp: 0 },
       power: { status: 'disconnected', message: 'Waiting...', timestamp: 0 },
     },
+
+    // Simulation state
+    simulationResults: [],        // Array of result objects from /api/simulate
+    simulationOverlayVisible: false,
+    simulationWaypoints: [],      // Waypoints used for the last simulation
+    simulationRunning: false,
   }),
 
   getters: {
@@ -163,6 +169,43 @@ export const useTelemetryStore = defineStore('telemetry', {
       if (config.password !== undefined) this.gnssPassword = config.password
       if (config.command_freq !== undefined) this.gnssCommandFreq = config.command_freq
       this.sendCommand('SET_GNSS_CONFIG', config)
+    },
+
+    // --- Simulation Actions ---
+    async runSimulation(request) {
+      this.simulationRunning = true
+      try {
+        const baseUrl = `${window.location.protocol}//${window.location.hostname}:8000`
+        const resp = await fetch(`${baseUrl}/api/simulate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(request),
+        })
+        const data = await resp.json()
+        if (data.status === 'ok') {
+          this.simulationResults = data.results
+          this.simulationWaypoints = request.waypoints
+          this.simulationOverlayVisible = true
+          return { ok: true, results: data.results }
+        } else {
+          return { ok: false, message: data.message }
+        }
+      } catch (e) {
+        console.error('Simulation request failed:', e)
+        return { ok: false, message: e.message }
+      } finally {
+        this.simulationRunning = false
+      }
+    },
+
+    clearSimulation() {
+      this.simulationResults = []
+      this.simulationWaypoints = []
+      this.simulationOverlayVisible = false
+    },
+
+    toggleSimOverlay() {
+      this.simulationOverlayVisible = !this.simulationOverlayVisible
     },
 
     connectWebSocket() {

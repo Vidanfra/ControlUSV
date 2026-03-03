@@ -26,11 +26,14 @@ class CommandType(str, Enum):
     RESET_ENERGY = "RESET_ENERGY"
     SET_BATTERY_CAPACITY = "SET_BATTERY_CAPACITY"
     SET_GNSS_CONFIG = "SET_GNSS_CONFIG"
+    RUN_SIMULATION = "RUN_SIMULATION"
+    CLEAR_SIM_OVERLAY = "CLEAR_SIM_OVERLAY"
 
 class Waypoint(BaseModel):
     lat: float
     lon: float
-    radius: float = 2.0  # Acceptance radius in meters
+    radius: float = 5.0   # Acceptance radius in meters
+    speed: float = 1.0    # Desired speed in m/s
 
 class MissionPayload(BaseModel):
     waypoints: List[Waypoint]
@@ -143,3 +146,54 @@ class ControlDebugMessage(BaseModel):
     target_heading: float = Field(..., description="Target heading in radians")
     heading_error: float = Field(..., description="Heading error in radians")
     cross_track_error: float = Field(..., description="Cross-track error in meters")
+
+
+# ============================================================================
+# SIMULATION MODELS
+# ============================================================================
+
+class SimulationConfig(BaseModel):
+    """One simulation profile configuration."""
+    profile_id: int = 0
+    payload_kg: float = Field(25.0, description="Payload mass [kg]")
+    wn_pid: float = Field(4.0, description="PID natural frequency [rad/s]")
+    zeta_pid: float = Field(0.5, description="PID damping ratio")
+    wn_ref: float = Field(1.0, description="Reference model natural frequency [rad/s]")
+    zeta_ref: float = Field(1.0, description="Reference model damping ratio")
+    delta: float = Field(5.0, description="ALOS look-ahead distance [m]")
+    gamma: float = Field(0.0, description="ALOS adaptive sideslip gain")
+    current_speed: float = Field(0.0, description="Ocean current speed [m/s]")
+    current_dir: float = Field(0.0, description="Ocean current direction [deg]")
+    surge_force: float = Field(150.0, description="Surge force [N]")
+    start_mode: str = Field("first_wp", description="'current_pos' or 'first_wp'")
+
+
+class SimulationRequest(BaseModel):
+    """Request to run one or more simulations."""
+    configs: List[SimulationConfig]
+    waypoints: List[Waypoint]
+    total_time: float = Field(400.0, description="Total simulation time [s]")
+    time_step: float = Field(0.02, description="Simulation time step [s]")
+    # If start_mode='current_pos', these are used:
+    current_lat: float = Field(0.0, description="Current USV latitude [deg]")
+    current_lon: float = Field(0.0, description="Current USV longitude [deg]")
+    current_heading: float = Field(0.0, description="Current USV heading [deg]")
+
+
+class SimulationResult(BaseModel):
+    """Result of one simulation profile."""
+    profile_id: int
+    config: SimulationConfig
+    time: List[float]
+    lat: List[float]
+    lon: List[float]
+    N: List[float]
+    E: List[float]
+    psi: List[float]
+    psi_d: List[float]
+    speed: List[float]
+    cte: List[float]
+    n1: List[float]
+    n2: List[float]
+    psi_error: List[float]
+    wp_reached: List[int]

@@ -48,7 +48,7 @@ import { useTelemetryStore } from '../stores/telemetry'
 import { storeToRefs } from 'pinia'
 
 const telemetry = useTelemetryStore()
-const { lat, lon, missionWaypoints, pathHistory } = storeToRefs(telemetry)
+const { lat, lon, missionWaypoints, pathHistory, simulationResults, simulationOverlayVisible } = storeToRefs(telemetry)
 
 const isPlanMode = ref(false)
 const isSatellite = ref(true)
@@ -174,6 +174,27 @@ onMounted(() => {
               'circle-stroke-width': 2
           }
       })
+
+      // 5. Simulation overlay sources/layers (up to 6 profiles)
+      const SIM_COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
+      for (let i = 0; i < 6; i++) {
+        map.addSource(`sim-track-${i}`, {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: [] }
+        })
+        map.addLayer({
+          id: `sim-track-line-${i}`,
+          type: 'line',
+          source: `sim-track-${i}`,
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: {
+            'line-color': SIM_COLORS[i],
+            'line-width': 3,
+            'line-dasharray': [4, 3],
+            'line-opacity': 0.85
+          }
+        })
+      }
   })
 
   // Create Custom Boat Marker Element
@@ -298,6 +319,37 @@ const updateTrail = () => {
         features: [lineString]
     })
 }
+
+// --- Simulation Overlay ---
+function updateSimOverlay() {
+  if (!map) return
+  const results = simulationResults.value
+  const visible = simulationOverlayVisible.value
+
+  for (let i = 0; i < 6; i++) {
+    const src = map.getSource(`sim-track-${i}`)
+    if (!src) continue
+    
+    if (!visible || !results || i >= results.length) {
+      src.setData({ type: 'FeatureCollection', features: [] })
+      continue
+    }
+    
+    const r = results[i]
+    const coords = r.lat.map((lat, j) => [r.lon[j], lat])
+    src.setData({
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: coords }
+      }]
+    })
+  }
+}
+
+watch([simulationResults, simulationOverlayVisible], () => {
+  updateSimOverlay()
+}, { deep: true })
 </script>
 
 <style scoped>

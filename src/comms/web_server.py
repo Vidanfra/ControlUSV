@@ -1,12 +1,14 @@
 import asyncio
 import json
+import math
 import os
 from typing import List
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import zmq
 import zmq.asyncio
+import numpy as np
 from loguru import logger
 from src.core.config import settings
 from src.core.messaging import Topics
@@ -122,6 +124,7 @@ async def startup_event():
     asyncio.create_task(consume_zmq())
 
 from src.core.models import CommandMessage
+from src.core.models import SimulationRequest, SimulationResult, SimulationConfig, Waypoint
 from src.core.config import settings
 
 # --- ZMQ Publisher Setup for Commands ---
@@ -170,6 +173,190 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
         manager.disconnect(websocket)
+
+
+# --- Simulation Runner ---
+def _run_simulation_sync(req: SimulationRequest) -> List[dict]:
+    """Run simulation(s) in a blocking thread. Returns list of result dicts."""
+    from src.gnc.vehicle_model import Salpa1Model
+    from src.gnc.autopilot import GNCController
+    from src.gnc.gnc_utils import latlon_to_ned, ned_to_latlon, attitudeEuler
+
+    results = []
+
+    # Convert waypoints to NED relative to first waypoint
+    if len(req.waypoints) < 2:
+        return []
+
+    origin_lat = req.waypoints[0].lat
+    origin_lon = req.waypoints[0].lon
+
+    wp_ned = []
+    for wp in req.waypoints:
+        n, e = latlon_to_ned(wp.lat, wp.lon, origin_lat, origin_lon)
+        wp_ned.append((n, e, wp.radius, wp.speed))
+
+    for cfg in req.configs:
+        # Determine initial position
+        if cfg.start_mode == "current_pos" and (req.current_lat != 0 or req.current_lon != 0):
+            n0, e0 = latlon_to_ned(req.current_lat, req.current_lon, origin_lat, origin_lon)
+            psi0 = math.radians(req.current_heading)
+        else:
+            # Start at first waypoint, heading toward second
+            n0, e0 = wp_ned[0][0], wp_ned[0][1]
+            dn = wp_ned[1][0] - wp_ned[0][0]
+            de = wp_ned[1][1] - wp_ned[0][1]
+            psi0 = math.atan2(de, dn)
+
+        # Build vehicle model (extracts physical parameters)
+        model = Salpa1Model(
+            payload_mass=cfg.payload_kg,
+            V_current=cfg.current_speed,
+            beta_current=cfg.current_dir,
+            tau_X=cfg.surge_force,
+        )
+
+        # Build controller using model's computed physical constants
+        controller = GNCController(
+            m_yaw=model.Izz_total,
+            B_inv=model.Binv,
+            n_max=model.n_max,
+            n_min=model.n_min,
+            wn=cfg.wn_pid,
+            zeta=cfg.zeta_pid,
+            wn_d=cfg.wn_ref,
+            zeta_d=cfg.zeta_ref,
+            delta=cfg.delta,
+            gamma=cfg.gamma,
+            tau_X=cfg.surge_force,
+        )
+
+        # Load waypoints as list of dicts
+        wp_dicts = [
+            {'N': n, 'E': e, 'radius': r, 'speed': s}
+            for n, e, r, s in wp_ned
+        ]
+        controller.set_waypoints(wp_dicts)
+        controller.reset(psi0)
+
+        # Initial state
+        eta = np.zeros(6)
+        eta[0] = n0
+        eta[1] = e0
+        eta[5] = psi0
+        nu = np.zeros(6)
+        u_actual = np.array([0.0, 0.0])
+
+        # Pre-allocate result lists
+        dt = req.time_step
+        N_steps = int(req.total_time / dt)
+
+        t_log = []
+        N_log, E_log = [], []
+        psi_log, psi_d_log = [], []
+        speed_log, cte_log = [], []
+        n1_log, n2_log = [], []
+        psi_err_log = []
+        wp_reached_log = []
+
+        LOG_DECIMATION = max(1, int(0.1 / dt))  # log at ~10 Hz
+
+        for i in range(N_steps):
+            t = i * dt
+
+            # GNC step
+            n1, n2, debug = controller.step(eta, nu, dt)
+            u_control = np.array([n1, n2], dtype=float)
+
+            # Physics step — dynamics() integrates nu and u_actual internally
+            nu, u_actual = model.dynamics(eta, nu, u_actual, u_control, dt)
+
+            # Kinematics — update eta (position/attitude)
+            eta = attitudeEuler(eta, nu, dt)
+
+            # Log at reduced rate
+            if i % LOG_DECIMATION == 0:
+                t_log.append(round(t, 3))
+                N_log.append(round(float(eta[0]), 3))
+                E_log.append(round(float(eta[1]), 3))
+                psi_log.append(round(float(eta[5]), 4))
+                psi_d_log.append(round(debug.get("psi_d", 0.0), 4))
+                spd = math.sqrt(float(nu[0])**2 + float(nu[1])**2)
+                speed_log.append(round(spd, 3))
+                cte_log.append(round(debug.get("cross_track_error", 0.0), 3))
+                n1_log.append(round(float(n1), 1))
+                n2_log.append(round(float(n2), 1))
+                psi_err_log.append(round(debug.get("heading_error", 0.0), 4))
+                wp_reached_log.append(debug.get("wp_index", 0))
+
+        # Convert N/E to lat/lon
+        lat_log = []
+        lon_log = []
+        for n_val, e_val in zip(N_log, E_log):
+            lat, lon = ned_to_latlon(n_val, e_val, origin_lat, origin_lon)
+            lat_log.append(round(lat, 8))
+            lon_log.append(round(lon, 8))
+
+        results.append(SimulationResult(
+            profile_id=cfg.profile_id,
+            config=cfg,
+            time=t_log,
+            lat=lat_log,
+            lon=lon_log,
+            N=N_log,
+            E=E_log,
+            psi=psi_log,
+            psi_d=psi_d_log,
+            speed=speed_log,
+            cte=cte_log,
+            n1=n1_log,
+            n2=n2_log,
+            psi_error=psi_err_log,
+            wp_reached=wp_reached_log,
+        ).model_dump())
+
+    return results
+
+
+@app.post("/api/simulate")
+async def run_simulation(req: SimulationRequest):
+    """Run one or more simulation profiles and return results."""
+    logger.info(f"Simulation requested: {len(req.configs)} profile(s), {len(req.waypoints)} waypoints, T={req.total_time}s")
+    try:
+        results = await asyncio.get_event_loop().run_in_executor(None, _run_simulation_sync, req)
+        return {"status": "ok", "results": results}
+    except Exception as e:
+        logger.error(f"Simulation failed: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/upload-waypoints")
+async def upload_waypoints(file: UploadFile = File(...)):
+    """Parse a CSV file of waypoints (lat,lon[,radius[,speed]])."""
+    try:
+        content = await file.read()
+        text = content.decode("utf-8")
+        waypoints = []
+        for i, line in enumerate(text.strip().splitlines()):
+            line = line.strip()
+            if not line or line.startswith("#") or line.lower().startswith("lat"):
+                continue
+            parts = [p.strip() for p in line.split(",")]
+            if len(parts) < 2:
+                continue
+            wp = Waypoint(
+                lat=float(parts[0]),
+                lon=float(parts[1]),
+                radius=float(parts[2]) if len(parts) > 2 else 5.0,
+                speed=float(parts[3]) if len(parts) > 3 else 1.0,
+            )
+            waypoints.append(wp.model_dump())
+        logger.info(f"Parsed {len(waypoints)} waypoints from uploaded CSV")
+        return {"status": "ok", "waypoints": waypoints}
+    except Exception as e:
+        logger.error(f"CSV upload failed: {e}")
+        return {"status": "error", "message": str(e)}
+
 
 # --- Static Files ---
 # Mount the Vue build output directory

@@ -9408,3 +9408,203 @@
 2026-03-02 19:56:39.069 | INFO     | HALService | [GNSS Node] Now receiving data
 2026-03-02 19:56:40.456 | INFO     | CommsService | WebSocket client disconnected. Total: 0
 2026-03-02 19:56:40.691 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-03-02 20:08:03.635 | INFO     | MAIN | Starting USV Control System
+2026-03-02 20:08:03.636 | INFO     | MAIN | Mode: SIMULATION
+2026-03-02 20:08:03.776 | INFO     | ManagerService | Process ManagerService starting...
+2026-03-02 20:08:03.860 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-03-02 20:08:03.864 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-03-02 20:08:03.875 | INFO     | CommsService | Starting Web Server on port 8000
+2026-03-02 20:08:03.882 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-03-02 20:08:03.893 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-03-02 20:08:03.897 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-03-02 20:08:03.896 | INFO     | HALService | Process HALService starting...
+2026-03-02 20:08:04.132 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-03-02 20:08:04.137 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-03-02 20:08:04.140 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-03-02 20:08:04.143 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-03-02 20:08:04.145 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-03-02 20:08:04.154 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-03-02 20:08:04.155 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-03-02 20:08:04.195 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-03-02 20:08:04.213 | INFO     | HALService | [UM982] Serial opened: /dev/gnss_um982 @ 115200
+2026-03-02 20:08:04.209 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-03-02 20:08:04.241 | INFO     | CommsService | Starting Web Server...
+2026-03-02 20:08:04.227 | INFO     | HALService | [IMU Node] Driver started on /dev/serial0, waiting for data...
+2026-03-02 20:08:04.252 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'sensor/imu', 'sensor/battery', 'sensor/status', 'gnc/ekf_state', 'system/status', 'gnc/control_debug', 'gnc/control_output']
+2026-03-02 20:08:04.231 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-03-02 20:08:04.235 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-03-02 20:08:04.260 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-03-02 20:08:04.275 | INFO     | HALService | [IMU Node] First data received - publishing OK status
+2026-03-02 20:08:04.299 | INFO     | HALService | [Power Node] Driver started on /dev/power_pzem, waiting for data...
+2026-03-02 20:08:04.754 | INFO     | HALService | [GNSS Node] Driver started on /dev/gnss_um982, waiting for data...
+2026-03-02 20:08:04.815 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-03-02 20:08:04.931 | INFO     | HALService | [Power Node] First data received - publishing OK status
+2026-03-02 20:08:05.059 | INFO     | HALService | [GNSS Node] Now receiving data
+2026-03-02 20:10:45.345 | INFO     | CommsService | Command received and published: CommandType.RESET_ENERGY
+2026-03-02 21:02:27.280 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-03-02 22:07:15.022 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-03-02 22:07:21.230 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-03-02 22:26:43.853 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-03-02 23:03:15.085 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-03-03 00:19:16.884 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-03-03 19:02:19.206 | INFO     | MAIN | Starting USV Control System
+2026-03-03 19:02:19.208 | INFO     | MAIN | Mode: SIMULATION
+2026-03-03 19:02:19.331 | INFO     | ManagerService | Process ManagerService starting...
+2026-03-03 19:02:19.378 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-03-03 19:02:19.416 | INFO     | GNCService | Process GNCService starting...
+2026-03-03 19:02:19.404 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-03-03 19:02:19.419 | INFO     | CommsService | Starting Web Server on port 8000
+2026-03-03 19:02:19.435 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-03-03 19:02:19.442 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-03-03 19:02:19.443 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-03-03 19:02:19.465 | INFO     | HALService | Process HALService starting...
+2026-03-03 19:02:19.680 | INFO     | GNCService | GNC Process initialized (waiting for AUTO mode)
+2026-03-03 19:02:19.682 | INFO     | GNCService | Process GNCService entering loop at 20.0 Hz
+2026-03-03 19:02:19.692 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-03-03 19:02:19.696 | INFO     | CommsService | Starting Web Server...
+2026-03-03 19:02:19.702 | INFO     | CommsService | Web Server ZMQ Consumer connected to tcp://127.0.0.1:5556 subscribing to ['sensor/gnss', 'sensor/imu', 'sensor/battery', 'sensor/status', 'gnc/ekf_state', 'system/status', 'gnc/control_debug', 'gnc/control_output']
+2026-03-03 19:02:19.700 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-03-03 19:02:19.708 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-03-03 19:02:19.712 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-03-03 19:02:19.721 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-03-03 19:02:19.729 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-03-03 19:02:19.731 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-03-03 19:02:19.764 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-03-03 19:02:19.766 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-03-03 19:02:19.772 | INFO     | HALService | [UM982] Serial opened: /dev/gnss_um982 @ 115200
+2026-03-03 19:02:19.775 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-03-03 19:02:19.776 | INFO     | HALService | [IMU Node] Driver started on /dev/serial0, waiting for data...
+2026-03-03 19:02:19.779 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-03-03 19:02:19.787 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-03-03 19:02:19.808 | INFO     | HALService | [Power Node] Driver started on /dev/power_pzem, waiting for data...
+2026-03-03 19:02:19.832 | INFO     | HALService | [IMU Node] First data received - publishing OK status
+2026-03-03 19:02:20.283 | INFO     | HALService | [GNSS Node] Driver started on /dev/gnss_um982, waiting for data...
+2026-03-03 19:02:20.640 | INFO     | HALService | [GNSS Node] Now receiving data
+2026-03-03 19:02:20.811 | WARNING  | HALService | [PZEM] I/O error (1/5): No communication with the instrument (no answer)
+2026-03-03 19:02:23.818 | WARNING  | HALService | [PZEM] I/O error (2/5): No communication with the instrument (no answer)
+2026-03-03 19:02:26.832 | WARNING  | HALService | [PZEM] I/O error (3/5): No communication with the instrument (no answer)
+2026-03-03 19:02:29.835 | WARNING  | HALService | [PZEM] I/O error (4/5): No communication with the instrument (no answer)
+2026-03-03 19:02:32.837 | ERROR    | HALService | [PZEM] Too many I/O errors (No communication with the instrument (no answer)). Stopping read loop for reconnect.
+2026-03-03 19:02:32.854 | WARNING  | HALService | [Power Node] Driver read loop stopped — device likely disconnected
+2026-03-03 19:02:32.855 | INFO     | HALService | [Power Node] Reconnecting in 5.0s...
+2026-03-03 19:02:34.940 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-03-03 19:02:37.858 | INFO     | HALService | [Power Node] Driver started on /dev/power_pzem, waiting for data...
+2026-03-03 19:02:38.860 | WARNING  | HALService | [PZEM] I/O error (1/5): No communication with the instrument (no answer)
+2026-03-03 19:02:41.863 | WARNING  | HALService | [PZEM] I/O error (2/5): No communication with the instrument (no answer)
+2026-03-03 19:02:44.867 | WARNING  | HALService | [PZEM] I/O error (3/5): No communication with the instrument (no answer)
+2026-03-03 19:02:47.869 | WARNING  | HALService | [PZEM] I/O error (4/5): No communication with the instrument (no answer)
+2026-03-03 19:02:50.872 | ERROR    | HALService | [PZEM] Too many I/O errors (No communication with the instrument (no answer)). Stopping read loop for reconnect.
+2026-03-03 19:02:50.876 | WARNING  | HALService | [Power Node] Driver read loop stopped — device likely disconnected
+2026-03-03 19:02:50.878 | INFO     | HALService | [Power Node] Reconnecting in 5.0s...
+2026-03-03 19:02:55.880 | INFO     | HALService | [Power Node] Driver started on /dev/power_pzem, waiting for data...
+2026-03-03 19:02:56.883 | WARNING  | HALService | [PZEM] I/O error (1/5): No communication with the instrument (no answer)
+2026-03-03 19:02:59.886 | WARNING  | HALService | [PZEM] I/O error (2/5): No communication with the instrument (no answer)
+2026-03-03 19:03:02.890 | WARNING  | HALService | [PZEM] I/O error (3/5): No communication with the instrument (no answer)
+2026-03-03 19:03:05.893 | WARNING  | HALService | [PZEM] I/O error (4/5): No communication with the instrument (no answer)
+2026-03-03 19:03:08.897 | ERROR    | HALService | [PZEM] Too many I/O errors (No communication with the instrument (no answer)). Stopping read loop for reconnect.
+2026-03-03 19:03:08.902 | WARNING  | HALService | [Power Node] Driver read loop stopped — device likely disconnected
+2026-03-03 19:03:08.905 | INFO     | HALService | [Power Node] Reconnecting in 5.0s...
+2026-03-03 19:03:13.908 | INFO     | HALService | [Power Node] Driver started on /dev/power_pzem, waiting for data...
+2026-03-03 19:03:14.912 | WARNING  | HALService | [PZEM] I/O error (1/5): No communication with the instrument (no answer)
+2026-03-03 19:03:17.915 | WARNING  | HALService | [PZEM] I/O error (2/5): No communication with the instrument (no answer)
+2026-03-03 19:03:20.918 | WARNING  | HALService | [PZEM] I/O error (3/5): No communication with the instrument (no answer)
+2026-03-03 19:03:23.925 | WARNING  | HALService | [PZEM] I/O error (4/5): No communication with the instrument (no answer)
+2026-03-03 19:03:26.928 | ERROR    | HALService | [PZEM] Too many I/O errors (No communication with the instrument (no answer)). Stopping read loop for reconnect.
+2026-03-03 19:03:26.935 | WARNING  | HALService | [Power Node] Driver read loop stopped — device likely disconnected
+2026-03-03 19:03:26.936 | INFO     | HALService | [Power Node] Reconnecting in 5.0s...
+2026-03-03 19:03:31.939 | INFO     | HALService | [Power Node] Driver started on /dev/power_pzem, waiting for data...
+2026-03-03 19:03:32.942 | WARNING  | HALService | [PZEM] I/O error (1/5): No communication with the instrument (no answer)
+2026-03-03 19:03:35.946 | WARNING  | HALService | [PZEM] I/O error (2/5): No communication with the instrument (no answer)
+2026-03-03 19:03:38.949 | WARNING  | HALService | [PZEM] I/O error (3/5): No communication with the instrument (no answer)
+2026-03-03 19:03:41.952 | WARNING  | HALService | [PZEM] I/O error (4/5): No communication with the instrument (no answer)
+2026-03-03 19:03:44.955 | ERROR    | HALService | [PZEM] Too many I/O errors (No communication with the instrument (no answer)). Stopping read loop for reconnect.
+2026-03-03 19:03:44.959 | WARNING  | HALService | [Power Node] Driver read loop stopped — device likely disconnected
+2026-03-03 19:03:44.960 | INFO     | HALService | [Power Node] Reconnecting in 5.0s...
+2026-03-03 19:03:49.964 | INFO     | HALService | [Power Node] Driver started on /dev/power_pzem, waiting for data...
+2026-03-03 19:03:50.968 | WARNING  | HALService | [PZEM] I/O error (1/5): No communication with the instrument (no answer)
+2026-03-03 19:03:53.971 | WARNING  | HALService | [PZEM] I/O error (2/5): No communication with the instrument (no answer)
+2026-03-03 19:03:56.974 | WARNING  | HALService | [PZEM] I/O error (3/5): No communication with the instrument (no answer)
+2026-03-03 19:03:59.977 | WARNING  | HALService | [PZEM] I/O error (4/5): No communication with the instrument (no answer)
+2026-03-03 19:04:02.981 | ERROR    | HALService | [PZEM] Too many I/O errors (No communication with the instrument (no answer)). Stopping read loop for reconnect.
+2026-03-03 19:04:02.983 | WARNING  | HALService | [Power Node] Driver read loop stopped — device likely disconnected
+2026-03-03 19:04:02.985 | INFO     | HALService | [Power Node] Reconnecting in 5.0s...
+2026-03-03 19:04:05.737 | INFO     | CommsService | Command received and published: CommandType.UPLOAD_MISSION
+2026-03-03 19:04:07.988 | INFO     | HALService | [Power Node] Driver started on /dev/power_pzem, waiting for data...
+2026-03-03 19:04:08.990 | WARNING  | HALService | [PZEM] I/O error (1/5): No communication with the instrument (no answer)
+2026-03-03 19:04:11.993 | WARNING  | HALService | [PZEM] I/O error (2/5): No communication with the instrument (no answer)
+2026-03-03 19:04:14.997 | WARNING  | HALService | [PZEM] I/O error (3/5): No communication with the instrument (no answer)
+2026-03-03 19:04:18.001 | WARNING  | HALService | [PZEM] I/O error (4/5): No communication with the instrument (no answer)
+2026-03-03 19:04:21.004 | ERROR    | HALService | [PZEM] Too many I/O errors (No communication with the instrument (no answer)). Stopping read loop for reconnect.
+2026-03-03 19:04:21.010 | WARNING  | HALService | [Power Node] Driver read loop stopped — device likely disconnected
+2026-03-03 19:04:21.011 | INFO     | HALService | [Power Node] Reconnecting in 5.0s...
+2026-03-03 19:04:26.015 | INFO     | HALService | [Power Node] Driver started on /dev/power_pzem, waiting for data...
+2026-03-03 19:04:27.017 | WARNING  | HALService | [PZEM] I/O error (1/5): No communication with the instrument (no answer)
+2026-03-03 19:04:30.021 | WARNING  | HALService | [PZEM] I/O error (2/5): No communication with the instrument (no answer)
+2026-03-03 19:04:33.025 | WARNING  | HALService | [PZEM] I/O error (3/5): No communication with the instrument (no answer)
+2026-03-03 19:04:36.028 | WARNING  | HALService | [PZEM] I/O error (4/5): No communication with the instrument (no answer)
+2026-03-03 19:04:37.870 | INFO     | CommsService | Simulation requested: 1 profile(s), 7 waypoints, T=400.0s
+2026-03-03 19:04:37.884 | INFO     | CommsService | PathFollower: loaded 7 waypoints
+2026-03-03 19:04:39.032 | ERROR    | HALService | [PZEM] Too many I/O errors (No communication with the instrument (no answer)). Stopping read loop for reconnect.
+2026-03-03 19:04:39.036 | WARNING  | HALService | [Power Node] Driver read loop stopped — device likely disconnected
+2026-03-03 19:04:39.039 | INFO     | HALService | [Power Node] Reconnecting in 5.0s...
+2026-03-03 19:04:44.043 | INFO     | HALService | [Power Node] Driver started on /dev/power_pzem, waiting for data...
+2026-03-03 19:04:42.996 | INFO     | CommsService | PathFollower: switched to WP 2/7
+2026-03-03 19:04:45.045 | WARNING  | HALService | [PZEM] I/O error (1/5): No communication with the instrument (no answer)
+2026-03-03 19:04:45.078 | INFO     | CommsService | PathFollower: switched to WP 3/7
+2026-03-03 19:04:48.047 | WARNING  | HALService | [PZEM] I/O error (2/5): No communication with the instrument (no answer)
+2026-03-03 19:04:51.049 | WARNING  | HALService | [PZEM] I/O error (3/5): No communication with the instrument (no answer)
+2026-03-03 19:04:54.052 | WARNING  | HALService | [PZEM] I/O error (4/5): No communication with the instrument (no answer)
+2026-03-03 19:04:57.055 | ERROR    | HALService | [PZEM] Too many I/O errors (No communication with the instrument (no answer)). Stopping read loop for reconnect.
+2026-03-03 19:04:57.060 | WARNING  | HALService | [Power Node] Driver read loop stopped — device likely disconnected
+2026-03-03 19:04:57.061 | INFO     | HALService | [Power Node] Reconnecting in 5.0s...
+2026-03-03 19:05:02.064 | INFO     | HALService | [Power Node] Driver started on /dev/power_pzem, waiting for data...
+2026-03-03 19:05:03.066 | WARNING  | HALService | [PZEM] I/O error (1/5): No communication with the instrument (no answer)
+2026-03-03 19:05:06.068 | WARNING  | HALService | [PZEM] I/O error (2/5): No communication with the instrument (no answer)
+2026-03-03 19:05:09.070 | WARNING  | HALService | [PZEM] I/O error (3/5): No communication with the instrument (no answer)
+2026-03-03 19:05:12.073 | WARNING  | HALService | [PZEM] I/O error (4/5): No communication with the instrument (no answer)
+2026-03-03 19:05:15.076 | ERROR    | HALService | [PZEM] Too many I/O errors (No communication with the instrument (no answer)). Stopping read loop for reconnect.
+2026-03-03 19:05:15.083 | WARNING  | HALService | [Power Node] Driver read loop stopped — device likely disconnected
+2026-03-03 19:05:15.084 | INFO     | HALService | [Power Node] Reconnecting in 5.0s...
+2026-03-03 19:05:20.087 | INFO     | HALService | [Power Node] Driver started on /dev/power_pzem, waiting for data...
+2026-03-03 19:05:21.091 | WARNING  | HALService | [PZEM] I/O error (1/5): No communication with the instrument (no answer)
+2026-03-03 19:05:24.094 | WARNING  | HALService | [PZEM] I/O error (2/5): No communication with the instrument (no answer)
+2026-03-03 19:05:27.097 | WARNING  | HALService | [PZEM] I/O error (3/5): No communication with the instrument (no answer)
+2026-03-03 19:05:30.099 | WARNING  | HALService | [PZEM] I/O error (4/5): No communication with the instrument (no answer)
+2026-03-03 19:05:33.102 | ERROR    | HALService | [PZEM] Too many I/O errors (No communication with the instrument (no answer)). Stopping read loop for reconnect.
+2026-03-03 19:05:33.108 | WARNING  | HALService | [Power Node] Driver read loop stopped — device likely disconnected
+2026-03-03 19:05:33.110 | INFO     | HALService | [Power Node] Reconnecting in 5.0s...
+2026-03-03 19:05:38.113 | INFO     | HALService | [Power Node] Driver started on /dev/power_pzem, waiting for data...
+2026-03-03 19:05:39.116 | WARNING  | HALService | [PZEM] I/O error (1/5): No communication with the instrument (no answer)
+2026-03-03 19:05:42.119 | WARNING  | HALService | [PZEM] I/O error (2/5): No communication with the instrument (no answer)
+2026-03-03 19:05:45.122 | WARNING  | HALService | [PZEM] I/O error (3/5): No communication with the instrument (no answer)
+2026-03-03 19:05:48.126 | WARNING  | HALService | [PZEM] I/O error (4/5): No communication with the instrument (no answer)
+2026-03-03 19:05:51.131 | ERROR    | HALService | [PZEM] Too many I/O errors (No communication with the instrument (no answer)). Stopping read loop for reconnect.
+2026-03-03 19:05:51.134 | WARNING  | HALService | [Power Node] Driver read loop stopped — device likely disconnected
+2026-03-03 19:05:51.135 | INFO     | HALService | [Power Node] Reconnecting in 5.0s...
+2026-03-03 19:05:56.137 | INFO     | HALService | [Power Node] Driver started on /dev/power_pzem, waiting for data...
+2026-03-03 19:05:57.141 | WARNING  | HALService | [PZEM] I/O error (1/5): No communication with the instrument (no answer)
+2026-03-03 19:06:00.145 | WARNING  | HALService | [PZEM] I/O error (2/5): No communication with the instrument (no answer)
+2026-03-03 19:06:03.147 | WARNING  | HALService | [PZEM] I/O error (3/5): No communication with the instrument (no answer)
+2026-03-03 19:06:06.151 | WARNING  | HALService | [PZEM] I/O error (4/5): No communication with the instrument (no answer)
+2026-03-03 19:06:09.155 | ERROR    | HALService | [PZEM] Too many I/O errors (No communication with the instrument (no answer)). Stopping read loop for reconnect.
+2026-03-03 19:06:09.158 | WARNING  | HALService | [Power Node] Driver read loop stopped — device likely disconnected
+2026-03-03 19:06:09.160 | INFO     | HALService | [Power Node] Reconnecting in 5.0s...
+2026-03-03 19:06:14.162 | INFO     | HALService | [Power Node] Driver started on /dev/power_pzem, waiting for data...
+2026-03-03 19:06:15.165 | WARNING  | HALService | [PZEM] I/O error (1/5): No communication with the instrument (no answer)
+2026-03-03 19:06:18.168 | WARNING  | HALService | [PZEM] I/O error (2/5): No communication with the instrument (no answer)
+2026-03-03 19:06:21.171 | WARNING  | HALService | [PZEM] I/O error (3/5): No communication with the instrument (no answer)
+2026-03-03 19:06:24.173 | WARNING  | HALService | [PZEM] I/O error (4/5): No communication with the instrument (no answer)
+2026-03-03 19:06:27.176 | ERROR    | HALService | [PZEM] Too many I/O errors (No communication with the instrument (no answer)). Stopping read loop for reconnect.
+2026-03-03 19:06:27.181 | WARNING  | HALService | [Power Node] Driver read loop stopped — device likely disconnected
+2026-03-03 19:06:27.183 | INFO     | HALService | [Power Node] Reconnecting in 5.0s...
+2026-03-03 19:06:31.144 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-03-03 19:06:31.145 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-03-03 19:06:31.145 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-03-03 19:06:31.144 | INFO     | GNCService | Process GNCService received signal 2. Stopping...
+2026-03-03 19:06:31.177 | INFO     | GNCService | Process GNCService stopped.
+2026-03-03 19:06:31.180 | INFO     | ManagerService | Process ManagerService stopped.
+2026-03-03 19:06:31.241 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-03-03 19:06:31.343 | INFO     | CommsService | ZMQ Consumer task cancelled
+2026-03-03 19:06:31.347 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-03-03 19:06:31.349 | INFO     | CommsService | MAVLink bridge stopped.
+2026-03-03 19:06:31.360 | SUCCESS  | MAIN | All services stopped. Exiting.
