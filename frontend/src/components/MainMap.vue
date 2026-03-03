@@ -4,25 +4,56 @@
     
     <div class="map-controls">
       <button 
-        class="plan-btn"
-        :class="{ active: isPlanMode }"
-        @click="isPlanMode = !isPlanMode"
+        class="ctrl-btn plan-btn"
+        :class="{ active: telemetry.mapPlanMode }"
+        @click="telemetry.mapPlanMode = !telemetry.mapPlanMode"
       >
-        {{ isPlanMode ? 'EXIT PLAN MODE' : 'PLAN MISSION' }}
+        {{ telemetry.mapPlanMode ? 'EXIT PLAN MODE' : 'PLAN MISSION' }}
       </button>
+      <label v-if="telemetry.mapPlanMode" class="ctrl-btn route-btn">
+        LOAD ROUTE
+        <input type="file" accept=".csv,.txt" @change="loadRouteFromFile" hidden />
+      </label>
       <button 
-        class="layer-btn"
+        class="ctrl-btn layer-btn"
         @click="isSatellite = !isSatellite"
       >
         {{ isSatellite ? 'MAP VIEW' : 'SATELLITE' }}
       </button>
       <button 
-        v-if="missionWaypoints.length > 0"
-        class="clear-btn" 
+        v-if="telemetry.mapPlanMode && missionWaypoints.length > 0"
+        class="ctrl-btn save-btn" 
+        @click="saveRouteToFile"
+      >
+        SAVE ROUTE
+      </button>
+      <button 
+        v-if="telemetry.mapPlanMode && missionWaypoints.length > 0"
+        class="ctrl-btn danger-btn" 
         @click="telemetry.clearMission()"
       >
         CLEAR
       </button>
+      <button
+        v-if="telemetry.simulationResults.length > 0"
+        class="ctrl-btn sim-btn"
+        :class="{ active: telemetry.simulationOverlayVisible }"
+        @click="telemetry.toggleSimOverlay()"
+      >
+        {{ telemetry.simulationOverlayVisible ? 'HIDE SIM' : 'SHOW SIM' }}
+      </button>
+    </div>
+
+    <!-- Simulation Legend -->
+    <div
+      v-if="telemetry.simulationOverlayVisible && telemetry.simulationResults.length > 0"
+      class="sim-legend"
+    >
+      <div class="sim-legend-title">Simulation Profiles</div>
+      <div v-for="(r, i) in telemetry.simulationResults" :key="i" class="sim-legend-item">
+        <span class="sim-legend-line" :style="{ borderColor: SIM_COLORS[i % SIM_COLORS.length] }"></span>
+        <span class="sim-legend-label">Profile {{ r.profile_id }} ({{ r.config?.payload_kg ?? 25 }}kg, δ={{ r.config?.delta ?? 5 }}m)</span>
+      </div>
     </div>
 
     <button
@@ -50,14 +81,28 @@ import { storeToRefs } from 'pinia'
 const telemetry = useTelemetryStore()
 const { lat, lon, missionWaypoints, pathHistory, simulationResults, simulationOverlayVisible } = storeToRefs(telemetry)
 
-const isPlanMode = ref(false)
 const isSatellite = ref(true)
 const followVehicle = ref(true)
 const FOLLOW_ZOOM = 16.5  // ~200m north-south view
+const SIM_COLORS = ['#e6194b', '#3cb44b', '#4363d8', '#f032e6', '#42d4f4', '#fabed4']
 
 let map = null
 let boatMarker = null
 let trailInterval = null
+
+// Build a GeoJSON Polygon ring approximating a circle on the Earth surface
+function geoCircle(lng, lat, radiusMeters, steps = 48) {
+  const coords = []
+  const R = 6371000
+  const latRad = lat * Math.PI / 180
+  for (let i = 0; i <= steps; i++) {
+    const angle = (2 * Math.PI * i) / steps
+    const dLat = (radiusMeters * Math.cos(angle)) / R * (180 / Math.PI)
+    const dLng = (radiusMeters * Math.sin(angle)) / (R * Math.cos(latRad)) * (180 / Math.PI)
+    coords.push([lng + dLng, lat + dLat])
+  }
+  return [coords]
+}
 
 onMounted(() => {
   // Initialize Map with a basic background style first
@@ -153,12 +198,13 @@ onMounted(() => {
           id: 'mission-line',
           type: 'line',
           source: 'mission',
+          filter: ['==', '$type', 'LineString'],
           layout: {
               'line-join': 'round',
               'line-cap': 'round'
           },
           paint: {
-              'line-color': '#FFA500', // Orange path
+              'line-color': '#00E5FF',
               'line-width': 4
           }
       })
@@ -167,16 +213,39 @@ onMounted(() => {
           id: 'mission-points',
           type: 'circle',
           source: 'mission',
+          filter: ['==', '$type', 'Point'],
           paint: {
               'circle-radius': 6,
-              'circle-color': '#ffffff',
-              'circle-stroke-color': '#FFA500',
+              'circle-color': '#00E5FF',
+              'circle-stroke-color': '#00E5FF',
               'circle-stroke-width': 2
           }
       })
 
+      // Waypoint acceptance-radius circles
+      map.addSource('wp-radius', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      })
+      map.addLayer({
+        id: 'wp-radius-fill',
+        type: 'fill',
+        source: 'wp-radius',
+        paint: { 'fill-color': '#00E5FF', 'fill-opacity': 0.08 }
+      })
+      map.addLayer({
+        id: 'wp-radius-stroke',
+        type: 'line',
+        source: 'wp-radius',
+        paint: {
+          'line-color': '#00E5FF',
+          'line-width': 1.5,
+          'line-dasharray': [6, 4],
+          'line-opacity': 0.45
+        }
+      })
+
       // 5. Simulation overlay sources/layers (up to 6 profiles)
-      const SIM_COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
       for (let i = 0; i < 6; i++) {
         map.addSource(`sim-track-${i}`, {
           type: 'geojson',
@@ -215,7 +284,7 @@ onMounted(() => {
   
   // Click Handler for Planning
   map.on('click', (e) => {
-      if (isPlanMode.value) {
+      if (telemetry.mapPlanMode) {
           const { lng, lat } = e.lngLat
           telemetry.addWaypoint(lat, lng)
       }
@@ -289,6 +358,19 @@ watch(missionWaypoints, (newPoints) => {
         type: 'FeatureCollection',
         features: [lineString, ...points]
     })
+
+    // Update acceptance-radius circles
+    const radiusSrc = map.getSource('wp-radius')
+    if (radiusSrc) {
+      const circles = newPoints.map(wp => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: geoCircle(wp.lon, wp.lat, wp.radius || 5)
+        }
+      }))
+      radiusSrc.setData({ type: 'FeatureCollection', features: circles })
+    }
 }, { deep: true })
 
 // Optimized Trail Update Function (Polling instead of Watcher)
@@ -318,6 +400,61 @@ const updateTrail = () => {
         type: 'FeatureCollection',
         features: [lineString]
     })
+}
+
+// --- Load Route from File ---
+function loadRouteFromFile(e) {
+  const file = e.target.files[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = (ev) => {
+    const text = ev.target.result
+    const wps = []
+    for (const line of text.trim().split('\n')) {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith('#') || trimmed.toLowerCase().startsWith('lat')) continue
+      const parts = trimmed.split(',').map(s => s.trim())
+      if (parts.length < 2) continue
+      wps.push({
+        lat: parseFloat(parts[0]),
+        lon: parseFloat(parts[1]),
+        radius: parts.length > 2 ? parseFloat(parts[2]) : 5.0,
+        speed: parts.length > 3 ? parseFloat(parts[3]) : 1.0,
+      })
+    }
+    if (wps.length > 0) {
+      telemetry.missionWaypoints = wps
+      // Fly to the route
+      if (map && wps.length >= 1) {
+        followVehicle.value = false
+        const bounds = new maplibregl.LngLatBounds()
+        wps.forEach(wp => bounds.extend([wp.lon, wp.lat]))
+        map.fitBounds(bounds, { padding: 60, maxZoom: 17 })
+      }
+    }
+  }
+  reader.readAsText(file)
+  e.target.value = ''
+}
+
+// --- Save Route to File ---
+function saveRouteToFile() {
+  const wps = missionWaypoints.value
+  if (!wps || wps.length === 0) return
+  const header = '# lat,lon,radius,speed'
+  const lines = wps.map(wp =>
+    `${wp.lat.toFixed(7)},${wp.lon.toFixed(7)},${wp.radius || 5.0},${wp.speed || 1.0}`
+  )
+  const csv = [header, ...lines].join('\n')
+  const blob = new Blob([csv], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  const now = new Date()
+  const ts = now.toISOString().replace(/[:.]/g, '-').slice(0, 19)
+  a.href = url
+  a.download = `route_${ts}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 // --- Simulation Overlay ---
@@ -355,7 +492,7 @@ watch([simulationResults, simulationOverlayVisible], () => {
 <style scoped>
 .map-container {
   width: 100%;
-  height: 100%; /* Fill parent instead of strict 100vh */
+  height: 100%;
   position: relative;
 }
 
@@ -365,34 +502,52 @@ watch([simulationResults, simulationOverlayVisible], () => {
 }
 
 .map-controls {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    z-index: 10;
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 10;
 }
 
-button {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    background: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    font-weight: bold;
-    cursor: pointer;
+/* ── Unified button base ── */
+.ctrl-btn {
+  padding: 7px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+  transition: opacity 0.15s, background 0.2s;
+  text-align: center;
+  color: white;
+  background: #444;
 }
+.ctrl-btn:hover { opacity: 0.85; }
 
-.plan-btn.active {
-    background: #FFD700; /* Gold */
-    color: black;
-}
+/* Plan mode toggle */
+.plan-btn { background: #555; color: #eee; }
+.plan-btn.active { background: #FFD700; color: #111; }
 
-.clear-btn {
-    background: #ff4444;
-    color: white;
-}
+/* Layer toggle */
+.layer-btn { background: rgba(50,50,50,0.85); color: #ddd; }
+
+/* Route (load) */
+.route-btn { background: #2ecc71; color: white; }
+
+/* Save */
+.save-btn { background: #3498db; color: white; }
+
+/* Clear / danger */
+.danger-btn { background: #e74c3c; color: white; }
+
+/* Sim overlay */
+.sim-btn { background: #333; color: #ccc; }
+.sim-btn.active { background: #1f77b4; color: white; }
 
 :deep(.boat-marker) {
   width: 40px;
@@ -401,6 +556,41 @@ button {
   justify-content: center;
   align-items: center;
   cursor: pointer;
+}
+
+.sim-legend {
+  position: absolute;
+  bottom: 60px;
+  left: 20px;
+  z-index: 10;
+  background: rgba(30, 30, 30, 0.9);
+  border: 1px solid #555;
+  border-radius: 6px;
+  padding: 8px 12px;
+  min-width: 180px;
+}
+.sim-legend-title {
+  color: #00E5FF;
+  font-weight: bold;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.sim-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+.sim-legend-line {
+  display: inline-block;
+  width: 24px;
+  height: 0;
+  border-bottom: 3px dashed;
+  flex-shrink: 0;
+}
+.sim-legend-label {
+  color: #ddd;
+  font-size: 11px;
 }
 
 .follow-btn {

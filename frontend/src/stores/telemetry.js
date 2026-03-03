@@ -76,6 +76,10 @@ export const useTelemetryStore = defineStore('telemetry', {
       power: { status: 'disconnected', message: 'Waiting...', timestamp: 0 },
     },
 
+    // UI navigation state (shared across components)
+    currentTab: 'map',            // Active tab id
+    mapPlanMode: false,           // Whether the map waypoint planner is active
+
     // Simulation state
     simulationResults: [],        // Array of result objects from /api/simulate
     simulationOverlayVisible: false,
@@ -206,6 +210,11 @@ export const useTelemetryStore = defineStore('telemetry', {
 
     toggleSimOverlay() {
       this.simulationOverlayVisible = !this.simulationOverlayVisible
+    },
+
+    navigateToMapPlanner() {
+      this.currentTab = 'map'
+      this.mapPlanMode = true
     },
 
     connectWebSocket() {

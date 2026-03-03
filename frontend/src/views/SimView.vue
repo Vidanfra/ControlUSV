@@ -11,6 +11,9 @@
           <button class="btn" @click="loadCurrentRoute" :disabled="telemetry.missionWaypoints.length === 0">
             Load Current Route ({{ telemetry.missionWaypoints.length }} WP)
           </button>
+          <button class="btn btn-accent" @click="telemetry.navigateToMapPlanner()">
+            Create New Route
+          </button>
           <label class="btn btn-secondary file-label">
             Browse CSV
             <input type="file" accept=".csv,.txt" @change="onCsvUpload" hidden />
@@ -91,16 +94,10 @@
         >
           Clear Results
         </button>
-        <button
-          v-if="telemetry.simulationResults.length > 0"
-          class="btn btn-secondary"
-          @click="telemetry.toggleSimOverlay()"
-        >
-          {{ telemetry.simulationOverlayVisible ? 'Hide Overlay' : 'Show Overlay' }}
-        </button>
       </div>
 
       <div v-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
+      <div v-if="successMsg" class="success-msg">{{ successMsg }}</div>
     </div>
 
     <!-- Right: Results -->
@@ -132,6 +129,7 @@ const totalTime = ref(400)
 const timeStep = ref(0.02)
 const startMode = ref('first_wp')
 const errorMsg = ref('')
+const successMsg = ref('')
 
 const defaultProfile = () => ({
   profile_id: 0,
@@ -179,6 +177,10 @@ async function onCsvUpload(e) {
     const data = await resp.json()
     if (data.status === 'ok') {
       waypoints.value = data.waypoints
+      // Also sync to store so the map shows them
+      telemetry.missionWaypoints = data.waypoints.map(wp => ({
+        lat: wp.lat, lon: wp.lon, radius: wp.radius || 5.0, speed: wp.speed || 1.0
+      }))
       errorMsg.value = ''
     } else {
       errorMsg.value = data.message || 'CSV parse failed'
@@ -214,6 +216,9 @@ async function launchSimulation() {
   const result = await telemetry.runSimulation(request)
   if (!result.ok) {
     errorMsg.value = result.message || 'Simulation failed'
+  } else {
+    successMsg.value = `Simulation complete — ${result.results.length} profile(s), ${result.results[0]?.time?.length || 0} data points each`
+    setTimeout(() => { successMsg.value = '' }, 8000)
   }
 }
 </script>
@@ -288,6 +293,11 @@ h3 {
   background: #444;
 }
 .btn-secondary:hover:not(:disabled) { background: #555; }
+
+.btn-accent {
+  background: #27ae60;
+}
+.btn-accent:hover:not(:disabled) { background: #2ecc71; }
 
 .btn-launch {
   background: #e67e22;
@@ -413,6 +423,16 @@ h3 {
   padding: 6px 10px;
   background: #2c1a1a;
   border: 1px solid #5a2a2a;
+  border-radius: 4px;
+}
+
+.success-msg {
+  color: #2ecc71;
+  font-size: 0.85rem;
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: #1a2c1a;
+  border: 1px solid #2a5a2a;
   border-radius: 4px;
 }
 

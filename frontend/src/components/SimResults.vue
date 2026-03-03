@@ -1,200 +1,329 @@
 <template>
-  <div class="sim-results" v-if="results && results.length > 0">
+  <div class="sim-results" v-show="results && results.length > 0">
     <h3>Simulation Results</h3>
     
     <div class="charts-grid">
       <!-- XY Track Plot -->
       <div class="chart-box wide">
-        <div ref="trackPlot" class="plotly-chart"></div>
+        <canvas ref="trackCanvas"></canvas>
       </div>
 
       <!-- Heading -->
       <div class="chart-box">
-        <div ref="headingPlot" class="plotly-chart"></div>
+        <canvas ref="headingCanvas"></canvas>
       </div>
 
       <!-- Cross-Track Error -->
       <div class="chart-box">
-        <div ref="ctePlot" class="plotly-chart"></div>
+        <canvas ref="cteCanvas"></canvas>
       </div>
 
       <!-- Speed -->
       <div class="chart-box">
-        <div ref="speedPlot" class="plotly-chart"></div>
+        <canvas ref="speedCanvas"></canvas>
       </div>
 
       <!-- Heading Error -->
       <div class="chart-box">
-        <div ref="headingErrPlot" class="plotly-chart"></div>
+        <canvas ref="headingErrCanvas"></canvas>
       </div>
 
       <!-- Motor Commands -->
       <div class="chart-box">
-        <div ref="motorPlot" class="plotly-chart"></div>
+        <canvas ref="motorCanvas"></canvas>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, nextTick, onUnmounted } from 'vue'
-import Plotly from 'plotly.js-dist-min'
+import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import {
+  Chart, LineController, ScatterController, LineElement, PointElement,
+  LinearScale, CategoryScale, Title, Tooltip, Legend, Filler
+} from 'chart.js'
+
+Chart.register(
+  LineController, ScatterController, LineElement, PointElement,
+  LinearScale, CategoryScale, Title, Tooltip, Legend, Filler
+)
 
 const props = defineProps({
   results: { type: Array, default: () => [] },
   waypoints: { type: Array, default: () => [] },
 })
 
-const trackPlot = ref(null)
-const headingPlot = ref(null)
-const ctePlot = ref(null)
-const speedPlot = ref(null)
-const headingErrPlot = ref(null)
-const motorPlot = ref(null)
+const trackCanvas = ref(null)
+const headingCanvas = ref(null)
+const cteCanvas = ref(null)
+const speedCanvas = ref(null)
+const headingErrCanvas = ref(null)
+const motorCanvas = ref(null)
 
-const COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
+const COLORS = ['#e6194b', '#3cb44b', '#4363d8', '#f032e6', '#42d4f4', '#fabed4']
 const RAD2DEG = 180 / Math.PI
 
-const darkLayout = {
-  paper_bgcolor: '#1e1e1e',
-  plot_bgcolor: '#1e1e1e',
-  font: { color: '#ccc', size: 11 },
-  margin: { l: 50, r: 20, t: 35, b: 40 },
-  legend: { orientation: 'h', y: -0.15, font: { size: 10 } },
-  xaxis: { gridcolor: '#333', zerolinecolor: '#444' },
-  yaxis: { gridcolor: '#333', zerolinecolor: '#444' },
+// Keep chart instances for cleanup
+const charts = {}
+
+const darkDefaults = {
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: false,
+  plugins: {
+    legend: {
+      display: true,
+      position: 'bottom',
+      labels: { color: '#ccc', font: { size: 10 }, boxWidth: 14, padding: 8 },
+    },
+    title: {
+      display: true,
+      color: '#00E5FF',
+      font: { size: 13, weight: 'bold' },
+    },
+  },
+  scales: {
+    x: {
+      ticks: { color: '#aaa', font: { size: 9 } },
+      grid: { color: '#333' },
+      title: { display: true, color: '#aaa', font: { size: 10 } },
+    },
+    y: {
+      ticks: { color: '#aaa', font: { size: 9 } },
+      grid: { color: '#333' },
+      title: { display: true, color: '#aaa', font: { size: 10 } },
+    },
+  },
+  elements: {
+    point: { radius: 0 },
+    line: { borderWidth: 2 },
+  },
+}
+
+function profileLabel(r) {
+  const cfg = r.config || {}
+  return `Salpa 1 #${r.profile_id} (${cfg.payload_kg ?? 25}kg, δ=${cfg.delta ?? 5}m)`
+}
+
+function makeChart(canvasRef, key, config) {
+  if (charts[key]) {
+    charts[key].destroy()
+    delete charts[key]
+  }
+  if (!canvasRef.value) return
+  charts[key] = new Chart(canvasRef.value.getContext('2d'), config)
 }
 
 function plotAll(results, waypoints) {
   if (!results || results.length === 0) return
-  
-  // --- XY Track ---
-  const trackTraces = results.map((r, i) => ({
-    x: r.E,
-    y: r.N,
-    mode: 'lines',
-    name: `Profile ${r.profile_id}`,
-    line: { color: COLORS[i % COLORS.length], width: 2 },
+
+  // --- XY Track (scatter mode — East vs North) ---
+  const trackDatasets = results.map((r, i) => ({
+    label: profileLabel(r),
+    data: r.E.map((e, j) => ({ x: e, y: r.N[j] })),
+    borderColor: COLORS[i % COLORS.length],
+    showLine: true,
+    fill: false,
   }))
-  // Add waypoints
   if (waypoints && waypoints.length > 0) {
-    // Convert lat/lon to N/E using first WP as origin
     const origin = waypoints[0]
     const R = 6371000
-    const wpN = waypoints.map(wp => (wp.lat - origin.lat) * Math.PI / 180 * R)
-    const wpE = waypoints.map(wp => (wp.lon - origin.lon) * Math.PI / 180 * R * Math.cos(origin.lat * Math.PI / 180))
-    trackTraces.push({
-      x: wpE, y: wpN,
-      mode: 'markers+lines',
-      name: 'Waypoints',
-      marker: { size: 10, color: '#FFA500', symbol: 'diamond' },
-      line: { color: '#FFA500', dash: 'dot', width: 1 },
+    trackDatasets.push({
+      label: 'Waypoints',
+      data: waypoints.map(wp => ({
+        x: (wp.lon - origin.lon) * Math.PI / 180 * R * Math.cos(origin.lat * Math.PI / 180),
+        y: (wp.lat - origin.lat) * Math.PI / 180 * R,
+      })),
+      borderColor: '#00E5FF',
+      backgroundColor: '#00E5FF',
+      showLine: true,
+      borderDash: [6, 4],
+      borderWidth: 1,
+      pointRadius: 5,
+      pointStyle: 'rectRot',
     })
   }
-  Plotly.react(trackPlot.value, trackTraces, {
-    ...darkLayout,
-    title: 'XY Track (NED)',
-    xaxis: { ...darkLayout.xaxis, title: 'East [m]', scaleanchor: 'y' },
-    yaxis: { ...darkLayout.yaxis, title: 'North [m]' },
-  }, { responsive: true })
+  makeChart(trackCanvas, 'track', {
+    type: 'scatter',
+    data: { datasets: trackDatasets },
+    options: {
+      ...darkDefaults,
+      maintainAspectRatio: true,
+      aspectRatio: 1,
+      plugins: {
+        ...darkDefaults.plugins,
+        title: { ...darkDefaults.plugins.title, text: 'XY Track (NED)' },
+      },
+      scales: {
+        x: { ...darkDefaults.scales.x, title: { ...darkDefaults.scales.x.title, text: 'East [m]' } },
+        y: { ...darkDefaults.scales.y, title: { ...darkDefaults.scales.y.title, text: 'North [m]' } },
+      },
+    },
+  })
+
+  // Decimate time labels for line charts (show max ~40 labels)
+  const allTimes = results[0].time
+  const step = Math.max(1, Math.floor(allTimes.length / 40))
+  const sparseLabels = allTimes.map((t, i) => i % step === 0 ? t : '')
 
   // --- Heading ---
-  const headingTraces = []
+  const headingDatasets = []
   results.forEach((r, i) => {
-    headingTraces.push({
-      x: r.time, y: r.psi.map(v => v * RAD2DEG),
-      mode: 'lines', name: `Actual ${r.profile_id}`,
-      line: { color: COLORS[i % COLORS.length], width: 2 },
+    headingDatasets.push({
+      label: `${profileLabel(r)} — Actual`,
+      data: r.psi.map(v => ((v * RAD2DEG) % 360 + 360) % 360),
+      borderColor: COLORS[i % COLORS.length],
     })
-    headingTraces.push({
-      x: r.time, y: r.psi_d.map(v => v * RAD2DEG),
-      mode: 'lines', name: `Desired ${r.profile_id}`,
-      line: { color: COLORS[i % COLORS.length], width: 1, dash: 'dash' },
+    headingDatasets.push({
+      label: `${profileLabel(r)} — Desired`,
+      data: r.psi_d.map(v => ((v * RAD2DEG) % 360 + 360) % 360),
+      borderColor: COLORS[i % COLORS.length],
+      borderDash: [6, 3],
+      borderWidth: 1.5,
     })
   })
-  Plotly.react(headingPlot.value, headingTraces, {
-    ...darkLayout,
-    title: 'Heading',
-    xaxis: { ...darkLayout.xaxis, title: 'Time [s]' },
-    yaxis: { ...darkLayout.yaxis, title: 'Heading [deg]' },
-  }, { responsive: true })
+  makeChart(headingCanvas, 'heading', {
+    type: 'line',
+    data: { labels: sparseLabels, datasets: headingDatasets },
+    options: {
+      ...darkDefaults,
+      plugins: {
+        ...darkDefaults.plugins,
+        title: { ...darkDefaults.plugins.title, text: 'Heading' },
+      },
+      scales: {
+        x: { ...darkDefaults.scales.x, title: { ...darkDefaults.scales.x.title, text: 'Time [s]' } },
+        y: { ...darkDefaults.scales.y, min: 0, max: 360, title: { ...darkDefaults.scales.y.title, text: 'Heading [deg]' } },
+      },
+    },
+  })
 
   // --- CTE ---
-  const cteTraces = results.map((r, i) => ({
-    x: r.time, y: r.cte,
-    mode: 'lines', name: `Profile ${r.profile_id}`,
-    line: { color: COLORS[i % COLORS.length], width: 2 },
-  }))
-  Plotly.react(ctePlot.value, cteTraces, {
-    ...darkLayout,
-    title: 'Cross-Track Error',
-    xaxis: { ...darkLayout.xaxis, title: 'Time [s]' },
-    yaxis: { ...darkLayout.yaxis, title: 'CTE [m]' },
-  }, { responsive: true })
+  makeChart(cteCanvas, 'cte', {
+    type: 'line',
+    data: {
+      labels: sparseLabels,
+      datasets: results.map((r, i) => ({
+        label: profileLabel(r),
+        data: r.cte,
+        borderColor: COLORS[i % COLORS.length],
+      })),
+    },
+    options: {
+      ...darkDefaults,
+      plugins: {
+        ...darkDefaults.plugins,
+        title: { ...darkDefaults.plugins.title, text: 'Cross-Track Error' },
+      },
+      scales: {
+        x: { ...darkDefaults.scales.x, title: { ...darkDefaults.scales.x.title, text: 'Time [s]' } },
+        y: { ...darkDefaults.scales.y, title: { ...darkDefaults.scales.y.title, text: 'CTE [m]' } },
+      },
+    },
+  })
 
   // --- Speed ---
-  const speedTraces = results.map((r, i) => ({
-    x: r.time, y: r.speed,
-    mode: 'lines', name: `Profile ${r.profile_id}`,
-    line: { color: COLORS[i % COLORS.length], width: 2 },
-  }))
-  Plotly.react(speedPlot.value, speedTraces, {
-    ...darkLayout,
-    title: 'Speed',
-    xaxis: { ...darkLayout.xaxis, title: 'Time [s]' },
-    yaxis: { ...darkLayout.yaxis, title: 'Speed [m/s]' },
-  }, { responsive: true })
+  makeChart(speedCanvas, 'speed', {
+    type: 'line',
+    data: {
+      labels: sparseLabels,
+      datasets: results.map((r, i) => ({
+        label: profileLabel(r),
+        data: r.speed,
+        borderColor: COLORS[i % COLORS.length],
+      })),
+    },
+    options: {
+      ...darkDefaults,
+      plugins: {
+        ...darkDefaults.plugins,
+        title: { ...darkDefaults.plugins.title, text: 'Speed' },
+      },
+      scales: {
+        x: { ...darkDefaults.scales.x, title: { ...darkDefaults.scales.x.title, text: 'Time [s]' } },
+        y: { ...darkDefaults.scales.y, title: { ...darkDefaults.scales.y.title, text: 'Speed [m/s]' } },
+      },
+    },
+  })
 
   // --- Heading Error ---
-  const errTraces = results.map((r, i) => ({
-    x: r.time, y: r.psi_error.map(v => v * RAD2DEG),
-    mode: 'lines', name: `Profile ${r.profile_id}`,
-    line: { color: COLORS[i % COLORS.length], width: 2 },
-  }))
-  Plotly.react(headingErrPlot.value, errTraces, {
-    ...darkLayout,
-    title: 'Heading Error',
-    xaxis: { ...darkLayout.xaxis, title: 'Time [s]' },
-    yaxis: { ...darkLayout.yaxis, title: 'Error [deg]' },
-  }, { responsive: true })
+  makeChart(headingErrCanvas, 'headingErr', {
+    type: 'line',
+    data: {
+      labels: sparseLabels,
+      datasets: results.map((r, i) => ({
+        label: profileLabel(r),
+        data: r.psi_error.map(v => v * RAD2DEG),
+        borderColor: COLORS[i % COLORS.length],
+      })),
+    },
+    options: {
+      ...darkDefaults,
+      plugins: {
+        ...darkDefaults.plugins,
+        title: { ...darkDefaults.plugins.title, text: 'Heading Error' },
+      },
+      scales: {
+        x: { ...darkDefaults.scales.x, title: { ...darkDefaults.scales.x.title, text: 'Time [s]' } },
+        y: { ...darkDefaults.scales.y, title: { ...darkDefaults.scales.y.title, text: 'Error [deg]' } },
+      },
+    },
+  })
 
   // --- Motor Commands ---
-  const motorTraces = []
+  const motorDatasets = []
   results.forEach((r, i) => {
-    motorTraces.push({
-      x: r.time, y: r.n1,
-      mode: 'lines', name: `n1 P${r.profile_id}`,
-      line: { color: COLORS[i % COLORS.length], width: 2 },
+    motorDatasets.push({
+      label: `${profileLabel(r)} — n₁ (port)`,
+      data: r.n1,
+      borderColor: COLORS[i % COLORS.length],
     })
-    motorTraces.push({
-      x: r.time, y: r.n2,
-      mode: 'lines', name: `n2 P${r.profile_id}`,
-      line: { color: COLORS[i % COLORS.length], width: 1, dash: 'dot' },
+    motorDatasets.push({
+      label: `${profileLabel(r)} — n₂ (stbd)`,
+      data: r.n2,
+      borderColor: COLORS[i % COLORS.length],
+      borderDash: [4, 3],
+      borderWidth: 1.5,
     })
   })
-  Plotly.react(motorPlot.value, motorTraces, {
-    ...darkLayout,
-    title: 'Motor Commands',
-    xaxis: { ...darkLayout.xaxis, title: 'Time [s]' },
-    yaxis: { ...darkLayout.yaxis, title: 'RPM' },
-  }, { responsive: true })
+  makeChart(motorCanvas, 'motor', {
+    type: 'line',
+    data: { labels: sparseLabels, datasets: motorDatasets },
+    options: {
+      ...darkDefaults,
+      plugins: {
+        ...darkDefaults.plugins,
+        title: { ...darkDefaults.plugins.title, text: 'Motor Commands' },
+      },
+      scales: {
+        x: { ...darkDefaults.scales.x, title: { ...darkDefaults.scales.x.title, text: 'Time [s]' } },
+        y: { ...darkDefaults.scales.y, title: { ...darkDefaults.scales.y.title, text: 'Speed [rad/s]' } },
+      },
+    },
+  })
+}
+
+async function safePlot() {
+  // Double nextTick ensures DOM is ready after v-show toggle
+  await nextTick()
+  await nextTick()
+  plotAll(props.results, props.waypoints)
 }
 
 watch(() => props.results, async (newResults) => {
   if (newResults && newResults.length > 0) {
-    await nextTick()
-    plotAll(newResults, props.waypoints)
+    await safePlot()
   }
 }, { deep: true })
 
-// Cleanup Plotly on unmount
+onMounted(() => {
+  if (props.results && props.results.length > 0) {
+    safePlot()
+  }
+})
+
 onUnmounted(() => {
-  const refs = [trackPlot, headingPlot, ctePlot, speedPlot, headingErrPlot, motorPlot]
-  refs.forEach(r => {
-    if (r.value) {
-      try { Plotly.purge(r.value) } catch {}
-    }
-  })
+  Object.values(charts).forEach(c => { try { c.destroy() } catch {} })
 })
 </script>
 
@@ -204,7 +333,7 @@ onUnmounted(() => {
 }
 
 .sim-results h3 {
-  color: #FFA500;
+  color: #00E5FF;
   margin: 0 0 10px 0;
   font-size: 1rem;
 }
@@ -219,15 +348,13 @@ onUnmounted(() => {
   background: #1e1e1e;
   border: 1px solid #333;
   border-radius: 6px;
-  overflow: hidden;
+  padding: 8px;
+  height: 300px;
+  position: relative;
 }
 
 .chart-box.wide {
   grid-column: 1 / -1;
-}
-
-.plotly-chart {
-  width: 100%;
-  height: 300px;
+  height: 380px;
 }
 </style>

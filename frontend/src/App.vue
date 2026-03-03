@@ -7,8 +7,8 @@
         <button 
           v-for="tab in tabs" 
           :key="tab.id"
-          :class="{ active: currentTab === tab.id }"
-          @click="currentTab = tab.id"
+          :class="{ active: telemetry.currentTab === tab.id }"
+          @click="telemetry.currentTab = tab.id"
         >
           {{ tab.name }}
         </button>
@@ -73,10 +73,8 @@ const tabs = [
   { id: 'settings', name: 'Settings', component: SettingsView }
 ]
 
-const currentTab = ref('map')
-
 const currentComponent = computed(() => {
-  return tabs.find(t => t.id === currentTab.value)?.component || MapView
+  return tabs.find(t => t.id === telemetry.currentTab)?.component || MapView
 })
 
 onMounted(() => {
