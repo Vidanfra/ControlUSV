@@ -19,6 +19,10 @@
         <span>{{ store.bestHeading.toFixed(1) }}° <small class="src-tag">{{ store.headingSource }}</small></span>
       </div>
       <div class="data-item">
+        <label>Des Heading</label>
+        <span>{{ (((store.targetHeading * 180 / Math.PI) % 360 + 360) % 360).toFixed(1) }}°</span>
+      </div>
+      <div class="data-item">
         <label>Speed</label>
         <span>{{ store.gnssSogKnots.toFixed(1) }} kn</span>
       </div>

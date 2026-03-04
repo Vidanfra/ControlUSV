@@ -14,12 +14,17 @@
         LOAD ROUTE
         <input type="file" accept=".csv,.txt" @change="loadRouteFromFile" hidden />
       </label>
-      <button 
-        class="ctrl-btn layer-btn"
-        @click="isSatellite = !isSatellite"
-      >
-        {{ isSatellite ? 'MAP VIEW' : 'SATELLITE' }}
-      </button>
+      <div class="map-type-wrapper">
+        <button class="ctrl-btn layer-btn" @click="showMapMenu = !showMapMenu">
+          MAP ▾
+        </button>
+        <div v-if="showMapMenu" class="map-menu">
+          <label v-for="t in themeOptions" :key="t.id" class="map-menu-item" :class="{ selected: currentThemeName === t.id }">
+            <input type="radio" :value="t.id" v-model="currentThemeName" @change="showMapMenu = false" />
+            {{ t.label }}
+          </label>
+        </div>
+      </div>
       <button 
         v-if="telemetry.mapPlanMode && missionWaypoints.length > 0"
         class="ctrl-btn save-btn" 
@@ -56,6 +61,18 @@
       </div>
     </div>
 
+    <!-- North reset button (just above follow) -->
+    <button
+      class="north-btn"
+      @click="resetNorth"
+      title="Reset North"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 3L12 21" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M5 10L12 3L19 10" stroke="#333" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
     <button
       class="follow-btn"
       :class="{ active: followVehicle }"
@@ -68,20 +85,58 @@
         <circle cx="12" cy="12" r="8" :stroke="followVehicle ? '#1a73e8' : '#666'" stroke-width="1.5" fill="none"/>
       </svg>
     </button>
+
+    <ThrustIndicator />
+
+    <!-- Windy overlay (wind / radar) -->
+    <iframe
+      v-if="isWindyView"
+      class="windy-overlay"
+      :src="windyUrl"
+      frameborder="0"
+      allowfullscreen
+    ></iframe>
   </div>
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useTelemetryStore } from '../stores/telemetry'
 import { storeToRefs } from 'pinia'
+import ThrustIndicator from './ThrustIndicator.vue'
 
 const telemetry = useTelemetryStore()
 const { lat, lon, missionWaypoints, pathHistory, simulationResults, simulationOverlayVisible } = storeToRefs(telemetry)
 
-const isSatellite = ref(true)
+const currentThemeName = ref('satellite')
+const showMapMenu = ref(false)
+const themeOptions = [
+  { id: 'satellite', label: 'Satellite' },
+  { id: 'osm', label: 'Street Map' },
+  { id: 'dark', label: 'Dark' },
+  { id: 'nautical', label: 'Nautical' },
+  { id: 'wind', label: 'Wind (Windy)' },
+  { id: 'radar', label: 'Radar (Windy)' },
+]
+
+const isWindyView = computed(() => currentThemeName.value === 'wind' || currentThemeName.value === 'radar')
+
+const windyUrl = computed(() => {
+  const overlay = currentThemeName.value === 'radar' ? 'radar' : 'wind'
+  const product = currentThemeName.value === 'radar' ? 'radar' : 'ecmwf'
+  const la = lat.value || 39.4699
+  const lo = lon.value || -0.3763
+  return `https://embed.windy.com/embed2.html?lat=${la}&lon=${lo}&detailLat=${la}&detailLon=${lo}&zoom=10&level=surface&overlay=${overlay}&product=${product}&menu=&message=true&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=kt&metricTemp=%C2%B0C&radarRange=-1`
+})
+
+function resetNorth() {
+  if (map) {
+    map.easeTo({ bearing: 0, pitch: 0 })
+  }
+}
+
 const followVehicle = ref(true)
 const FOLLOW_ZOOM = 16.5  // ~200m north-south view
 const SIM_COLORS = ['#e6194b', '#3cb44b', '#4363d8', '#f032e6', '#42d4f4', '#fabed4']
@@ -121,7 +176,7 @@ onMounted(() => {
         }
       ]
     },
-    center: [2.4, 39.5], // Default center (Mallorca roughly)
+    center: [-0.3763, 39.4699], // Default center (Valencia, Spain)
     zoom: 15
   })
   
@@ -142,6 +197,20 @@ onMounted(() => {
           attribution: 'Tiles &copy; Esri'
       })
 
+      map.addSource('dark', {
+          type: 'raster',
+          tiles: ['https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'],
+          tileSize: 256,
+          attribution: '&copy; CARTO'
+      })
+
+      map.addSource('nautical', {
+          type: 'raster',
+          tiles: ['https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png'],
+          tileSize: 256,
+          attribution: 'Map data &copy; OpenSeaMap contributors'
+      })
+
       // 2. Add Base Layers
       // Satellite (visible by default)
       map.addLayer({
@@ -156,6 +225,22 @@ onMounted(() => {
           id: 'osm',
           type: 'raster',
           source: 'osm',
+          layout: { visibility: 'none' }
+      })
+
+      // Dark (hidden by default)
+      map.addLayer({
+          id: 'dark',
+          type: 'raster',
+          source: 'dark',
+          layout: { visibility: 'none' }
+      })
+
+      // Nautical (hidden by default)
+      map.addLayer({
+          id: 'nautical',
+          type: 'raster',
+          source: 'nautical',
           layout: { visibility: 'none' }
       })
 
@@ -279,7 +364,7 @@ onMounted(() => {
     element: el,
     rotationAlignment: 'map'
   })
-  .setLngLat([2.4, 39.5])
+  .setLngLat([-0.3763, 39.4699])
   .addTo(map)
   
   // Click Handler for Planning
@@ -306,14 +391,27 @@ onUnmounted(() => {
   telemetry.connectWebSocket()
 })
 
-watch(isSatellite, (val) => {
+watch(currentThemeName, (val) => {
   if (!map || !map.getLayer('satellite') || !map.getLayer('osm')) return
-  if (val) {
+  
+  // Hide all tile layers
+  map.setLayoutProperty('satellite', 'visibility', 'none')
+  map.setLayoutProperty('osm', 'visibility', 'none')
+  if (map.getLayer('dark')) map.setLayoutProperty('dark', 'visibility', 'none')
+  if (map.getLayer('nautical')) map.setLayoutProperty('nautical', 'visibility', 'none')
+
+  // For Windy views, keep map layers hidden (iframe overlays the map)
+  if (val === 'wind' || val === 'radar') return
+
+  if (val === 'satellite') {
     map.setLayoutProperty('satellite', 'visibility', 'visible')
-    map.setLayoutProperty('osm', 'visibility', 'none')
-  } else {
-    map.setLayoutProperty('satellite', 'visibility', 'none')
+  } else if (val === 'osm') {
     map.setLayoutProperty('osm', 'visibility', 'visible')
+  } else if (val === 'dark') {
+    if (map.getLayer('dark')) map.setLayoutProperty('dark', 'visibility', 'visible')
+  } else if (val === 'nautical') {
+    map.setLayoutProperty('osm', 'visibility', 'visible')
+    if (map.getLayer('nautical')) map.setLayoutProperty('nautical', 'visibility', 'visible')
   }
 })
 
@@ -615,5 +713,77 @@ watch([simulationResults, simulationOverlayVisible], () => {
 .follow-btn.active {
   background: #e8f0fe;
   box-shadow: 0 2px 6px rgba(26,115,232,0.4);
+}
+
+.north-btn {
+  position: absolute;
+  bottom: 62px;
+  left: 20px;
+  z-index: 10;
+  width: 36px;
+  height: 36px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.north-btn:hover {
+  background: #f0f0f0;
+}
+
+/* ── Map Type Selector ── */
+.map-type-wrapper {
+  position: relative;
+}
+.map-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: rgba(40, 40, 40, 0.95);
+  border: 1px solid #555;
+  border-radius: 6px;
+  padding: 6px 0;
+  min-width: 170px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  z-index: 20;
+}
+.map-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  color: #ccc;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.map-menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.map-menu-item.selected {
+  color: #00E5FF;
+}
+.map-menu-item input[type="radio"] {
+  accent-color: #00E5FF;
+  margin: 0;
+}
+
+/* ── Windy Overlay ── */
+.windy-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  border: none;
 }
 </style>

@@ -115,7 +115,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useTelemetryStore } from '../stores/telemetry'
 import SimResults from '../components/SimResults.vue'
 
@@ -147,6 +147,40 @@ const defaultProfile = () => ({
 })
 
 const profiles = ref([defaultProfile()])
+
+// --- Persistence ---
+const STORAGE_KEY = 'simSettings'
+
+onMounted(() => {
+  const saved = localStorage.getItem(STORAGE_KEY)
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved)
+      if (parsed.waypoints) waypoints.value = parsed.waypoints
+      if (parsed.profiles) profiles.value = parsed.profiles
+      if (parsed.totalTime !== undefined) totalTime.value = parsed.totalTime
+      if (parsed.timeStep !== undefined) timeStep.value = parsed.timeStep
+      if (parsed.startMode) startMode.value = parsed.startMode
+    } catch (e) {
+      console.error('Failed to load sim settings', e)
+    }
+  }
+})
+
+watch(
+  [waypoints, profiles, totalTime, timeStep, startMode],
+  () => {
+    const toSave = {
+      waypoints: waypoints.value,
+      profiles: profiles.value,
+      totalTime: totalTime.value,
+      timeStep: timeStep.value,
+      startMode: startMode.value,
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave))
+  },
+  { deep: true }
+)
 
 function addProfile() {
   const p = defaultProfile()

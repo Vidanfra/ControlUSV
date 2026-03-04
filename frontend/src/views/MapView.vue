@@ -4,7 +4,7 @@
     <div class="floating-dashboard">
       <Dashboard />
     </div>
-    <div class="bottom-bar">
+    <div class="top-center-bar">
       <ControlPanel />
     </div>
   </div>
@@ -30,13 +30,13 @@ import Dashboard from '../components/Dashboard.vue'
   z-index: 1000;
 }
 
-.bottom-bar {
+.top-center-bar {
   position: absolute;
-  bottom: 20px;
+  top: 12px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
-  width: 80%;
+  width: auto;
   max-width: 600px;
 }
 </style>
