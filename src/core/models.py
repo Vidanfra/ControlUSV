@@ -28,6 +28,10 @@ class CommandType(str, Enum):
     SET_GNSS_CONFIG = "SET_GNSS_CONFIG"
     RUN_SIMULATION = "RUN_SIMULATION"
     CLEAR_SIM_OVERLAY = "CLEAR_SIM_OVERLAY"
+    MUTE_SENSORS = "MUTE_SENSORS"
+    UNMUTE_SENSORS = "UNMUTE_SENSORS"
+    START_RT_SIM = "START_RT_SIM"
+    STOP_RT_SIM = "STOP_RT_SIM"
 
 class Waypoint(BaseModel):
     lat: float
@@ -66,6 +70,7 @@ class GNSSData(BaseModel):
     sog_kmh: float = Field(0.0, description="Speed over ground in km/h")
     utc_time: str = Field("", description="UTC time string from ZDA (HH:MM:SS)")
     utc_date: str = Field("", description="UTC date string from ZDA (DD/MM/YYYY)")
+    source: str = Field("sensor", description="Data source: 'sensor' or 'sim'")
 
 class ImuMessage(BaseModel):
     """
@@ -99,28 +104,36 @@ class ImuMessage(BaseModel):
     # Computed mag compass heading
     mag_heading: float = 0.0
 
+    # Data source tag
+    source: str = "sensor"
+
 class USVState(BaseModel):
     """
-    State estimation of the vehicle (output of EKF/Filter).
+    State estimation of the vehicle (output of navigation/EKF filter).
+    Published on gnc/ekf_state. Consumed by GNC, Dashboard, Map, MAVLink.
     """
     timestamp: float
     
     # Position (Global)
     lat: float
     lon: float
+    altitude: float = 0.0
     
     # Velocity (m/s)
-    speed: float = Field(..., description="Speed over ground")
-    course: float = Field(..., description="Course over ground in radians")
+    speed: float = Field(0.0, description="Speed over ground")
+    course: float = Field(0.0, description="Course over ground in radians")
     
     # Attitude (radians)
-    heading: float = Field(..., description="Heading/Yaw in radians")
+    heading: float = Field(0.0, description="Heading/Yaw in radians")
     roll: float = 0.0
     pitch: float = 0.0
+    yaw: float = 0.0
     
-    # System status
-    battery_voltage: float = 0.0
-    system_status: str = "INIT"
+    # Heading quality
+    heading_status: str = Field("", description="A=GNSS dual-antenna, M=magnetic, S=simulated")
+    
+    # Data source tag
+    source: str = Field("sensor", description="Data source: 'sensor' or 'sim'")
 
 class BatteryMessage(BaseModel):
     """
@@ -165,7 +178,8 @@ class SimulationConfig(BaseModel):
     current_speed: float = Field(0.0, description="Ocean current speed [m/s]")
     current_dir: float = Field(0.0, description="Ocean current direction [deg]")
     surge_force: float = Field(150.0, description="Surge force [N]")
-    start_mode: str = Field("first_wp", description="'current_pos' or 'first_wp'")
+    start_mode: str = Field("first_wp", description="'first_wp', 'last_wp', or 'current_pos'")
+    completion_mode: str = Field("stop_time", description="'stop_time', 'one_way', 'loop', 'loop_reverse'")
 
 
 class SimulationRequest(BaseModel):
@@ -197,3 +211,40 @@ class SimulationResult(BaseModel):
     n2: List[float]
     psi_error: List[float]
     wp_reached: List[int]
+
+
+class RTSimConfig(BaseModel):
+    """Configuration for real-time simulation."""
+    waypoints: List[Waypoint]
+    start_mode: str = Field("first_wp", description="'first_wp' or 'last_wp'")
+    completion_mode: str = Field("one_way", description="'stop_time', 'one_way', 'loop', 'loop_reverse'")
+    total_time: float = Field(600.0, description="Max sim time [s] (for stop_time mode)")
+    time_step: float = Field(0.05, description="Simulation time step [s]")
+    gnss_mode: str = Field("rtk_fix", description="'rtk_fix', 'dgnss', or 'gps'")
+    payload_kg: float = Field(25.0, description="Payload mass [kg]")
+    current_speed: float = Field(0.0, description="Ocean current speed [m/s]")
+    current_dir: float = Field(0.0, description="Ocean current direction [deg]")
+    surge_force: float = Field(150.0, description="Surge force [N]")
+    wn_pid: float = Field(4.0, description="PID natural frequency [rad/s]")
+    zeta_pid: float = Field(0.5, description="PID damping ratio")
+    wn_ref: float = Field(1.0, description="Reference model natural frequency [rad/s]")
+    zeta_ref: float = Field(1.0, description="Reference model damping ratio")
+    delta: float = Field(5.0, description="ALOS look-ahead distance [m]")
+    gamma: float = Field(0.0, description="ALOS adaptive sideslip gain")
+    # Start position (used when start_mode='current_pos')
+    current_lat: float = Field(0.0)
+    current_lon: float = Field(0.0)
+    current_heading: float = Field(0.0)
+
+
+class RTSimStatus(BaseModel):
+    """Status of the real-time simulation (published on sim/status)."""
+    timestamp: float
+    running: bool = False
+    elapsed_time: float = 0.0
+    total_time: float = 0.0
+    completion_mode: str = ""
+    gnss_mode: str = ""
+    current_wp: int = 0
+    total_wp: int = 0
+    loops_completed: int = 0

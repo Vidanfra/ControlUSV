@@ -45,7 +45,12 @@
         <div v-for="(p, i) in profiles" :key="i" class="profile-card">
           <div class="profile-header">
             <span class="profile-dot" :style="{ background: COLORS[i % COLORS.length] }"></span>
-            <strong>Profile {{ i }}</strong>
+            <input
+              type="text"
+              v-model="p.name"
+              class="profile-name-input"
+              :placeholder="`Profile ${i + 1}`"
+            />
             <button v-if="profiles.length > 1" class="btn-sm btn-danger" @click="profiles.splice(i, 1)">x</button>
           </div>
           <div class="param-grid">
@@ -72,7 +77,16 @@
           <label>Start Position
             <select v-model="startMode">
               <option value="first_wp">First Waypoint</option>
+              <option value="last_wp">Last Waypoint (Reverse)</option>
               <option value="current_pos">Current USV Position</option>
+            </select>
+          </label>
+          <label>Completion Mode
+            <select v-model="completionMode">
+              <option value="stop_time">Run Full Time</option>
+              <option value="one_way">Stop at Last WP</option>
+              <option value="loop">Loop (same dir)</option>
+              <option value="loop_reverse">Loop (reverse)</option>
             </select>
           </label>
         </div>
@@ -98,6 +112,70 @@
 
       <div v-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
       <div v-if="successMsg" class="success-msg">{{ successMsg }}</div>
+
+      <!-- ========== RT Simulation Section ========== -->
+      <section class="section rt-section">
+        <h2 class="rt-title">Real-Time Simulation</h2>
+
+        <div v-if="telemetry.rtSimActive" class="rt-status-banner">
+          SIM RUNNING &mdash; {{ telemetry.rtSimElapsed.toFixed(1) }}s
+        </div>
+
+        <div class="rt-profile-info">
+          <span class="profile-dot" :style="{ background: COLORS[0] }"></span>
+          Using <strong>{{ profiles[0]?.name || 'Profile 1' }}</strong> parameters
+          &mdash; payload {{ profiles[0]?.payload_kg ?? 25 }} kg,
+          surge {{ profiles[0]?.surge_force ?? 150 }} N,
+          current {{ profiles[0]?.current_speed ?? 0 }} m/s
+        </div>
+
+        <div class="param-grid">
+          <label>Start Direction
+            <select v-model="rtStartMode">
+              <option value="first_wp">Forward</option>
+              <option value="last_wp">Reverse</option>
+            </select>
+          </label>
+          <label>Completion
+            <select v-model="rtCompletionMode">
+              <option value="stop_time">Run Full Time</option>
+              <option value="one_way">Stop at Last WP</option>
+              <option value="loop">Loop</option>
+              <option value="loop_reverse">Loop &amp; Reverse</option>
+            </select>
+          </label>
+          <label>GNSS Mode
+            <select v-model="rtGnssMode">
+              <option value="rtk_fix">RTK Fix</option>
+              <option value="dgnss">DGNSS</option>
+              <option value="gps">GPS</option>
+            </select>
+          </label>
+          <label>Time Step [s]
+            <input type="number" v-model.number="rtTimeStep" step="0.01" min="0.01" max="0.2" />
+          </label>
+        </div>
+
+        <div class="launch-row" style="margin-top: 10px;">
+          <button
+            class="btn btn-rt-start"
+            @click="launchRTSim"
+            :disabled="telemetry.rtSimActive || telemetry.missionWaypoints.length < 2"
+          >
+            Start RT Sim
+          </button>
+          <button
+            class="btn btn-danger"
+            @click="telemetry.stopRTSim()"
+            :disabled="!telemetry.rtSimActive"
+          >
+            Stop
+          </button>
+        </div>
+        <div v-if="telemetry.missionWaypoints.length < 2" class="rt-hint">
+          Upload a mission with &ge; 2 waypoints first.
+        </div>
+      </section>
     </div>
 
     <!-- Right: Results -->
@@ -121,17 +199,25 @@ import SimResults from '../components/SimResults.vue'
 
 const telemetry = useTelemetryStore()
 
-const COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
+const COLORS = ['#e6194b', '#3cb44b', '#4363d8', '#f032e6', '#42d4f4', '#fabed4']
 
 // --- State ---
 const waypoints = ref([])
 const totalTime = ref(400)
 const timeStep = ref(0.02)
 const startMode = ref('first_wp')
+const completionMode = ref('stop_time')
 const errorMsg = ref('')
 const successMsg = ref('')
 
+// RT Simulation state
+const rtStartMode = ref('first_wp')
+const rtCompletionMode = ref('one_way')
+const rtGnssMode = ref('rtk_fix')
+const rtTimeStep = ref(0.05)
+
 const defaultProfile = () => ({
+  name: 'Profile 1',
   profile_id: 0,
   payload_kg: 25,
   wn_pid: 4.0,
@@ -161,6 +247,11 @@ onMounted(() => {
       if (parsed.totalTime !== undefined) totalTime.value = parsed.totalTime
       if (parsed.timeStep !== undefined) timeStep.value = parsed.timeStep
       if (parsed.startMode) startMode.value = parsed.startMode
+      if (parsed.completionMode) completionMode.value = parsed.completionMode
+      if (parsed.rtStartMode) rtStartMode.value = parsed.rtStartMode
+      if (parsed.rtCompletionMode) rtCompletionMode.value = parsed.rtCompletionMode
+      if (parsed.rtGnssMode) rtGnssMode.value = parsed.rtGnssMode
+      if (parsed.rtTimeStep !== undefined) rtTimeStep.value = parsed.rtTimeStep
     } catch (e) {
       console.error('Failed to load sim settings', e)
     }
@@ -168,7 +259,7 @@ onMounted(() => {
 })
 
 watch(
-  [waypoints, profiles, totalTime, timeStep, startMode],
+  [waypoints, profiles, totalTime, timeStep, startMode, completionMode, rtStartMode, rtCompletionMode, rtGnssMode, rtTimeStep],
   () => {
     const toSave = {
       waypoints: waypoints.value,
@@ -176,6 +267,11 @@ watch(
       totalTime: totalTime.value,
       timeStep: timeStep.value,
       startMode: startMode.value,
+      completionMode: completionMode.value,
+      rtStartMode: rtStartMode.value,
+      rtCompletionMode: rtCompletionMode.value,
+      rtGnssMode: rtGnssMode.value,
+      rtTimeStep: rtTimeStep.value,
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave))
   },
@@ -185,6 +281,7 @@ watch(
 function addProfile() {
   const p = defaultProfile()
   p.profile_id = profiles.value.length
+  p.name = `Profile ${profiles.value.length + 1}`
   profiles.value.push(p)
 }
 
@@ -238,6 +335,7 @@ async function launchSimulation() {
       ...p,
       profile_id: i,
       start_mode: startMode.value,
+      completion_mode: completionMode.value,
     })),
     waypoints: waypoints.value,
     total_time: totalTime.value,
@@ -254,6 +352,28 @@ async function launchSimulation() {
     successMsg.value = `Simulation complete — ${result.results.length} profile(s), ${result.results[0]?.time?.length || 0} data points each`
     setTimeout(() => { successMsg.value = '' }, 8000)
   }
+}
+
+function launchRTSim() {
+  const p = profiles.value[0] || {}
+  telemetry.startRTSim({
+    // Profile 0 vehicle / controller / environment parameters
+    payload_kg:    p.payload_kg    ?? 25,
+    wn_pid:        p.wn_pid        ?? 4.0,
+    zeta_pid:      p.zeta_pid      ?? 0.5,
+    wn_ref:        p.wn_ref        ?? 1.0,
+    zeta_ref:      p.zeta_ref      ?? 1.0,
+    delta:         p.delta         ?? 5.0,
+    gamma:         p.gamma         ?? 0.0,
+    current_speed: p.current_speed ?? 0.0,
+    current_dir:   p.current_dir   ?? 0.0,
+    surge_force:   p.surge_force   ?? 150,
+    // RT-specific settings
+    gnss_mode:       rtGnssMode.value,
+    time_step:       rtTimeStep.value,
+    completion_mode: rtCompletionMode.value,
+    start_mode:      rtStartMode.value,
+  })
 }
 </script>
 
@@ -420,6 +540,18 @@ h3 {
   flex-shrink: 0;
 }
 
+.profile-name-input {
+  flex: 1;
+  background: #2a2a2a;
+  border: 1px solid #555;
+  border-radius: 3px;
+  color: #eee;
+  font-size: 0.85rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  min-width: 0;
+}
+
 .param-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -481,5 +613,60 @@ h3 {
 }
 .no-results p {
   margin: 4px 0;
+}
+
+/* RT Simulation Section */
+.rt-section {
+  border-top: 2px solid #00838f;
+  margin-top: 18px;
+  padding-top: 12px;
+}
+
+.rt-title {
+  color: #00e5ff !important;
+  margin: 0 0 10px 0;
+  font-size: 1.1rem;
+}
+
+.rt-status-banner {
+  background: #00838f;
+  color: #fff;
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.85rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  animation: pulse-rt 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-rt {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.btn-rt-start {
+  background: #00838f;
+}
+.btn-rt-start:hover:not(:disabled) { background: #00acc1; }
+
+.rt-hint {
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: 6px;
+}
+
+.rt-profile-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #aaa;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 5px 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 </style>

@@ -58,6 +58,7 @@ class UM982Driver:
         self.running = False
         self._reader_thread = None
         self._rtcm_thread = None
+        self._error_logged = False  # Track if error has been logged
 
         # Accumulated parsed data (updated per-sentence, callback fired on GGA)
         self.data = {
@@ -190,11 +191,17 @@ class UM982Driver:
                 line = raw.decode(errors="ignore").strip()
                 if line.startswith("$G"):
                     self._dispatch(line)
+                # Clear error flag on successful read
+                self._error_logged = False
             except serial.SerialException as e:
                 logger.error(f"[UM982] Serial error: {e}")
+                self._error_logged = True
                 time.sleep(1)
             except Exception as e:
-                logger.warning(f"[UM982] Reader error: {e}")
+                # Only log once per error state, not every loop iteration
+                if not self._error_logged:
+                    logger.warning(f"[UM982] Reader error: {e}")
+                    self._error_logged = True
                 time.sleep(0.1)
 
     # ------------------------------------------------------------------ dispatch / parse
@@ -361,6 +368,7 @@ class GnssNode:
         self._STATUS_PUBLISH_INTERVAL = 5.0  # Publish status every 5 seconds for health heartbeat
 
         # Instantiate driver (will be started in run())
+        self.muted = False  # When True, skip publishing (RT sim active)
         self.driver = UM982Driver(
             serial_port=serial_port,
             baud_rate=baud_rate,
@@ -390,6 +398,8 @@ class GnssNode:
 
     def _on_gnss_data(self, raw_data: dict):
         """Called by UM982Driver each time a GGA sentence arrives with full data snapshot."""
+        if self.muted:
+            return  # RT simulation active, skip real sensor publishing
         ts = time.time()
         self._last_data_time = ts
         if not self._connected:

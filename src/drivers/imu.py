@@ -173,6 +173,7 @@ class ImuNode:
         logger.info(f"[IMU Node] Publisher connected to ZMQ Bus: {bus_url}")
 
         # Instantiate Driver and register callback
+        self.muted = False  # When True, skip publishing (RT sim active)
         self.driver = WT901Driver(
             serial_port=serial_port, 
             baud_rate=baud_rate, 
@@ -216,6 +217,8 @@ class ImuNode:
         """
         Driver invokes this every time an 'Angles (0x53)' frame is fully parsed.
         """
+        if self.muted:
+            return  # RT simulation active, skip real sensor publishing
         ts = time.time()
         self._last_data_time = ts
         if not self._connected:

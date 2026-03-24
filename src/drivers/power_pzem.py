@@ -67,6 +67,7 @@ class PZEMDriver:
     def _read_loop(self):
         consecutive_errors = 0
         MAX_CONSECUTIVE_ERRORS = 5
+        error_state_logged = False  # Track if we've logged the error state
         while self.running:
             try:
                 voltage = self.instrument.read_register(0x0000, number_of_decimals=2, functioncode=4)
@@ -88,24 +89,32 @@ class PZEMDriver:
                     "high_voltage_alarm": high_voltage_alarm,
                     "low_voltage_alarm": low_voltage_alarm
                 })
-                consecutive_errors = 0  # Reset on success
+                
+                # Log recovery only if we previously had errors
+                if consecutive_errors > 0:
+                    logger.info(f"[PZEM] Communication recovered after {consecutive_errors} errors")
+                consecutive_errors = 0
+                error_state_logged = False
 
                 if self.on_data_callback:
                     self.on_data_callback(self.data)
 
             except minimalmodbus.IllegalRequestError as e:
-                logger.warning(f"[PZEM] Modbus read error: {e}")
+                logger.debug(f"[PZEM] Modbus read error: {e}")
             except (OSError, IOError) as e:
                 consecutive_errors += 1
-                if consecutive_errors >= MAX_CONSECUTIVE_ERRORS:
+                # Only log on first error or when reaching threshold, not every retry
+                if consecutive_errors == 1:
+                    logger.warning(f"[PZEM] Communication error: {e}. Will retry...")
+                    error_state_logged = True
+                elif consecutive_errors >= MAX_CONSECUTIVE_ERRORS:
                     logger.error(f"[PZEM] Too many I/O errors ({e}). Stopping read loop for reconnect.")
                     self.running = False
                     break
-                logger.warning(f"[PZEM] I/O error ({consecutive_errors}/{MAX_CONSECUTIVE_ERRORS}): {e}")
                 time.sleep(2)
                 continue
             except Exception as e:
-                logger.warning(f"[PZEM] Read error: {e}")
+                logger.debug(f"[PZEM] Read error: {e}")
                 time.sleep(1)
 
             time.sleep(self.update_interval)
@@ -133,6 +142,7 @@ class PowerNode:
         self._connected = False
         self._last_data_time = 0.0
         self._last_status_publish_time = 0.0
+        self._disconnection_logged = False  # Track if we've logged the disconnection
 
         # Energy tracking
         self._energy_start_time = time.time()
@@ -198,7 +208,12 @@ class PowerNode:
         self._last_data_time = ts
         if not self._connected:
             self._connected = True
-            logger.info("[Power Node] First data received - publishing OK status")
+            # Log reconnection only if we were previously disconnected, not on initial startup
+            if self._disconnection_logged:
+                logger.info("[Power Node] Reconnected to /dev/power_pzem")
+                self._disconnection_logged = False
+            else:
+                logger.info("[Power Node] First data received - publishing OK status")
             self._publish_status(SensorStatus.OK, "Receiving data")
 
         voltage = raw_data["voltage"]
@@ -266,11 +281,14 @@ class PowerNode:
                 self.driver.start()
                 self._connected = False  # Will become True when first data arrives
                 self._last_data_time = time.time()
+                # Log startup message (reconnection is logged when data arrives)
                 logger.info(f"[Power Node] Driver started on {self._port}, waiting for data...")
             except Exception as e:
                 self._connected = False
                 self._publish_status(SensorStatus.DISCONNECTED, str(e))
-                logger.warning(f"[Power Node] Cannot open {self._port}: {e}. Retrying in {self._RETRY_INTERVAL}s...")
+                if not self._disconnection_logged:
+                    logger.warning(f"[Power Node] Cannot open {self._port}: {e}. Retrying...")
+                    self._disconnection_logged = True
                 deadline = time.time() + self._RETRY_INTERVAL
                 while time.time() < deadline:
                     self._check_commands()
@@ -299,7 +317,10 @@ class PowerNode:
                         self._last_status_publish_time = now
                     # Check if the read loop died (device unplugged)
                     if not self.driver.running:
-                        logger.warning("[Power Node] Driver read loop stopped — device likely disconnected")
+                        # Only log disconnection once per occurrence
+                        if self._connected and not self._disconnection_logged:
+                            logger.warning("[Power Node] Driver disconnected — retrying...")
+                            self._disconnection_logged = True
                         self._connected = False
                         self._publish_status(SensorStatus.DISCONNECTED, "Device disconnected (I/O errors)")
                         break
@@ -321,7 +342,6 @@ class PowerNode:
 
             # Clean up before retry
             self.driver.stop()
-            logger.info(f"[Power Node] Reconnecting in {self._RETRY_INTERVAL}s...")
             time.sleep(self._RETRY_INTERVAL)
             self.driver = PZEMDriver(
                 port=self._port,

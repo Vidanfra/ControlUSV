@@ -21,6 +21,7 @@ class Topics(str, Enum):
     CONTROL_DEBUG = "gnc/control_debug"
     SYSTEM_STATUS = "system/status"
     COMMAND_USER = "command/user"
+    SIM_STATUS = "sim/status"
 
 class PubSubBroker:
     """

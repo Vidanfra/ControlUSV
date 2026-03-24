@@ -498,6 +498,10 @@ const updateTrail = () => {
         type: 'FeatureCollection',
         features: [lineString]
     })
+
+    // Change trail color based on sim state
+    const trailColor = telemetry.rtSimActive ? '#FF8C00' : '#FF0000'
+    map.setPaintProperty('trail-line', 'line-color', trailColor)
 }
 
 // --- Load Route from File ---

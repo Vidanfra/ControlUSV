@@ -27,7 +27,7 @@
       </div>
     </div>
 
-    <div class="sidebar">
+    <div class="sidebar" :class="{ 'sim-mode': telemetry.dataSource === 'sim' }">
       <h3>GNSS Status</h3>
 
       <!-- Fix quality indicator -->
@@ -103,7 +103,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useTelemetryStore } from '../stores/telemetry'
 import {
   Chart as ChartJS,
@@ -129,8 +129,9 @@ ChartJS.register(
 
 const telemetry = useTelemetryStore()
 
+const simSuffix = () => telemetry.dataSource === 'sim' ? ' (SIM)' : ''
+
 const timeWindow = ref(120)
-const history = ref([])
 
 // --- Fix type helpers ---
 const fixLabel = computed(() => {
@@ -201,64 +202,32 @@ const altChartOptions = {
   }
 }
 
-// --- Chart data ---
-const latChartData = ref({ labels: [], datasets: [] })
-const lonChartData = ref({ labels: [], datasets: [] })
-const altChartData = ref({ labels: [], datasets: [] })
-
-let updateInterval = null
-
-const updateCharts = () => {
-  const now = Date.now()
-
-  history.value.push({
-    timeMs: now,
-    label: new Date(now).toISOString().substr(11, 8),
-    lat: telemetry.lat || 0,
-    lon: telemetry.lon || 0,
-    alt: telemetry.gnssAlt || 0
-  })
-
-  const cutoff = now - (timeWindow.value * 1000)
-  while (history.value.length > 0 && history.value[0].timeMs < cutoff) {
-    history.value.shift()
-  }
-
-  const labels = history.value.map(pt => pt.label)
-
-  latChartData.value = {
-    labels,
-    datasets: [
-      { label: 'Latitude', borderColor: '#33b5e5', data: history.value.map(pt => pt.lat), borderWidth: 2, tension: 0.2, fill: false }
-    ]
-  }
-
-  lonChartData.value = {
-    labels,
-    datasets: [
-      { label: 'Longitude', borderColor: '#FFA500', data: history.value.map(pt => pt.lon), borderWidth: 2, tension: 0.2, fill: false }
-    ]
-  }
-
-  altChartData.value = {
-    labels,
-    datasets: [
-      { label: 'Altitude', borderColor: '#00C851', data: history.value.map(pt => pt.alt), borderWidth: 2, tension: 0.2, fill: false }
-    ]
-  }
-}
-
-onMounted(() => {
-  updateInterval = setInterval(updateCharts, 500)
+// --- Chart data (computed from store history — no setInterval needed) ---
+const filteredHistory = computed(() => {
+  const cutoff = Date.now() - (timeWindow.value * 1000)
+  return telemetry.gnssHistory.filter(p => p.timeMs > cutoff)
 })
 
-onUnmounted(() => {
-  if (updateInterval) clearInterval(updateInterval)
-})
+const latChartData = computed(() => ({
+  labels: filteredHistory.value.map(pt => pt.label),
+  datasets: [
+    { label: 'Latitude' + simSuffix(), borderColor: '#33b5e5', data: filteredHistory.value.map(pt => pt.lat), borderWidth: 2, tension: 0.2, fill: false }
+  ]
+}))
 
-watch(timeWindow, () => {
-  updateCharts()
-})
+const lonChartData = computed(() => ({
+  labels: filteredHistory.value.map(pt => pt.label),
+  datasets: [
+    { label: 'Longitude' + simSuffix(), borderColor: '#FFA500', data: filteredHistory.value.map(pt => pt.lon), borderWidth: 2, tension: 0.2, fill: false }
+  ]
+}))
+
+const altChartData = computed(() => ({
+  labels: filteredHistory.value.map(pt => pt.label),
+  datasets: [
+    { label: 'Altitude' + simSuffix(), borderColor: '#00C851', data: filteredHistory.value.map(pt => pt.alt), borderWidth: 2, tension: 0.2, fill: false }
+  ]
+}))
 </script>
 
 <style scoped>
@@ -423,4 +392,7 @@ watch(timeWindow, () => {
 .value.small {
   font-size: 0.85em;
 }
+
+/* Highlight sidebar values cyan when displaying simulation data */
+.sim-mode .value { color: #00e5ff; }
 </style>

@@ -4,18 +4,23 @@
     <div class="status-indicator" :class="{ connected: isConnected }">
       {{ isConnected ? 'CONNECTED' : 'DISCONNECTED' }}
     </div>
+
+    <!-- RT Sim Banner -->
+    <div v-if="store.rtSimActive" class="sim-banner">
+      SIM RUNNING &mdash; {{ store.rtSimElapsed.toFixed(1) }}s
+    </div>
     
     <div class="data-grid">
       <div class="data-item">
-        <label>Lat</label>
+        <label :class="{ 'sim-label': store.dataSource === 'sim' }">Lat</label>
         <span :style="{ color: store.fixColor }">{{ lat.toFixed(7) }}</span>
       </div>
       <div class="data-item">
-        <label>Lon</label>
+        <label :class="{ 'sim-label': store.dataSource === 'sim' }">Lon</label>
         <span :style="{ color: store.fixColor }">{{ lon.toFixed(7) }}</span>
       </div>
       <div class="data-item">
-        <label>Heading</label>
+        <label :class="{ 'sim-label': store.dataSource === 'sim' }">Heading</label>
         <span>{{ store.bestHeading.toFixed(1) }}° <small class="src-tag">{{ store.headingSource }}</small></span>
       </div>
       <div class="data-item">
@@ -23,7 +28,7 @@
         <span>{{ (((store.targetHeading * 180 / Math.PI) % 360 + 360) % 360).toFixed(1) }}°</span>
       </div>
       <div class="data-item">
-        <label>Speed</label>
+        <label :class="{ 'sim-label': store.dataSource === 'sim' }">Speed</label>
         <span>{{ store.gnssSogKnots.toFixed(1) }} kn</span>
       </div>
       <div class="data-item">
@@ -103,5 +108,26 @@ h3 {
   color: #888;
   font-weight: normal;
   margin-left: 3px;
+}
+
+.sim-banner {
+  background: #00838f;
+  color: #fff;
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.85rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  animation: pulse-sim 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-sim {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.sim-label {
+  color: #00e5ff !important;
 }
 </style>

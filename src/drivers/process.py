@@ -1,22 +1,19 @@
 from src.core.process import ServiceProcess
-from src.core.messaging import Publisher, Topics
-from src.core.models import BatteryMessage, ControlDebugMessage
+from src.core.messaging import Publisher, Subscriber, Topics
+from src.core.models import CommandMessage, CommandType
 from src.drivers.imu import ImuNode
 from src.drivers.power_pzem import PowerNode
 from src.drivers.gnss_um982 import GnssNode
 from src.core.config import settings
 from loguru import logger
 import time
-import math
-import random
 import threading
 
 class HALProcess(ServiceProcess):
     def setup(self):
-        self.control_debug_pub = Publisher(Topics.CONTROL_DEBUG)
-        self.control_cmd_pub = Publisher(Topics.CONTROL_CMD)
-        
-        self.start_time = time.time()
+        # Command subscriber for mute/unmute
+        self.cmd_sub = Subscriber([Topics.COMMAND_USER])
+        self.sensors_muted = False
 
         # Start GNSS Node (UM982) in a background thread
         try:
@@ -61,32 +58,29 @@ class HALProcess(ServiceProcess):
             self.power_node = None
 
     def loop(self):
-        now = time.time()
-
-        # Dummy Control Debug Data
-        try:
-            t = now - self.start_time
-            # Add some random noise for errors
-            fake_target = math.pi * math.sin(t * 0.15)
-            fake_h_err = 0.2 * random.uniform(-1, 1) + 0.5 * math.sin(t * 0.2)
-            fake_xte = 5.0 * math.sin(t * 0.1) + random.uniform(-0.5, 0.5)
-            
-            control_debug_data = ControlDebugMessage(
-                timestamp=now,
-                target_heading=fake_target,
-                heading_error=fake_h_err,
-                cross_track_error=fake_xte
-            )
-            self.control_debug_pub.publish(control_debug_data.model_dump())
-            
-            # Dummy Control Output (Motors)
-            fake_motor_p = 50.0 * math.sin(t * 0.2)
-            fake_motor_s = 50.0 * math.cos(t * 0.2)
-            self.control_cmd_pub.publish({
-                "timestamp": now,
-                "port_pct": fake_motor_p,
-                "starboard_pct": fake_motor_s
-            })
-        except Exception as e:
-            logger.error(f"Error publishing Dummy Control Debug/Output: {e}")
+        # Process mute/unmute commands
+        while True:
+            msg = self.cmd_sub.receive(timeout_ms=0)
+            if msg is None:
+                break
+            _, payload = msg
+            try:
+                cmd = CommandMessage(**payload)
+                if cmd.type == CommandType.MUTE_SENSORS:
+                    self.sensors_muted = True
+                    # Propagate mute to sensor nodes
+                    if self.gnss_node:
+                        self.gnss_node.muted = True
+                    if self.imu_node:
+                        self.imu_node.muted = True
+                    logger.info("HAL: Sensors MUTED (RT simulation active)")
+                elif cmd.type == CommandType.UNMUTE_SENSORS:
+                    self.sensors_muted = False
+                    if self.gnss_node:
+                        self.gnss_node.muted = False
+                    if self.imu_node:
+                        self.imu_node.muted = False
+                    logger.info("HAL: Sensors UNMUTED")
+            except Exception:
+                pass
 

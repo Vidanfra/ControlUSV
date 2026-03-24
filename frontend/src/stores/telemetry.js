@@ -85,6 +85,17 @@ export const useTelemetryStore = defineStore('telemetry', {
     simulationOverlayVisible: false,
     simulationWaypoints: [],      // Waypoints used for the last simulation
     simulationRunning: false,
+
+    // RT Simulation state
+    rtSimActive: false,
+    rtSimElapsed: 0.0,
+    rtSimConfig: null,
+    dataSource: 'sensor',         // 'sensor' or 'sim'
+
+    // Pre-collected chart histories (2-min window, collected regardless of active tab)
+    gnssHistory: [],   // { timeMs, label, lat, lon, alt }
+    imuHistory: [],    // { timeMs, label, roll, pitch, yaw, ax, ay, az, p, q, r }
+    gncHistory: [],    // { timeMs, label, actualHeading, targetHeading, headingError, cte, port, starboard }
   }),
 
   getters: {
@@ -212,6 +223,29 @@ export const useTelemetryStore = defineStore('telemetry', {
       this.simulationOverlayVisible = !this.simulationOverlayVisible
     },
 
+    // --- RT Simulation Actions ---
+    startRTSim(config) {
+      // config: { gnss_mode, time_step, completion_mode, start_mode }
+      // Include mission waypoints in the payload
+      const payload = {
+        ...config,
+        waypoints: this.missionWaypoints.map(wp => ({
+          lat: wp.lat,
+          lon: wp.lon,
+          radius: wp.radius || 5.0,
+          speed: wp.speed || 1.0,
+        })),
+        current_lat: this.lat,
+        current_lon: this.lon,
+        current_heading: this.heading,
+      }
+      this.sendCommand('START_RT_SIM', payload)
+    },
+
+    stopRTSim() {
+      this.sendCommand('STOP_RT_SIM', {})
+    },
+
     navigateToMapPlanner() {
       this.currentTab = 'map'
       this.mapPlanMode = true
@@ -262,15 +296,35 @@ export const useTelemetryStore = defineStore('telemetry', {
             this.speed = data.sog_knots * 0.514444
             newLat = data.lat
             newLon = data.lon
+            // Append to chart history
+            const nowMs = Date.now()
+            this.gnssHistory.push({
+              timeMs: nowMs,
+              label: new Date(nowMs).toISOString().substr(11, 8),
+              lat: data.lat, lon: data.lon, alt: data.alt || 0
+            })
+            const cutoffGnss = nowMs - 120000
+            if (this.gnssHistory.length > 0 && this.gnssHistory[0].timeMs < cutoffGnss)
+              this.gnssHistory = this.gnssHistory.filter(p => p.timeMs > cutoffGnss)
           } 
           else if (topic === 'gnc/ekf_state') {
             this.lat = data.lat
             this.lon = data.lon
             this.heading = data.heading
             this.speed = data.speed
-            this.battery = data.battery_voltage
+            if (data.source) this.dataSource = data.source
             newLat = data.lat
             newLon = data.lon
+          }
+          else if (topic === 'sim/status') {
+            this.rtSimActive = data.running
+            this.rtSimElapsed = data.elapsed_time || 0
+            this.rtSimConfig = data || null
+            if (data.running) {
+              this.dataSource = 'sim'
+            } else {
+              this.dataSource = 'sensor'
+            }
           }
           else if (topic === 'system/status') {
              this.isArmed = data.is_armed
@@ -284,6 +338,22 @@ export const useTelemetryStore = defineStore('telemetry', {
           else if (topic === 'gnc/control_output') {
              this.motorPort = data.port_pct
              this.motorStarboard = data.starboard_pct
+             // Append to gnc chart history (heading already updated by control_debug)
+             const nowMs = Date.now()
+             const RAD2DEG = 180 / Math.PI
+             this.gncHistory.push({
+               timeMs: nowMs,
+               label: new Date(nowMs).toISOString().substr(11, 8),
+               actualHeading: ((this.heading || 0) * RAD2DEG + 360) % 360,
+               targetHeading: ((this.targetHeading || 0) * RAD2DEG + 360) % 360,
+               headingError: (this.headingError || 0) * RAD2DEG,
+               cte: this.crossTrackError || 0,
+               port: data.port_pct || 0,
+               starboard: data.starboard_pct || 0
+             })
+             const cutoffGnc = nowMs - 120000
+             if (this.gncHistory.length > 0 && this.gncHistory[0].timeMs < cutoffGnc)
+               this.gncHistory = this.gncHistory.filter(p => p.timeMs > cutoffGnc)
           }
           else if (topic === 'sensor/battery') {
              this.batteryVoltage = data.voltage
@@ -308,6 +378,18 @@ export const useTelemetryStore = defineStore('telemetry', {
              this.imuQ = data.wy
              this.imuR = data.wz
              this.imuMagHeading = data.mag_heading ?? 0.0
+             // Append to chart history
+             const nowMs = Date.now()
+             this.imuHistory.push({
+               timeMs: nowMs,
+               label: new Date(nowMs).toISOString().substr(11, 8),
+               roll: data.roll || 0, pitch: data.pitch || 0, yaw: data.yaw || 0,
+               ax: data.ax || 0, ay: data.ay || 0, az: data.az || 0,
+               p: data.wx || 0, q: data.wy || 0, r: data.wz || 0
+             })
+             const cutoffImu = nowMs - 120000
+             if (this.imuHistory.length > 0 && this.imuHistory[0].timeMs < cutoffImu)
+               this.imuHistory = this.imuHistory.filter(p => p.timeMs > cutoffImu)
           }
           else if (topic === 'sensor/status') {
              const sensor = data.sensor  // 'gnss', 'imu', or 'power'

@@ -24,7 +24,7 @@
       </div>
     </div>
 
-    <div class="sidebar">
+    <div class="sidebar" :class="{ 'sim-mode': telemetry.dataSource === 'sim' }">
       <h3>IMU Status</h3>
 
       <div class="stat-group">
@@ -87,7 +87,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useTelemetryStore } from '../stores/telemetry'
 import {
   Chart as ChartJS,
@@ -113,13 +113,12 @@ ChartJS.register(
 
 const telemetry = useTelemetryStore()
 
+const simSuffix = () => telemetry.dataSource === 'sim' ? ' (SIM)' : ''
+
 // State
 const timeWindow = ref(20) // seconds
 
-// History array
-const history = ref([])
-
-// Chart Options base
+// --- Chart Options base ---
 const chartBaseOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -169,83 +168,38 @@ const gyroChartOptions = {
   }
 }
 
-// Chart Data Structures
-const orientationChartData = ref({ labels: [], datasets: [] })
-const accelChartData = ref({ labels: [], datasets: [] })
-const gyroChartData = ref({ labels: [], datasets: [] })
-
-let updateInterval = null
-
-// Real-time Update Logic
-const updateCharts = () => {
-    const now = Date.now()
-    
-    // Push new point
-    history.value.push({
-      timeMs: now,
-      label: new Date(now).toISOString().substr(11, 8), // HH:mm:ss
-      roll: telemetry.imuRoll || 0.0,
-      pitch: telemetry.imuPitch || 0.0,
-      yaw: telemetry.imuYaw || 0.0,
-      ax: telemetry.imuAx || 0.0,
-      ay: telemetry.imuAy || 0.0,
-      az: telemetry.imuAz || 0.0,
-      p: telemetry.imuP || 0.0,
-      q: telemetry.imuQ || 0.0,
-      r: telemetry.imuR || 0.0
-    })
-
-    // Filter old points based on timeWindow
-    const cutoff = now - (timeWindow.value * 1000)
-    
-    // Shift buffer logic to prevent memory leaks
-    while (history.value.length > 0 && history.value[0].timeMs < cutoff) {
-        history.value.shift()
-    }
-
-    const labels = history.value.map(pt => pt.label)
-
-    // Map history to chart data
-    orientationChartData.value = {
-      labels,
-      datasets: [
-        { label: 'Roll', borderColor: '#ff4444', data: history.value.map(pt => pt.roll), borderWidth: 2, tension: 0.1 },
-        { label: 'Pitch', borderColor: '#00C851', data: history.value.map(pt => pt.pitch), borderWidth: 2, tension: 0.1 },
-        { label: 'Yaw', borderColor: '#33b5e5', data: history.value.map(pt => pt.yaw), borderWidth: 2, tension: 0.1 }
-      ]
-    }
-    
-    accelChartData.value = {
-      labels,
-      datasets: [
-        { label: 'Ax', borderColor: '#ff4444', data: history.value.map(pt => pt.ax), borderWidth: 2, tension: 0.1 },
-        { label: 'Ay', borderColor: '#00C851', data: history.value.map(pt => pt.ay), borderWidth: 2, tension: 0.1 },
-        { label: 'Az', borderColor: '#33b5e5', data: history.value.map(pt => pt.az), borderWidth: 2, tension: 0.1 }
-      ]
-    }
-
-    gyroChartData.value = {
-      labels,
-      datasets: [
-        { label: 'P (Roll Rate)', borderColor: '#ff4444', data: history.value.map(pt => pt.p), borderWidth: 2, tension: 0.1 },
-        { label: 'Q (Pitch Rate)', borderColor: '#00C851', data: history.value.map(pt => pt.q), borderWidth: 2, tension: 0.1 },
-        { label: 'R (Yaw Rate)', borderColor: '#33b5e5', data: history.value.map(pt => pt.r), borderWidth: 2, tension: 0.1 }
-      ]
-    }
-}
-
-onMounted(() => {
-  // Update at 10Hz
-  updateInterval = setInterval(updateCharts, 100)
+// Chart Data (computed from store history — collected globally)
+const filteredHistory = computed(() => {
+  const cutoff = Date.now() - (timeWindow.value * 1000)
+  return telemetry.imuHistory.filter(p => p.timeMs > cutoff)
 })
 
-onUnmounted(() => {
-  if (updateInterval) clearInterval(updateInterval)
-})
+const orientationChartData = computed(() => ({
+  labels: filteredHistory.value.map(pt => pt.label),
+  datasets: [
+    { label: 'Roll' + simSuffix(), borderColor: '#ff4444', data: filteredHistory.value.map(pt => pt.roll), borderWidth: 2, tension: 0.1 },
+    { label: 'Pitch' + simSuffix(), borderColor: '#00C851', data: filteredHistory.value.map(pt => pt.pitch), borderWidth: 2, tension: 0.1 },
+    { label: 'Yaw' + simSuffix(), borderColor: '#33b5e5', data: filteredHistory.value.map(pt => pt.yaw), borderWidth: 2, tension: 0.1 }
+  ]
+}))
 
-watch(timeWindow, () => {
-    updateCharts()
-})
+const accelChartData = computed(() => ({
+  labels: filteredHistory.value.map(pt => pt.label),
+  datasets: [
+    { label: 'Ax' + simSuffix(), borderColor: '#ff4444', data: filteredHistory.value.map(pt => pt.ax), borderWidth: 2, tension: 0.1 },
+    { label: 'Ay' + simSuffix(), borderColor: '#00C851', data: filteredHistory.value.map(pt => pt.ay), borderWidth: 2, tension: 0.1 },
+    { label: 'Az' + simSuffix(), borderColor: '#33b5e5', data: filteredHistory.value.map(pt => pt.az), borderWidth: 2, tension: 0.1 }
+  ]
+}))
+
+const gyroChartData = computed(() => ({
+  labels: filteredHistory.value.map(pt => pt.label),
+  datasets: [
+    { label: 'P (Roll Rate)' + simSuffix(), borderColor: '#ff4444', data: filteredHistory.value.map(pt => pt.p), borderWidth: 2, tension: 0.1 },
+    { label: 'Q (Pitch Rate)' + simSuffix(), borderColor: '#00C851', data: filteredHistory.value.map(pt => pt.q), borderWidth: 2, tension: 0.1 },
+    { label: 'R (Yaw Rate)' + simSuffix(), borderColor: '#33b5e5', data: filteredHistory.value.map(pt => pt.r), borderWidth: 2, tension: 0.1 }
+  ]
+}))
 
 </script>
 
@@ -356,4 +310,7 @@ watch(timeWindow, () => {
   color: white;
   white-space: nowrap;
 }
+
+/* Highlight sidebar values cyan when displaying simulation data */
+.sim-mode .value { color: #00e5ff; }
 </style>

@@ -20,7 +20,7 @@
       </div>
     </div>
     
-    <div class="sidebar">
+    <div class="sidebar" :class="{ 'sim-mode': telemetry.dataSource === 'sim' }">
       <h3>GNC Variables</h3>
       
       <div class="stat-box">
@@ -57,7 +57,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useTelemetryStore } from '../stores/telemetry'
 import {
   Chart as ChartJS,
@@ -83,19 +83,12 @@ ChartJS.register(
 
 const telemetry = useTelemetryStore()
 
+const simSuffix = () => telemetry.dataSource === 'sim' ? ' (SIM)' : ''
+
 // State
 const timeWindow = ref(60) // seconds
 
-// History arrays
-const history = ref([])
-
-// Utility
-const degrees = (rad) => {
-  if (rad === undefined || rad === null) return '0.0'
-  return (rad * (180 / Math.PI)).toFixed(1)
-}
-
-// Chart Options base
+// --- Chart Options base ---
 const chartBaseOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -145,86 +138,33 @@ const motorChartOptions = {
   }
 }
 
-// Chart Data Structures (Reactive Refs attached to the Line component)
-const headingChartData = ref({
-  labels: [],
-  datasets: [
-    { label: 'Actual Heading', borderColor: '#42A5F5', data: [], borderWidth: 2, tension: 0.1 },
-    { label: 'Target Heading', borderColor: '#FFA500', data: [], borderWidth: 2, tension: 0.1 }
-  ]
-})
-
-const motorChartData = ref({
-  labels: [],
-  datasets: [
-    { label: 'Port', borderColor: '#FF4444', data: [], borderWidth: 2, tension: 0.1 },
-    { label: 'Starboard', borderColor: '#00C851', data: [], borderWidth: 2, tension: 0.1 }
-  ]
-})
-
-let updateInterval = null
-
-// Real-time Update Logic
-const updateCharts = () => {
-    const now = Date.now()
-    
-    // Convert current rad to deg (0-360) for Heading Chart
-    let actualDeg = (telemetry.heading * (180/Math.PI)) % 360
-    if (actualDeg < 0) actualDeg += 360
-    if (isNaN(actualDeg)) actualDeg = 0
-    
-    let targetDeg = (telemetry.targetHeading * (180/Math.PI)) % 360
-    if (targetDeg < 0) targetDeg += 360
-    if (isNaN(targetDeg)) targetDeg = 0
-
-    // Push new point
-    history.value.push({
-      timeMs: now,
-      label: new Date(now).toISOString().substr(11, 8), // HH:mm:ss
-      actualHeading: actualDeg,
-      targetHeading: targetDeg,
-      port: telemetry.motorPort || 0,
-      starboard: telemetry.motorStarboard || 0
-    })
-
-    // Filter old points based on timeWindow
-    const cutoff = now - (timeWindow.value * 1000)
-    
-    // Shift buffer logic to prevent memory leaks! We use while shift
-    while (history.value.length > 0 && history.value[0].timeMs < cutoff) {
-        history.value.shift()
-    }
-
-    // Map history to chart data
-    headingChartData.value = {
-      labels: history.value.map(pt => pt.label),
-      datasets: [
-        { label: 'Actual Heading', borderColor: '#42A5F5', data: history.value.map(pt => pt.actualHeading), borderWidth: 2, tension: 0.1 },
-        { label: 'Target Heading', borderColor: '#FFA500', data: history.value.map(pt => pt.targetHeading), borderWidth: 2, tension: 0.1 }
-      ]
-    }
-    
-    motorChartData.value = {
-      labels: history.value.map(pt => pt.label),
-      datasets: [
-        { label: 'Port', borderColor: '#FF4444', data: history.value.map(pt => pt.port), borderWidth: 2, tension: 0.1 },
-        { label: 'Starboard', borderColor: '#00C851', data: history.value.map(pt => pt.starboard), borderWidth: 2, tension: 0.1 }
-      ]
-    }
+// Utility
+const degrees = (rad) => {
+  if (rad === undefined || rad === null) return '0.0'
+  return (rad * (180 / Math.PI)).toFixed(1)
 }
 
-onMounted(() => {
-  // Update at 10Hz
-  updateInterval = setInterval(updateCharts, 100)
+// Chart Data (computed from store history — collected globally)
+const filteredHistory = computed(() => {
+  const cutoff = Date.now() - (timeWindow.value * 1000)
+  return telemetry.gncHistory.filter(p => p.timeMs > cutoff)
 })
 
-onUnmounted(() => {
-  if (updateInterval) clearInterval(updateInterval)
-})
+const headingChartData = computed(() => ({
+  labels: filteredHistory.value.map(pt => pt.label),
+  datasets: [
+    { label: 'Actual Heading' + simSuffix(), borderColor: '#42A5F5', data: filteredHistory.value.map(pt => pt.actualHeading), borderWidth: 2, tension: 0.1 },
+    { label: 'Target Heading' + simSuffix(), borderColor: '#FFA500', data: filteredHistory.value.map(pt => pt.targetHeading), borderWidth: 2, tension: 0.1 }
+  ]
+}))
 
-watch(timeWindow, () => {
-    updateCharts()
-})
+const motorChartData = computed(() => ({
+  labels: filteredHistory.value.map(pt => pt.label),
+  datasets: [
+    { label: 'Port' + simSuffix(), borderColor: '#FF4444', data: filteredHistory.value.map(pt => pt.port), borderWidth: 2, tension: 0.1 },
+    { label: 'Starboard' + simSuffix(), borderColor: '#00C851', data: filteredHistory.value.map(pt => pt.starboard), borderWidth: 2, tension: 0.1 }
+  ]
+}))
 
 </script>
 
@@ -327,4 +267,10 @@ watch(timeWindow, () => {
 .motor-starboard {
   color: #00C851;
 }
+
+/* Highlight sidebar values cyan when displaying simulation data */
+.sim-mode .value { color: #00e5ff; }
+/* Preserve motor indicator colors in sim mode */
+.sim-mode .motor-port { color: #ff4444; }
+.sim-mode .motor-starboard { color: #00C851; }
 </style>

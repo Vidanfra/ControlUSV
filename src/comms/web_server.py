@@ -69,7 +69,8 @@ async def consume_zmq():
         Topics.STATE_ESTIMATION, 
         Topics.SYSTEM_STATUS,
         Topics.CONTROL_DEBUG,
-        Topics.CONTROL_CMD
+        Topics.CONTROL_CMD,
+        Topics.SIM_STATUS,
     ]
     for t in topics_to_subscribe:
         sub_socket.setsockopt_string(zmq.SUBSCRIBE, t.value)
@@ -119,7 +120,18 @@ async def consume_zmq():
 
 @app.on_event("startup")
 async def startup_event():
+    global cmd_pub, cmd_ctx
     logger.info("Starting Web Server...")
+
+    # Create ZMQ command publisher HERE (post-fork, inside the child process).
+    # Creating it at module level causes the socket to be forked from the parent
+    # process, which silently breaks ZMQ delivery.
+    cmd_ctx = zmq.Context()
+    cmd_pub = cmd_ctx.socket(zmq.PUB)
+    cmd_pub.connect(f"tcp://127.0.0.1:{settings.ZMQ_PORT}")
+    import time; time.sleep(0.2)   # allow ZMQ connection establishment
+    logger.info("Command publisher connected to ZMQ broker")
+
     # Run the ZMQ consumer in the background
     asyncio.create_task(consume_zmq())
 
@@ -127,16 +139,10 @@ from src.core.models import CommandMessage
 from src.core.models import SimulationRequest, SimulationResult, SimulationConfig, Waypoint
 from src.core.config import settings
 
-# --- ZMQ Publisher Setup for Commands ---
-# We need a dedicated socket to publish user commands to the bus.
-# Since uvicorn is async, we can't easily share the "Publisher" class from messaging.py which is sync.
-# We'll create a simple async publisher context here or use a sync socket carefully.
-# Given low command rate, a sync socket creation per command or a global one is fine.
-# Let's create a global command publisher context.
-
-cmd_ctx = zmq.Context()
-cmd_pub = cmd_ctx.socket(zmq.PUB)
-cmd_pub.connect(f"tcp://127.0.0.1:{settings.ZMQ_PORT}") # Connect to Broker XSUB
+# --- ZMQ Publisher for Commands ---
+# Initialized in startup_event() to avoid pre-fork socket issues.
+cmd_ctx = None
+cmd_pub = None
 
 async def process_incoming_command(data_str: str):
     """Parses and publishes commands from the UI."""
@@ -197,15 +203,21 @@ def _run_simulation_sync(req: SimulationRequest) -> List[dict]:
         wp_ned.append((n, e, wp.radius, wp.speed))
 
     for cfg in req.configs:
+        # Determine waypoint order based on start_mode
+        if cfg.start_mode == 'last_wp':
+            sim_wp_ned = list(reversed(wp_ned))
+        else:
+            sim_wp_ned = list(wp_ned)
+
         # Determine initial position
         if cfg.start_mode == "current_pos" and (req.current_lat != 0 or req.current_lon != 0):
             n0, e0 = latlon_to_ned(req.current_lat, req.current_lon, origin_lat, origin_lon)
             psi0 = math.radians(req.current_heading)
         else:
-            # Start at first waypoint, heading toward second
-            n0, e0 = wp_ned[0][0], wp_ned[0][1]
-            dn = wp_ned[1][0] - wp_ned[0][0]
-            de = wp_ned[1][1] - wp_ned[0][1]
+            # Start at first wp of (possibly reversed) list
+            n0, e0 = sim_wp_ned[0][0], sim_wp_ned[0][1]
+            dn = sim_wp_ned[1][0] - sim_wp_ned[0][0]
+            de = sim_wp_ned[1][1] - sim_wp_ned[0][1]
             psi0 = math.atan2(de, dn)
 
         # Build vehicle model (extracts physical parameters)
@@ -234,7 +246,7 @@ def _run_simulation_sync(req: SimulationRequest) -> List[dict]:
         # Load waypoints as list of dicts
         wp_dicts = [
             {'N': n, 'E': e, 'radius': r, 'speed': s}
-            for n, e, r, s in wp_ned
+            for n, e, r, s in sim_wp_ned
         ]
         controller.set_waypoints(wp_dicts)
         controller.reset(psi0)
@@ -261,6 +273,13 @@ def _run_simulation_sync(req: SimulationRequest) -> List[dict]:
 
         LOG_DECIMATION = max(1, int(0.1 / dt))  # log at ~10 Hz
 
+        # Completion mode support for one-shot:
+        # For loop/loop_reverse, when route completes within total_time,
+        # restart the waypoint sequence and continue.
+        completion_mode = getattr(cfg, 'completion_mode', 'stop_time')
+        is_forward = (cfg.start_mode != 'last_wp')
+        current_wp_ned = list(sim_wp_ned)  # mutable copy for reversing
+
         for i in range(N_steps):
             t = i * dt
 
@@ -268,11 +287,37 @@ def _run_simulation_sync(req: SimulationRequest) -> List[dict]:
             n1, n2, debug = controller.step(eta, nu, dt)
             u_control = np.array([n1, n2], dtype=float)
 
-            # Physics step — dynamics() integrates nu and u_actual internally
+            # Physics step
             nu, u_actual = model.dynamics(eta, nu, u_actual, u_control, dt)
 
-            # Kinematics — update eta (position/attitude)
+            # Kinematics
             eta = attitudeEuler(eta, nu, dt)
+
+            # Handle completion modes (loop/loop_reverse) during one-shot
+            if controller.is_mission_complete():
+                if completion_mode == 'loop':
+                    # Restart same direction
+                    wp_dicts_loop = [
+                        {'N': n, 'E': e, 'radius': r, 'speed': s}
+                        for n, e, r, s in current_wp_ned
+                    ]
+                    controller.set_waypoints(wp_dicts_loop)
+                    dn_l = current_wp_ned[1][0] - current_wp_ned[0][0]
+                    de_l = current_wp_ned[1][1] - current_wp_ned[0][1]
+                    controller.reset(math.atan2(de_l, dn_l))
+                elif completion_mode == 'loop_reverse':
+                    # Reverse waypoints
+                    is_forward = not is_forward
+                    current_wp_ned = list(reversed(current_wp_ned))
+                    wp_dicts_loop = [
+                        {'N': n, 'E': e, 'radius': r, 'speed': s}
+                        for n, e, r, s in current_wp_ned
+                    ]
+                    controller.set_waypoints(wp_dicts_loop)
+                    dn_l = current_wp_ned[1][0] - current_wp_ned[0][0]
+                    de_l = current_wp_ned[1][1] - current_wp_ned[0][1]
+                    controller.reset(math.atan2(de_l, dn_l))
+                # For 'stop_time' and 'one_way', one-shot always runs to total_time
 
             # Log at reduced rate
             if i % LOG_DECIMATION == 0:

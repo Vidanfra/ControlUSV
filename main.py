@@ -12,6 +12,7 @@ from src.drivers.process import HALProcess
 from src.comms.manager import CommsProcess
 from src.manager.process import ManagerProcess
 from src.gnc.process import GNCProcess
+from src.gnc.navigation import NavigationProcess
 from src.core.messaging import PubSubBroker
 from loguru import logger
 
@@ -37,6 +38,7 @@ def main():
         ManagerProcess(name="ManagerService", loop_rate_hz=settings.LOOP_RATES["manager"]),
         CommsProcess(),
         HALProcess(name="HALService", loop_rate_hz=settings.LOOP_RATES["hal"]),
+        NavigationProcess(name="NavigationService", loop_rate_hz=settings.LOOP_RATES["gnc"]),
         GNCProcess(name="GNCService", loop_rate_hz=settings.LOOP_RATES["gnc"]),
     ]
 
