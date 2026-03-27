@@ -21,7 +21,7 @@ from src.gnc.gnc_utils import ssa
 
 def PIDpolePlacement(e_int, e_x, e_v, x_d, v_d, a_d,
                      m, d, k, wn_d, zeta_d, wn, zeta,
-                     r, v_max, sampleTime):
+                     r, v_max, sampleTime, e_int_max=10.0, e_x_threshold=0.35):
     """
     PID controller with pole placement and 3rd-order reference model.
 
@@ -60,8 +60,12 @@ def PIDpolePlacement(e_int, e_x, e_v, x_d, v_d, a_d,
     # PID control law
     u = -Kp * e_x - Kd * e_v - Ki * e_int
 
-    # Integral error (Euler's method)
-    e_int += sampleTime * e_x
+    # Integral error (Euler's method): Conditional integration & clamp
+    # Only integrate if error is reasonably small (e.g., < 20 deg / 0.35 rad)
+    if abs(e_x) < e_x_threshold:
+        e_int += sampleTime * e_x
+        # Anti-windup clamp
+        e_int = max(-e_int_max, min(e_int, e_int_max))
 
     # 3rd-order reference model
     x_d, v_d, a_d = refModel3(x_d, v_d, a_d, r, wn_d, zeta_d, v_max, sampleTime)
