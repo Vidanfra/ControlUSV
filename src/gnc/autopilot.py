@@ -225,6 +225,97 @@ class PathFollower:
         self._mission_complete = False
 
 
+class StationKeeper:
+    """
+    Dual-radius station keeping algorithm.
+
+    Two radii define the behaviour around the station waypoint:
+      - reaching_radius (inner): once inside, the USV idles (zero thrust).
+      - station_radius (outer): once outside, the USV re-engages and drives
+        back to the station waypoint.
+
+    States: APPROACHING → IDLE → APPROACHING (cycle)
+    """
+
+    APPROACHING = 'APPROACHING'
+    IDLE = 'IDLE'
+
+    def __init__(self, station_ned, reaching_radius=3.0, station_radius=10.0,
+                 m_yaw=60.0, B_inv=None, n_max=175.9, n_min=-175.0,
+                 wn=4.0, zeta=0.5, wn_d=1.0, zeta_d=1.0,
+                 delta=5.0, gamma=0.0, tau_X=150.0):
+        """
+        Args:
+            station_ned: dict with 'N', 'E' keys — station point in NED
+            reaching_radius: inner radius [m] — idle when inside
+            station_radius: outer radius [m] — re-engage when outside
+        """
+        self.station_ned = station_ned
+        self.reaching_radius = reaching_radius
+        self.station_radius = station_radius
+        self.state = self.APPROACHING
+
+        # Create a GNCController for approach segments
+        self.controller = GNCController(
+            m_yaw=m_yaw, B_inv=B_inv, n_max=n_max, n_min=n_min,
+            wn=wn, zeta=zeta, wn_d=wn_d, zeta_d=zeta_d,
+            delta=delta, gamma=gamma, tau_X=tau_X,
+        )
+
+    def _load_approach(self, eta):
+        """Build a 2-WP path from current position to station."""
+        current_wp = {'N': float(eta[0]), 'E': float(eta[1]),
+                      'radius': self.reaching_radius, 'speed': 1.0}
+        target_wp = {'N': self.station_ned['N'], 'E': self.station_ned['E'],
+                     'radius': self.reaching_radius, 'speed': 1.0}
+        self.controller.set_waypoints([current_wp, target_wp])
+        self.controller.reset(psi_init=eta[5])
+        self.state = self.APPROACHING
+        logger.info(f"StationKeeper: APPROACHING (d > {self.station_radius:.1f}m)")
+
+    def _distance_to_station(self, eta):
+        dn = eta[0] - self.station_ned['N']
+        de = eta[1] - self.station_ned['E']
+        return math.sqrt(dn * dn + de * de)
+
+    def step(self, eta, nu, dt):
+        """
+        Execute one station-keeping step.
+
+        Returns:
+            n1, n2: propeller commands (0, 0 when idle)
+            debug: dict with control info (or minimal dict when idle)
+        """
+        dist = self._distance_to_station(eta)
+
+        if self.state == self.APPROACHING:
+            # Check if we've reached the inner zone
+            if dist < self.reaching_radius:
+                self.state = self.IDLE
+                logger.info(f"StationKeeper: IDLE (d={dist:.1f}m < {self.reaching_radius:.1f}m)")
+                return 0.0, 0.0, {'psi_d': eta[5], 'heading_error': 0.0,
+                                   'cross_track_error': 0.0, 'wp_index': 0,
+                                   'station_state': self.IDLE, 'station_dist': dist}
+
+            n1, n2, debug = self.controller.step(eta, nu, dt)
+            debug['station_state'] = self.APPROACHING
+            debug['station_dist'] = dist
+            return n1, n2, debug
+
+        else:  # IDLE
+            if dist > self.station_radius:
+                logger.info(f"StationKeeper: RE-ENGAGE (d={dist:.1f}m > {self.station_radius:.1f}m)")
+                self._load_approach(eta)
+                n1, n2, debug = self.controller.step(eta, nu, dt)
+                debug['station_state'] = self.APPROACHING
+                debug['station_dist'] = dist
+                return n1, n2, debug
+
+            return 0.0, 0.0, {'psi_d': eta[5], 'heading_error': 0.0,
+                               'cross_track_error': 0.0, 'wp_index': 0,
+                               'station_state': self.IDLE, 'station_dist': dist}
+
+
 class GNCController:
     """
     Unified GNC controller combining PathFollower + HeadingAutopilot + control allocation.

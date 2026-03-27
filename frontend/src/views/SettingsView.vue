@@ -149,6 +149,75 @@
         </div>
       </section>
 
+      <!-- Fail-Safe (Auto Mode) Section -->
+      <section class="settings-section">
+        <h3>Fail-Safe (Auto Mode)</h3>
+
+        <div class="setting-row">
+          <label for="fsMinBattery">Minimum Battery (%)</label>
+          <div class="input-group">
+            <input id="fsMinBattery" v-model.number="fsForm.min_battery_pct" type="number" min="0" max="100" step="1" class="text-input" placeholder="25" />
+          </div>
+          <p class="hint">Auto mode issues a warning below this level.</p>
+        </div>
+
+        <div class="setting-row">
+          <label for="fsMinGnss">Minimum GNSS Quality</label>
+          <div class="input-group">
+            <select id="fsMinGnss" v-model.number="fsForm.min_gnss_fix" class="text-input">
+              <option :value="1">GPS (1)</option>
+              <option :value="2">DGPS (2)</option>
+              <option :value="4">RTK Fix (4)</option>
+              <option :value="5">RTK Float (5)</option>
+            </select>
+          </div>
+          <p class="hint">Blocks auto mode start below this GNSS fix quality.</p>
+        </div>
+
+        <div class="setting-row">
+          <label for="fsCommTimeout">Comm Loss Timeout (s)</label>
+          <div class="input-group">
+            <input id="fsCommTimeout" v-model.number="fsForm.comm_timeout" type="number" min="1" max="120" step="1" class="text-input" placeholder="10" />
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <label for="fsCommAction">Comm Loss Action</label>
+          <div class="input-group">
+            <select id="fsCommAction" v-model="fsForm.comm_action" class="text-input">
+              <option value="station_keeping">Station Keeping</option>
+              <option value="return_home">Return Home</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <label for="fsInsTimeout">GNSS Loss / INS Timeout (s)</label>
+          <div class="input-group">
+            <input id="fsInsTimeout" v-model.number="fsForm.ins_timeout" type="number" min="1" max="120" step="1" class="text-input" placeholder="10" />
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <label for="fsInsAction">GNSS Loss Action</label>
+          <div class="input-group">
+            <select id="fsInsAction" v-model="fsForm.ins_action" class="text-input">
+              <option value="emergency_stop">Emergency Stop</option>
+              <option value="station_keeping">Station Keeping</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="input-group">
+            <button class="btn btn-primary" @click="saveFailsafeConfig" :disabled="!fsConfigChanged">
+              Save Fail-Safe Config
+            </button>
+          </div>
+          <p class="hint">Updates fail-safe parameters on the vehicle.</p>
+        </div>
+      </section>
+
       <!-- Reset Confirmation Dialog -->
       <div v-if="showResetConfirm" class="confirm-overlay" @click.self="showResetConfirm = false">
         <div class="confirm-dialog">
@@ -173,6 +242,16 @@ const telemetry = useTelemetryStore()
 const capacityInput = ref(500)
 const showResetConfirm = ref(false)
 
+// Fail-safe config form
+const fsForm = ref({
+  min_battery_pct: 25.0,
+  min_gnss_fix: 1,
+  comm_timeout: 10.0,
+  comm_action: 'station_keeping',
+  ins_timeout: 10.0,
+  ins_action: 'emergency_stop',
+})
+
 // GNSS config form
 const gnssForm = ref({
   serial_port: '/dev/gnss',
@@ -187,6 +266,13 @@ const gnssForm = ref({
 
 onMounted(() => {
   capacityInput.value = telemetry.batteryCapacityWh || 500
+  // Load fail-safe config from store
+  fsForm.value.min_battery_pct = telemetry.failsafeMinBattery
+  fsForm.value.min_gnss_fix = telemetry.failsafeMinGnssFix
+  fsForm.value.comm_timeout = telemetry.failsafeCommTimeout
+  fsForm.value.comm_action = telemetry.failsafeCommAction
+  fsForm.value.ins_timeout = telemetry.failsafeInsTimeout
+  fsForm.value.ins_action = telemetry.failsafeInsAction
   // Load GNSS config from store
   gnssForm.value.serial_port = telemetry.gnssSerialPort || '/dev/gnss'
   gnssForm.value.baud_rate = telemetry.gnssBaudRate || 115200
@@ -249,6 +335,21 @@ function doReset() {
 
 function saveGnssConfig() {
   telemetry.setGnssConfig({ ...gnssForm.value })
+}
+
+const fsConfigChanged = computed(() => {
+  return (
+    fsForm.value.min_battery_pct !== telemetry.failsafeMinBattery ||
+    fsForm.value.min_gnss_fix !== telemetry.failsafeMinGnssFix ||
+    fsForm.value.comm_timeout !== telemetry.failsafeCommTimeout ||
+    fsForm.value.comm_action !== telemetry.failsafeCommAction ||
+    fsForm.value.ins_timeout !== telemetry.failsafeInsTimeout ||
+    fsForm.value.ins_action !== telemetry.failsafeInsAction
+  )
+})
+
+function saveFailsafeConfig() {
+  telemetry.setFailsafeConfig({ ...fsForm.value })
 }
 </script>
 

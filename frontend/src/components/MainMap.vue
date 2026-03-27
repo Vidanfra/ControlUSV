@@ -3,17 +3,6 @@
     <div id="map"></div>
     
     <div class="map-controls">
-      <button 
-        class="ctrl-btn plan-btn"
-        :class="{ active: telemetry.mapPlanMode }"
-        @click="telemetry.mapPlanMode = !telemetry.mapPlanMode"
-      >
-        {{ telemetry.mapPlanMode ? 'EXIT PLAN MODE' : 'PLAN MISSION' }}
-      </button>
-      <label v-if="telemetry.mapPlanMode" class="ctrl-btn route-btn">
-        LOAD ROUTE
-        <input type="file" accept=".csv,.txt" @change="loadRouteFromFile" hidden />
-      </label>
       <div class="map-type-wrapper">
         <button class="ctrl-btn layer-btn" @click="showMapMenu = !showMapMenu">
           MAP ▾
@@ -25,20 +14,6 @@
           </label>
         </div>
       </div>
-      <button 
-        v-if="telemetry.mapPlanMode && missionWaypoints.length > 0"
-        class="ctrl-btn save-btn" 
-        @click="saveRouteToFile"
-      >
-        SAVE ROUTE
-      </button>
-      <button 
-        v-if="telemetry.mapPlanMode && missionWaypoints.length > 0"
-        class="ctrl-btn danger-btn" 
-        @click="telemetry.clearMission()"
-      >
-        CLEAR
-      </button>
       <button
         v-if="telemetry.simulationResults.length > 0"
         class="ctrl-btn sim-btn"
@@ -108,7 +83,7 @@ import { storeToRefs } from 'pinia'
 import ThrustIndicator from './ThrustIndicator.vue'
 
 const telemetry = useTelemetryStore()
-const { lat, lon, missionWaypoints, pathHistory, simulationResults, simulationOverlayVisible } = storeToRefs(telemetry)
+const { lat, lon, missionWaypoints, pathHistory, simulationResults, simulationOverlayVisible, stationWaypoint, stationRadius, stationReachingRadius, homeWaypoint } = storeToRefs(telemetry)
 
 const currentThemeName = ref('satellite')
 const showMapMenu = ref(false)
@@ -330,6 +305,81 @@ onMounted(() => {
         }
       })
 
+      // Station keeping circles (outer station radius + inner reaching radius + center marker)
+      map.addSource('station-circle', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      })
+      map.addLayer({
+        id: 'station-circle-fill',
+        type: 'fill',
+        source: 'station-circle',
+        paint: { 'fill-color': '#FFA500', 'fill-opacity': 0.06 }
+      })
+      map.addLayer({
+        id: 'station-circle-stroke',
+        type: 'line',
+        source: 'station-circle',
+        paint: {
+          'line-color': '#FFA500',
+          'line-width': 2,
+          'line-dasharray': [4, 3],
+          'line-opacity': 0.7
+        }
+      })
+      map.addSource('station-reaching-circle', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      })
+      map.addLayer({
+        id: 'station-reaching-fill',
+        type: 'fill',
+        source: 'station-reaching-circle',
+        paint: { 'fill-color': '#FFA500', 'fill-opacity': 0.12 }
+      })
+      map.addLayer({
+        id: 'station-reaching-stroke',
+        type: 'line',
+        source: 'station-reaching-circle',
+        paint: {
+          'line-color': '#FFA500',
+          'line-width': 2,
+          'line-opacity': 0.8
+        }
+      })
+      map.addSource('station-center', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      })
+      map.addLayer({
+        id: 'station-center-dot',
+        type: 'circle',
+        source: 'station-center',
+        paint: {
+          'circle-radius': 6,
+          'circle-color': '#FFA500',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#fff'
+        }
+      })
+
+      // Home waypoint marker
+      map.addSource('home-wp', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      })
+      map.addLayer({
+        id: 'home-wp-dot',
+        type: 'circle',
+        source: 'home-wp',
+        paint: {
+          'circle-radius': 8,
+          'circle-color': '#AB47BC',
+          'circle-stroke-width': 3,
+          'circle-stroke-color': '#fff'
+        }
+      })
+
       // 5. Simulation overlay sources/layers (up to 6 profiles)
       for (let i = 0; i < 6; i++) {
         map.addSource(`sim-track-${i}`, {
@@ -367,9 +417,14 @@ onMounted(() => {
   .setLngLat([-0.3763, 39.4699])
   .addTo(map)
   
-  // Click Handler for Planning
+  // Click Handler for Planning / Sim Pick
   map.on('click', (e) => {
-      if (telemetry.mapPlanMode) {
+      if (telemetry.simPickMode) {
+          const { lng, lat } = e.lngLat
+          telemetry.simDefaultLat = lat
+          telemetry.simDefaultLon = lng
+          telemetry.simPickMode = false
+      } else if (telemetry.mapPlanMode) {
           const { lng, lat } = e.lngLat
           telemetry.addWaypoint(lat, lng)
       }
@@ -469,6 +524,54 @@ watch(missionWaypoints, (newPoints) => {
       }))
       radiusSrc.setData({ type: 'FeatureCollection', features: circles })
     }
+}, { deep: true })
+
+// Watch station waypoint/radii to update map circles (outer + inner + center)
+watch([stationWaypoint, stationRadius, stationReachingRadius], () => {
+  if (!map) return
+  const wp = stationWaypoint.value
+  const rOuter = stationRadius.value
+  const rInner = stationReachingRadius.value
+  const outerSrc = map.getSource('station-circle')
+  const innerSrc = map.getSource('station-reaching-circle')
+  const centerSrc = map.getSource('station-center')
+  if (!outerSrc || !innerSrc || !centerSrc) return
+
+  const empty = { type: 'FeatureCollection', features: [] }
+  if (!wp) {
+    outerSrc.setData(empty)
+    innerSrc.setData(empty)
+    centerSrc.setData(empty)
+    return
+  }
+
+  outerSrc.setData({
+    type: 'FeatureCollection',
+    features: [{ type: 'Feature', geometry: { type: 'Polygon', coordinates: geoCircle(wp.lon, wp.lat, rOuter) } }]
+  })
+  innerSrc.setData({
+    type: 'FeatureCollection',
+    features: [{ type: 'Feature', geometry: { type: 'Polygon', coordinates: geoCircle(wp.lon, wp.lat, rInner) } }]
+  })
+  centerSrc.setData({
+    type: 'FeatureCollection',
+    features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [wp.lon, wp.lat] } }]
+  })
+}, { deep: true })
+
+// Watch home waypoint to update map marker
+watch(homeWaypoint, (hw) => {
+  if (!map) return
+  const src = map.getSource('home-wp')
+  if (!src) return
+  if (!hw) {
+    src.setData({ type: 'FeatureCollection', features: [] })
+    return
+  }
+  src.setData({
+    type: 'FeatureCollection',
+    features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [hw.lon, hw.lat] } }]
+  })
 }, { deep: true })
 
 // Optimized Trail Update Function (Polling instead of Watcher)
@@ -610,7 +713,7 @@ watch([simulationResults, simulationOverlayVisible], () => {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  z-index: 10;
+  z-index: 1010;
 }
 
 /* ── Unified button base ── */

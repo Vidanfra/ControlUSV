@@ -16,6 +16,11 @@ class SensorStatusMessage(BaseModel):
     status: SensorStatus = Field(..., description="Current status")
     message: str = Field("", description="Human-readable status detail")
 
+class VehicleMode(str, Enum):
+    MANUAL = "MANUAL"
+    STATION = "STATION"
+    WP_ROUTE = "WP_ROUTE"
+
 class CommandType(str, Enum):
     ARM = "ARM"
     DISARM = "DISARM"
@@ -32,6 +37,14 @@ class CommandType(str, Enum):
     UNMUTE_SENSORS = "UNMUTE_SENSORS"
     START_RT_SIM = "START_RT_SIM"
     STOP_RT_SIM = "STOP_RT_SIM"
+    MANUAL_INPUT = "MANUAL_INPUT"
+    SET_STATION = "SET_STATION"
+    START_STATION = "START_STATION"
+    STOP_STATION = "STOP_STATION"
+    START_WP_ROUTE = "START_WP_ROUTE"
+    STOP_WP_ROUTE = "STOP_WP_ROUTE"
+    SET_HOME_WP = "SET_HOME_WP"
+    SET_FAILSAFE_CONFIG = "SET_FAILSAFE_CONFIG"
 
 class Waypoint(BaseModel):
     lat: float
@@ -42,6 +55,23 @@ class Waypoint(BaseModel):
 class MissionPayload(BaseModel):
     waypoints: List[Waypoint]
     loop: bool = False
+
+class FailsafeConfig(BaseModel):
+    """Fail-safe configuration parameters."""
+    min_battery_pct: float = 25.0
+    min_gnss_fix: int = 1
+    comm_timeout: float = 10.0
+    comm_action: str = "station_keeping"
+    ins_timeout: float = 10.0
+    ins_action: str = "emergency_stop"
+
+
+class ManualInputMessage(BaseModel):
+    """
+    Manual control input (arcade style). Abstract XY ready for joystick.
+    """
+    throttle: float = Field(0.0, description="Throttle: -1.0 (full reverse) to 1.0 (full forward)")
+    steering: float = Field(0.0, description="Steering: -1.0 (full left) to 1.0 (full right)")
 
 class CommandMessage(BaseModel):
     """
@@ -215,7 +245,8 @@ class SimulationResult(BaseModel):
 
 class RTSimConfig(BaseModel):
     """Configuration for real-time simulation."""
-    waypoints: List[Waypoint]
+    waypoints: List[Waypoint] = Field(default_factory=list)
+    manual_mode: bool = Field(False, description="If True, manual inputs control the simulated vessel")
     start_mode: str = Field("first_wp", description="'first_wp' or 'last_wp'")
     completion_mode: str = Field("one_way", description="'stop_time', 'one_way', 'loop', 'loop_reverse'")
     total_time: float = Field(600.0, description="Max sim time [s] (for stop_time mode)")

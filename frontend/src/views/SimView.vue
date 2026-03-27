@@ -121,6 +121,22 @@
           SIM RUNNING &mdash; {{ telemetry.rtSimElapsed.toFixed(1) }}s
         </div>
 
+        <!-- Default Start Position -->
+        <div class="start-pos-section">
+          <h3>Default Start Position</h3>
+          <div class="start-pos-row">
+            <label>Lat <input type="number" v-model.number="telemetry.simDefaultLat" step="0.0001" class="coord-input" /></label>
+            <label>Lon <input type="number" v-model.number="telemetry.simDefaultLon" step="0.0001" class="coord-input" /></label>
+            <button
+              class="btn btn-pick"
+              :class="{ active: telemetry.simPickMode }"
+              @click="pickFromMap"
+            >
+              {{ telemetry.simPickMode ? 'Click on map...' : 'Pick on Map' }}
+            </button>
+          </div>
+        </div>
+
         <div class="rt-profile-info">
           <span class="profile-dot" :style="{ background: COLORS[0] }"></span>
           Using <strong>{{ profiles[0]?.name || 'Profile 1' }}</strong> parameters
@@ -252,6 +268,8 @@ onMounted(() => {
       if (parsed.rtCompletionMode) rtCompletionMode.value = parsed.rtCompletionMode
       if (parsed.rtGnssMode) rtGnssMode.value = parsed.rtGnssMode
       if (parsed.rtTimeStep !== undefined) rtTimeStep.value = parsed.rtTimeStep
+      if (parsed.simDefaultLat !== undefined) telemetry.simDefaultLat = parsed.simDefaultLat
+      if (parsed.simDefaultLon !== undefined) telemetry.simDefaultLon = parsed.simDefaultLon
     } catch (e) {
       console.error('Failed to load sim settings', e)
     }
@@ -272,10 +290,25 @@ watch(
       rtCompletionMode: rtCompletionMode.value,
       rtGnssMode: rtGnssMode.value,
       rtTimeStep: rtTimeStep.value,
+      simDefaultLat: telemetry.simDefaultLat,
+      simDefaultLon: telemetry.simDefaultLon,
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave))
   },
   { deep: true }
+)
+
+// Also watch store default position to persist it when changed from map pick
+watch(
+  () => [telemetry.simDefaultLat, telemetry.simDefaultLon],
+  () => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
+      saved.simDefaultLat = telemetry.simDefaultLat
+      saved.simDefaultLon = telemetry.simDefaultLon
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(saved))
+    } catch (e) { /* ignore */ }
+  }
 )
 
 function addProfile() {
@@ -374,6 +407,13 @@ function launchRTSim() {
     completion_mode: rtCompletionMode.value,
     start_mode:      rtStartMode.value,
   })
+}
+
+function pickFromMap() {
+  telemetry.simPickMode = !telemetry.simPickMode
+  if (telemetry.simPickMode) {
+    telemetry.currentTab = 'map'
+  }
 }
 </script>
 
@@ -668,5 +708,56 @@ h3 {
   padding: 5px 8px;
   margin-bottom: 8px;
   flex-wrap: wrap;
+}
+
+.start-pos-section {
+  margin-bottom: 10px;
+}
+.start-pos-section label {
+  display: block;
+  font-size: 0.82rem;
+  color: #ccc;
+  margin-bottom: 4px;
+}
+.start-pos-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.coord-input {
+  width: 110px;
+  padding: 4px 6px;
+  background: #1e1e1e;
+  color: #fff;
+  border: 1px solid #555;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+.coord-input:focus {
+  border-color: #4fc3f7;
+  outline: none;
+}
+.btn-pick {
+  padding: 4px 10px;
+  background: #333;
+  color: #ccc;
+  border: 1px solid #555;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+.btn-pick:hover {
+  background: #444;
+}
+.btn-pick.active {
+  background: #4fc3f7;
+  color: #000;
+  border-color: #4fc3f7;
+  animation: pulse-pick 1s infinite;
+}
+@keyframes pulse-pick {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 </style>

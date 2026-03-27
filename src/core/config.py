@@ -11,6 +11,14 @@ class Settings(BaseSettings):
         "manager": 10
     }
 
+    # Fail-safe parameters
+    FAILSAFE_MIN_BATTERY_PCT: float = 25.0
+    FAILSAFE_MIN_GNSS_FIX: int = 1        # 0=NoFix, 1=GPS, 2=DGPS, 4=RTK Fix, 5=RTK Float
+    FAILSAFE_COMM_TIMEOUT: float = 10.0    # seconds
+    FAILSAFE_COMM_ACTION: str = "station_keeping"  # 'station_keeping' or 'return_home'
+    FAILSAFE_INS_TIMEOUT: float = 10.0     # seconds without GNSS before action
+    FAILSAFE_INS_ACTION: str = "emergency_stop"    # 'emergency_stop' or 'station_keeping'
+
     class Config:
         env_file = ".env"
 

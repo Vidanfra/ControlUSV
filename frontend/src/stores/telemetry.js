@@ -96,6 +96,44 @@ export const useTelemetryStore = defineStore('telemetry', {
     gnssHistory: [],   // { timeMs, label, lat, lon, alt }
     imuHistory: [],    // { timeMs, label, roll, pitch, yaw, ax, ay, az, p, q, r }
     gncHistory: [],    // { timeMs, label, actualHeading, targetHeading, headingError, cte, port, starboard }
+
+    // Vehicle command modes
+    vehicleMode: 'MANUAL',        // 'MANUAL', 'STATION', 'WP_ROUTE'
+    simMode: 'REAL',              // 'REAL' or 'SIMULATION' (frontend-only toggle for now)
+
+    // Station keeping
+    stationWaypoint: null,        // { lat, lon } or null
+    stationReachingRadius: 3.0,   // inner radius (idle when inside)
+    stationRadius: 10.0,          // outer radius (re-engage when outside)
+    stationActive: false,
+
+    // WP Route
+    wpRouteActive: false,
+    wpRouteDirection: 'forward',  // 'forward' or 'reverse'
+    wpRouteCompletion: 'stop',    // 'stop', 'loop', 'loop_reverse'
+
+    // Manual control (keyboard/joystick input state)
+    manualThrottle: 0.0,          // -1 to 1
+    manualSteering: 0.0,          // -1 to 1
+
+    // Fail-safe configuration
+    failsafeMinBattery: 25.0,
+    failsafeMinGnssFix: 1,
+    failsafeCommTimeout: 10.0,
+    failsafeCommAction: 'station_keeping',
+    failsafeInsTimeout: 10.0,
+    failsafeInsAction: 'emergency_stop',
+
+    // Home waypoint
+    homeWaypoint: null,           // { lat, lon } or null
+
+    // Alert banners
+    alertBanners: [],             // [{ id, type:'error'|'warning', message, dismissible }]
+
+    // Sim default start position (for manual SIM mode)
+    simDefaultLat: 39.475,
+    simDefaultLon: -0.325,
+    simPickMode: false,           // true when user is picking a position on the map
   }),
 
   getters: {
@@ -121,6 +159,19 @@ export const useTelemetryStore = defineStore('telemetry', {
       if (f === 2) return '#aacc00'  // DGPS
       if (f === 1) return '#FFA500'  // GPS
       return '#ff4444'               // No fix
+    },
+    canStartAutoMode(state) {
+      return state.gnssFixType >= state.failsafeMinGnssFix
+    },
+    autoModeWarnings(state) {
+      const warnings = []
+      if (state.batteryLevelPct > 0 && state.batteryLevelPct < state.failsafeMinBattery) {
+        warnings.push(`Battery low: ${state.batteryLevelPct.toFixed(0)}% (min ${state.failsafeMinBattery}%)`)
+      }
+      if (state.gnssFixType < 4) {
+        warnings.push('No RTK fix — reduced position accuracy')
+      }
+      return warnings
     },
   },
 
@@ -225,19 +276,19 @@ export const useTelemetryStore = defineStore('telemetry', {
 
     // --- RT Simulation Actions ---
     startRTSim(config) {
-      // config: { gnss_mode, time_step, completion_mode, start_mode }
-      // Include mission waypoints in the payload
+      // config may provide its own waypoints (Station/WP panels), fall back to missionWaypoints
+      const wps = config.waypoints || this.missionWaypoints.map(wp => ({
+        lat: wp.lat,
+        lon: wp.lon,
+        radius: wp.radius || 5.0,
+        speed: wp.speed || 1.0,
+      }))
       const payload = {
         ...config,
-        waypoints: this.missionWaypoints.map(wp => ({
-          lat: wp.lat,
-          lon: wp.lon,
-          radius: wp.radius || 5.0,
-          speed: wp.speed || 1.0,
-        })),
-        current_lat: this.lat,
-        current_lon: this.lon,
-        current_heading: this.heading,
+        waypoints: wps,
+        current_lat: config.current_lat ?? (this.lat || this.simDefaultLat),
+        current_lon: config.current_lon ?? (this.lon || this.simDefaultLon),
+        current_heading: config.current_heading ?? this.heading,
       }
       this.sendCommand('START_RT_SIM', payload)
     },
@@ -249,6 +300,132 @@ export const useTelemetryStore = defineStore('telemetry', {
     navigateToMapPlanner() {
       this.currentTab = 'map'
       this.mapPlanMode = true
+    },
+
+    // --- Vehicle Mode Actions ---
+    setVehicleMode(mode) {
+      // Stop any active auto mode when switching
+      if (this.simMode === 'SIMULATION' && this.rtSimActive) {
+        this.stopRTSim()
+      }
+      if (this.wpRouteActive) {
+        this.wpRouteActive = false
+        if (this.simMode !== 'SIMULATION') this.sendCommand('STOP_WP_ROUTE', {})
+      }
+      if (this.stationActive) {
+        this.stationActive = false
+        if (this.simMode !== 'SIMULATION') this.sendCommand('STOP_STATION', {})
+      }
+      this.sendCommand('SET_MODE', { mode })
+    },
+
+    toggleSimMode() {
+      this.simMode = this.simMode === 'REAL' ? 'SIMULATION' : 'REAL'
+    },
+
+    armVehicle() {
+      this.sendCommand('ARM', {})
+      // In SIM + MANUAL, start a manual RT sim so the physics model runs
+      if (this.simMode === 'SIMULATION' && this.vehicleMode === 'MANUAL') {
+        this.startRTSim({ manual_mode: true, waypoints: [],
+          current_lat: this.simDefaultLat, current_lon: this.simDefaultLon })
+      }
+    },
+
+    disarmVehicle() {
+      this.sendCommand('DISARM', {})
+      // Stop any active RT sim
+      if (this.rtSimActive) {
+        this.stopRTSim()
+      }
+      // Clear active auto modes
+      this.wpRouteActive = false
+      this.stationActive = false
+    },
+
+    sendManualInput(throttle, steering) {
+      this.manualThrottle = throttle
+      this.manualSteering = steering
+      this.sendCommand('MANUAL_INPUT', { throttle, steering })
+    },
+
+    // --- Station Keeping Actions ---
+    setStation(lat, lon, reachingRadius, stationRadius) {
+      this.stationWaypoint = { lat, lon }
+      this.stationReachingRadius = reachingRadius
+      this.stationRadius = stationRadius
+      this.sendCommand('SET_STATION', { lat, lon, reaching_radius: reachingRadius, station_radius: stationRadius })
+    },
+
+    startStation() {
+      this.stationActive = true
+      this.sendCommand('START_STATION', {
+        lat: this.stationWaypoint?.lat,
+        lon: this.stationWaypoint?.lon,
+        reaching_radius: this.stationReachingRadius,
+        station_radius: this.stationRadius,
+      })
+    },
+
+    stopStation() {
+      this.stationActive = false
+      this.sendCommand('STOP_STATION', {})
+    },
+
+    // --- WP Route Actions ---
+    startWpRoute(config) {
+      this.wpRouteActive = true
+      // config: { direction, completion, waypoints }
+      const payload = {
+        direction: config.direction || this.wpRouteDirection,
+        completion: config.completion || this.wpRouteCompletion,
+        waypoints: (config.waypoints || this.missionWaypoints).map(wp => ({
+          lat: wp.lat,
+          lon: wp.lon,
+          radius: wp.radius || 5.0,
+          speed: wp.speed || 1.0,
+        })),
+      }
+      this.sendCommand('START_WP_ROUTE', payload)
+    },
+
+    stopWpRoute() {
+      this.wpRouteActive = false
+      this.sendCommand('STOP_WP_ROUTE', {})
+    },
+
+    // --- Home WP Actions ---
+    setHomeWp(lat, lon) {
+      this.homeWaypoint = { lat, lon }
+      this.sendCommand('SET_HOME_WP', { lat, lon })
+    },
+
+    // --- Fail-safe Actions ---
+    setFailsafeConfig(config) {
+      if (config.min_battery_pct !== undefined) this.failsafeMinBattery = config.min_battery_pct
+      if (config.min_gnss_fix !== undefined) this.failsafeMinGnssFix = config.min_gnss_fix
+      if (config.comm_timeout !== undefined) this.failsafeCommTimeout = config.comm_timeout
+      if (config.comm_action !== undefined) this.failsafeCommAction = config.comm_action
+      if (config.ins_timeout !== undefined) this.failsafeInsTimeout = config.ins_timeout
+      if (config.ins_action !== undefined) this.failsafeInsAction = config.ins_action
+      this.sendCommand('SET_FAILSAFE_CONFIG', config)
+    },
+
+    // --- Alert Banner Actions ---
+    addAlert(type, message) {
+      const id = Date.now()
+      this.alertBanners.push({ id, type, message, dismissible: type === 'warning' })
+      if (type === 'warning') {
+        setTimeout(() => this.dismissAlert(id), 5000)
+      }
+    },
+
+    dismissAlert(id) {
+      this.alertBanners = this.alertBanners.filter(a => a.id !== id)
+    },
+
+    clearAlerts() {
+      this.alertBanners = []
     },
 
     connectWebSocket() {
@@ -329,6 +506,25 @@ export const useTelemetryStore = defineStore('telemetry', {
           else if (topic === 'system/status') {
              this.isArmed = data.is_armed
              this.mode = data.mode
+             if (data.mode) this.vehicleMode = data.mode
+             // simMode is frontend-only — do NOT overwrite from backend
+             if (data.station_active !== undefined) this.stationActive = data.station_active
+             if (data.station_wp) this.stationWaypoint = data.station_wp
+             if (data.station_reaching_radius !== undefined) this.stationReachingRadius = data.station_reaching_radius
+             if (data.station_radius !== undefined) this.stationRadius = data.station_radius
+             if (data.wp_route_active !== undefined) this.wpRouteActive = data.wp_route_active
+             if (data.home_wp) this.homeWaypoint = data.home_wp
+             if (data.gnss_fix_type !== undefined) this.gnssFixType = data.gnss_fix_type
+             if (data.battery_level_pct !== undefined) this.batteryLevelPct = data.battery_level_pct
+             if (data.failsafe_config) {
+               const fs = data.failsafe_config
+               if (fs.min_battery_pct !== undefined) this.failsafeMinBattery = fs.min_battery_pct
+               if (fs.min_gnss_fix !== undefined) this.failsafeMinGnssFix = fs.min_gnss_fix
+               if (fs.comm_timeout !== undefined) this.failsafeCommTimeout = fs.comm_timeout
+               if (fs.comm_action !== undefined) this.failsafeCommAction = fs.comm_action
+               if (fs.ins_timeout !== undefined) this.failsafeInsTimeout = fs.ins_timeout
+               if (fs.ins_action !== undefined) this.failsafeInsAction = fs.ins_action
+             }
           }
           else if (topic === 'gnc/control_debug') {
              this.targetHeading = data.target_heading
