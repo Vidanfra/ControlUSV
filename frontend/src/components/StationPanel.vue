@@ -42,6 +42,27 @@
       SET CURRENT POSITION
     </button>
 
+    <!-- Surge Force Slider -->
+    <div class="field surge-field">
+      <label>Nominal Surge Force</label>
+      <div class="surge-slider-container">
+        <input 
+          type="range" 
+          v-model.number="surgePct" 
+          min="0" 
+          max="100" 
+          step="1" 
+          class="surge-slider"
+          :disabled="stationActive"
+        />
+        <span class="surge-val">{{ surgePct }}%</span>
+      </div>
+      <div class="surge-metrics">
+        <span>Force: {{ surgeForceN.toFixed(1) }} N</span>
+        <span>Speed: {{ expectedSpeedMs.toFixed(2) }} m/s ({{ expectedSpeedKnots.toFixed(1) }} kn)</span>
+      </div>
+    </div>
+
     <!-- Pre-flight alert -->
     <div v-if="startError" class="alert alert-error">{{ startError }}</div>
     <div v-for="w in startWarnings" :key="w" class="alert alert-warning">{{ w }}</div>
@@ -66,17 +87,28 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useTelemetryStore } from '../stores/telemetry'
 import { storeToRefs } from 'pinia'
 
 const store = useTelemetryStore()
 const { lat, lon, isConnected, isArmed, stationWaypoint, stationReachingRadius, stationRadius, stationActive, simMode } = storeToRefs(store)
 
-const reachingRadius = ref(stationReachingRadius.value)
 const stationRadiusLocal = ref(stationRadius.value)
+const reachingRadius = ref(stationReachingRadius.value)
 const startError = ref('')
 const startWarnings = ref([])
+
+// Compute Surge Force and Speed
+const surgePct = ref(66) // Default ~ 66% (approx 150N)
+const surgeForceN = computed(() => (surgePct.value / 100) * 225.6)
+const expectedSpeedMs = computed(() => {
+  const p = surgePct.value / 100
+  if (p <= 0) return 0
+  const Umax = 2.0576 // 4 knots in m/s
+  return ((-0.2 + Math.sqrt(0.04 + 3.2 * p)) / 1.6) * Umax
+})
+const expectedSpeedKnots = computed(() => expectedSpeedMs.value / 0.5144)
 
 watch(reachingRadius, (val) => {
   store.stationReachingRadius = val
@@ -103,32 +135,15 @@ const start = () => {
     startWarnings.value = store.autoModeWarnings
   }
 
-  if (simMode.value === 'SIMULATION') {
-    // In SIM mode, run RT simulation with single-WP approach
-    const wp = stationWaypoint.value
-    store.stationActive = true
-    store.startRTSim({
-      waypoints: [
-        { lat: lat.value, lon: lon.value, radius: 5.0, speed: 1.0 },
-        { lat: wp.lat, lon: wp.lon, radius: reachingRadius.value, speed: 1.0 },
-      ],
-      start_mode: 'first_wp',
-      completion_mode: 'one_way',
-    })
-  } else {
-    store.startStation()
-  }
+  // Decoupled start
+  store.startStation(surgeForceN.value)
 }
 
 const stop = () => {
   startError.value = ''
   startWarnings.value = []
   store.stationActive = false
-  if (simMode.value === 'SIMULATION') {
-    store.stopRTSim()
-  } else {
-    store.stopStation()
-  }
+  store.stopStation()
 }
 </script>
 
@@ -235,5 +250,43 @@ h3 {
   background: #4a3a1a;
   color: #ffaa00;
   border: 1px solid #ffaa00;
+}
+
+/* Surge slider */
+.surge-field {
+  background: #252525;
+  padding: 8px;
+  border-radius: 6px;
+  margin-top: 4px;
+}
+
+.surge-slider-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.surge-slider {
+  flex: 1;
+  cursor: pointer;
+  accent-color: #FFA500;
+}
+
+.surge-val {
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #FFA500;
+  min-width: 32px;
+  text-align: right;
+}
+
+.surge-metrics {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 0.7rem;
+  color: #888;
+  font-family: monospace;
 }
 </style>

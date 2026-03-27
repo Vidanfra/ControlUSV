@@ -218,6 +218,55 @@
         </div>
       </section>
 
+      <!-- GNC Controller Config Section -->
+      <section class="settings-section">
+        <h3>GNC Controller Settings</h3>
+        <p class="hint" style="margin-top:-10px; margin-bottom:15px">
+          These settings tune the path-following and heading PID controllers. They apply immediately to both real hardware and the physics simulation drift.
+        </p>
+
+        <div class="setting-row">
+          <label for="gncWn">Heading PID Natural Frequency (wn)</label>
+          <div class="input-group">
+            <input id="gncWn" v-model.number="gncForm.wn" type="number" min="0.1" max="20" step="0.1" class="text-input" />
+          </div>
+          <p class="hint">Higher values make steering faster but more aggressive.</p>
+        </div>
+
+        <div class="setting-row">
+          <label for="gncZeta">Heading PID Damping (zeta)</label>
+          <div class="input-group">
+            <input id="gncZeta" v-model.number="gncForm.zeta" type="number" min="0.1" max="5.0" step="0.1" class="text-input" />
+          </div>
+          <p class="hint">1.0 is critically damped. Lower values allow overshoot.</p>
+        </div>
+
+        <div class="setting-row">
+          <label for="gncDelta">ALOS Look-ahead Distance (delta)</label>
+          <div class="input-group">
+            <input id="gncDelta" v-model.number="gncForm.delta" type="number" min="1.0" max="50.0" step="0.5" class="text-input" />
+          </div>
+          <p class="hint">How far ahead the boat aims on the track (meters).</p>
+        </div>
+
+        <div class="setting-row">
+          <label for="gncGamma">ALOS Adaptive Gain (gamma)</label>
+          <div class="input-group">
+            <input id="gncGamma" v-model.number="gncForm.gamma" type="number" min="0.0" max="10.0" step="0.1" class="text-input" />
+          </div>
+          <p class="hint">Adaptive integral gain for compensating ocean currents.</p>
+        </div>
+
+        <div class="setting-row">
+          <div class="input-group">
+            <button class="btn btn-primary" @click="saveGncConfig" :disabled="!gncConfigChanged">
+              Update GNC Settings
+            </button>
+          </div>
+          <p class="hint">Live updates the path-following algorithm parameters.</p>
+        </div>
+      </section>
+
       <!-- Reset Confirmation Dialog -->
       <div v-if="showResetConfirm" class="confirm-overlay" @click.self="showResetConfirm = false">
         <div class="confirm-dialog">
@@ -264,6 +313,15 @@ const gnssForm = ref({
   command_freq: 1.0
 })
 
+// GNC config form
+const gncForm = ref({
+  wn: 4.0,
+  zeta: 0.5,
+  delta: 5.0,
+  gamma: 0.0,
+  tau_x: 150.0 // Kept in state but hidden in UI, as WP/Station panels control it
+})
+
 onMounted(() => {
   capacityInput.value = telemetry.batteryCapacityWh || 500
   // Load fail-safe config from store
@@ -282,6 +340,15 @@ onMounted(() => {
   gnssForm.value.username = telemetry.gnssUsername || ''
   gnssForm.value.password = telemetry.gnssPassword || ''
   gnssForm.value.command_freq = telemetry.gnssCommandFreq || 1.0
+
+  // Load GNC config from store
+  if (telemetry.gncConfig) {
+    gncForm.value.wn = telemetry.gncConfig.wn
+    gncForm.value.zeta = telemetry.gncConfig.zeta
+    gncForm.value.delta = telemetry.gncConfig.delta
+    gncForm.value.gamma = telemetry.gncConfig.gamma
+    gncForm.value.tau_x = telemetry.gncConfig.tau_x
+  }
 })
 
 const capacityChanged = computed(() => {
@@ -350,6 +417,21 @@ const fsConfigChanged = computed(() => {
 
 function saveFailsafeConfig() {
   telemetry.setFailsafeConfig({ ...fsForm.value })
+}
+
+const gncConfigChanged = computed(() => {
+  if (!telemetry.gncConfig) return false
+  return (
+    gncForm.value.wn !== telemetry.gncConfig.wn ||
+    gncForm.value.zeta !== telemetry.gncConfig.zeta ||
+    gncForm.value.delta !== telemetry.gncConfig.delta ||
+    gncForm.value.gamma !== telemetry.gncConfig.gamma
+  )
+})
+
+function saveGncConfig() {
+  // Always include the current explicit tau_x so it doesn't revert unexpectedly
+  telemetry.setGncConfig({ ...gncForm.value, tau_x: telemetry.gncConfig.tau_x })
 }
 </script>
 

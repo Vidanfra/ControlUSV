@@ -45,6 +45,7 @@ class CommandType(str, Enum):
     STOP_WP_ROUTE = "STOP_WP_ROUTE"
     SET_HOME_WP = "SET_HOME_WP"
     SET_FAILSAFE_CONFIG = "SET_FAILSAFE_CONFIG"
+    SET_GNC_CONFIG = "SET_GNC_CONFIG"
 
 class Waypoint(BaseModel):
     lat: float
@@ -64,6 +65,14 @@ class FailsafeConfig(BaseModel):
     comm_action: str = "station_keeping"
     ins_timeout: float = 10.0
     ins_action: str = "emergency_stop"
+
+class GncConfig(BaseModel):
+    """GNC Controller configuration parameters."""
+    wn: float = Field(4.0, description="Heading PID Natural Frequency")
+    zeta: float = Field(0.5, description="Heading PID Damping")
+    delta: float = Field(5.0, description="ALOS Look-ahead distance")
+    gamma: float = Field(0.0, description="ALOS Adaptive gain")
+    tau_x: float = Field(150.0, description="Nominal surge force")
 
 
 class ManualInputMessage(BaseModel):

@@ -83,7 +83,7 @@ import { storeToRefs } from 'pinia'
 import ThrustIndicator from './ThrustIndicator.vue'
 
 const telemetry = useTelemetryStore()
-const { lat, lon, missionWaypoints, pathHistory, simulationResults, simulationOverlayVisible, stationWaypoint, stationRadius, stationReachingRadius, homeWaypoint } = storeToRefs(telemetry)
+const { lat, lon, missionWaypoints, pathHistory, simulationResults, simulationOverlayVisible, stationWaypoint, stationRadius, stationReachingRadius, homeWaypoint, simStartWaypoint } = storeToRefs(telemetry)
 
 const currentThemeName = ref('satellite')
 const showMapMenu = ref(false)
@@ -380,6 +380,23 @@ onMounted(() => {
         }
       })
 
+      // SIM Start waypoint marker
+      map.addSource('sim-start-wp', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      })
+      map.addLayer({
+        id: 'sim-start-wp-dot',
+        type: 'circle',
+        source: 'sim-start-wp',
+        paint: {
+          'circle-radius': 8,
+          'circle-color': '#FFD700', // Gold color for SIM
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#000'
+        }
+      })
+
       // 5. Simulation overlay sources/layers (up to 6 profiles)
       for (let i = 0; i < 6; i++) {
         map.addSource(`sim-track-${i}`, {
@@ -421,8 +438,7 @@ onMounted(() => {
   map.on('click', (e) => {
       if (telemetry.simPickMode) {
           const { lng, lat } = e.lngLat
-          telemetry.simDefaultLat = lat
-          telemetry.simDefaultLon = lng
+          telemetry.setSimStartWp(lat, lng)
           telemetry.simPickMode = false
       } else if (telemetry.mapPlanMode) {
           const { lng, lat } = e.lngLat
@@ -574,6 +590,20 @@ watch(homeWaypoint, (hw) => {
   })
 }, { deep: true })
 
+// Watch SIM Start waypoint to update map marker
+watch(simStartWaypoint, (sw) => {
+  if (!map) return
+  const src = map.getSource('sim-start-wp')
+  if (!src) return
+  if (!sw) {
+    src.setData({ type: 'FeatureCollection', features: [] })
+    return
+  }
+  src.setData({
+    type: 'FeatureCollection',
+    features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [sw.lon, sw.lat] } }]
+  })
+}, { deep: true, immediate: true })
 // Optimized Trail Update Function (Polling instead of Watcher)
 const updateTrail = () => {
     if (!map || !map.getSource('trail')) return;

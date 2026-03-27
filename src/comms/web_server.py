@@ -135,7 +135,7 @@ async def startup_event():
     # Run the ZMQ consumer in the background
     asyncio.create_task(consume_zmq())
 
-from src.core.models import CommandMessage
+from src.core.models import CommandMessage, CommandType
 from src.core.models import SimulationRequest, SimulationResult, SimulationConfig, Waypoint
 from src.core.config import settings
 
@@ -156,7 +156,8 @@ async def process_incoming_command(data_str: str):
         msg = f"{topic} {cmd.model_dump_json()}"
         cmd_pub.send_string(msg)
         
-        logger.info(f"Command received and published: {cmd.type}")
+        if cmd.type != CommandType.MANUAL_INPUT:
+            logger.info(f"Command received and published: {cmd.type}")
         
     except json.JSONDecodeError:
         logger.warning(f"Invalid JSON received from websocket: {data_str}")

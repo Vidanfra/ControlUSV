@@ -131,9 +131,21 @@ export const useTelemetryStore = defineStore('telemetry', {
     alertBanners: [],             // [{ id, type:'error'|'warning', message, dismissible }]
 
     // Sim default start position (for manual SIM mode)
-    simDefaultLat: 39.475,
-    simDefaultLon: -0.325,
+    simDefaultLat: 39.4699,
+    simDefaultLon: -0.3763,
     simPickMode: false,           // true when user is picking a position on the map
+    
+    // Loaded from local storage on store creation
+    simStartWaypoint: JSON.parse(localStorage.getItem('simStartWp')) || null,
+
+    // GNC Configuration state
+    gncConfig: {
+      wn: 4.0,
+      zeta: 0.5,
+      delta: 5.0,
+      gamma: 0.0,
+      tau_x: 150.0
+    },
   }),
 
   getters: {
@@ -218,6 +230,30 @@ export const useTelemetryStore = defineStore('telemetry', {
       this.sendCommand('RESET_ENERGY')
     },
 
+    setSimMode(newMode) {
+      if (!this.isConnected) return
+      if (this.simMode === newMode) return
+
+      this.simMode = newMode
+      
+      if (newMode === 'SIMULATION') {
+        // Start RT Simulator continuously
+        const lat = this.simStartWaypoint ? this.simStartWaypoint.lat : 0.0
+        const lon = this.simStartWaypoint ? this.simStartWaypoint.lon : 0.0
+        const tauX = this.gncConfig ? this.gncConfig.tau_x : 150.0
+        
+        this.sendCommand('START_RT_SIM', {
+          current_lat: lat,
+          current_lon: lon,
+          current_heading: 0.0,
+          surge_force: tauX,
+        })
+      } else {
+        // Stop RT Simulator
+        this.sendCommand('STOP_RT_SIM', {})
+      }
+    },
+
     setBatteryCapacity(capacityWh) {
       this.batteryCapacityWh = capacityWh
       this.sendCommand('SET_BATTERY_CAPACITY', { capacity_wh: capacityWh })
@@ -235,6 +271,15 @@ export const useTelemetryStore = defineStore('telemetry', {
       if (config.password !== undefined) this.gnssPassword = config.password
       if (config.command_freq !== undefined) this.gnssCommandFreq = config.command_freq
       this.sendCommand('SET_GNSS_CONFIG', config)
+    },
+
+    setGncConfig(config) {
+      this.sendCommand('SET_GNC_CONFIG', config)
+    },
+    
+    setSimStartWp(lat, lon) {
+      this.simStartWaypoint = { lat, lon }
+      localStorage.setItem('simStartWp', JSON.stringify({ lat, lon }))
     },
 
     // --- Simulation Actions ---
@@ -276,19 +321,8 @@ export const useTelemetryStore = defineStore('telemetry', {
 
     // --- RT Simulation Actions ---
     startRTSim(config) {
-      // config may provide its own waypoints (Station/WP panels), fall back to missionWaypoints
-      const wps = config.waypoints || this.missionWaypoints.map(wp => ({
-        lat: wp.lat,
-        lon: wp.lon,
-        radius: wp.radius || 5.0,
-        speed: wp.speed || 1.0,
-      }))
       const payload = {
         ...config,
-        waypoints: wps,
-        current_lat: config.current_lat ?? (this.lat || this.simDefaultLat),
-        current_lon: config.current_lon ?? (this.lon || this.simDefaultLon),
-        current_heading: config.current_heading ?? this.heading,
       }
       this.sendCommand('START_RT_SIM', payload)
     },
@@ -304,41 +338,40 @@ export const useTelemetryStore = defineStore('telemetry', {
 
     // --- Vehicle Mode Actions ---
     setVehicleMode(mode) {
-      // Stop any active auto mode when switching
-      if (this.simMode === 'SIMULATION' && this.rtSimActive) {
-        this.stopRTSim()
-      }
       if (this.wpRouteActive) {
         this.wpRouteActive = false
-        if (this.simMode !== 'SIMULATION') this.sendCommand('STOP_WP_ROUTE', {})
+        this.sendCommand('STOP_WP_ROUTE', {})
       }
       if (this.stationActive) {
         this.stationActive = false
-        if (this.simMode !== 'SIMULATION') this.sendCommand('STOP_STATION', {})
+        this.sendCommand('STOP_STATION', {})
       }
       this.sendCommand('SET_MODE', { mode })
     },
 
     toggleSimMode() {
-      this.simMode = this.simMode === 'REAL' ? 'SIMULATION' : 'REAL'
+      if (this.simMode === 'REAL') {
+        const wp = this.simStartWaypoint || { lat: this.simDefaultLat, lon: this.simDefaultLon }
+        this.startRTSim({
+          current_lat: wp.lat,
+          current_lon: wp.lon,
+          current_heading: this.heading,
+          manual_mode: false, // Backend ignores this anyway now
+        })
+        this.simMode = 'SIMULATION'
+      } else {
+        this.stopRTSim()
+        this.simMode = 'REAL'
+      }
     },
 
     armVehicle() {
       this.sendCommand('ARM', {})
-      // In SIM + MANUAL, start a manual RT sim so the physics model runs
-      if (this.simMode === 'SIMULATION' && this.vehicleMode === 'MANUAL') {
-        this.startRTSim({ manual_mode: true, waypoints: [],
-          current_lat: this.simDefaultLat, current_lon: this.simDefaultLon })
-      }
     },
 
     disarmVehicle() {
       this.sendCommand('DISARM', {})
-      // Stop any active RT sim
-      if (this.rtSimActive) {
-        this.stopRTSim()
-      }
-      // Clear active auto modes
+      // Clear active auto modes locally
       this.wpRouteActive = false
       this.stationActive = false
     },
@@ -357,14 +390,16 @@ export const useTelemetryStore = defineStore('telemetry', {
       this.sendCommand('SET_STATION', { lat, lon, reaching_radius: reachingRadius, station_radius: stationRadius })
     },
 
-    startStation() {
+    startStation(tauX = null) {
       this.stationActive = true
-      this.sendCommand('START_STATION', {
+      const payload = {
         lat: this.stationWaypoint?.lat,
         lon: this.stationWaypoint?.lon,
         reaching_radius: this.stationReachingRadius,
         station_radius: this.stationRadius,
-      })
+      }
+      if (tauX !== null) payload.tau_x = tauX
+      this.sendCommand('START_STATION', payload)
     },
 
     stopStation() {
@@ -375,7 +410,7 @@ export const useTelemetryStore = defineStore('telemetry', {
     // --- WP Route Actions ---
     startWpRoute(config) {
       this.wpRouteActive = true
-      // config: { direction, completion, waypoints }
+      // config: { direction, completion, waypoints, tau_x }
       const payload = {
         direction: config.direction || this.wpRouteDirection,
         completion: config.completion || this.wpRouteCompletion,
@@ -386,6 +421,8 @@ export const useTelemetryStore = defineStore('telemetry', {
           speed: wp.speed || 1.0,
         })),
       }
+      if (config.tau_x !== undefined) payload.tau_x = config.tau_x
+      
       this.sendCommand('START_WP_ROUTE', payload)
     },
 
@@ -524,6 +561,9 @@ export const useTelemetryStore = defineStore('telemetry', {
                if (fs.comm_action !== undefined) this.failsafeCommAction = fs.comm_action
                if (fs.ins_timeout !== undefined) this.failsafeInsTimeout = fs.ins_timeout
                if (fs.ins_action !== undefined) this.failsafeInsAction = fs.ins_action
+             }
+             if (data.gnc_config) {
+               this.gncConfig = data.gnc_config
              }
           }
           else if (topic === 'gnc/control_debug') {

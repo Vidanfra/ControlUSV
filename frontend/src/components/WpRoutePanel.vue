@@ -95,6 +95,27 @@
       </div>
     </div>
 
+    <!-- Surge Force Slider -->
+    <div class="field surge-field">
+      <label>Nominal Surge Force</label>
+      <div class="surge-slider-container">
+        <input 
+          type="range" 
+          v-model.number="surgePct" 
+          min="0" 
+          max="100" 
+          step="1" 
+          class="surge-slider"
+          :disabled="wpRouteActive"
+        />
+        <span class="surge-val">{{ surgePct }}%</span>
+      </div>
+      <div class="surge-metrics">
+        <span>Force: {{ surgeForceN.toFixed(1) }} N</span>
+        <span>Speed: {{ expectedSpeedMs.toFixed(2) }} m/s ({{ expectedSpeedKnots.toFixed(1) }} kn)</span>
+      </div>
+    </div>
+
     <!-- Pre-flight alerts -->
     <div v-if="startError" class="alert alert-error">{{ startError }}</div>
     <div v-for="w in startWarnings" :key="w" class="alert alert-warning">{{ w }}</div>
@@ -120,7 +141,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useTelemetryStore } from '../stores/telemetry'
 import { storeToRefs } from 'pinia'
 
@@ -132,6 +153,17 @@ const completion = ref('stop')
 const fileInput = ref(null)
 const startError = ref('')
 const startWarnings = ref([])
+
+// Compute Surge Force and Speed
+const surgePct = ref(66) // Default ~ 66% (approx 150N)
+const surgeForceN = computed(() => (surgePct.value / 100) * 225.6)
+const expectedSpeedMs = computed(() => {
+  const p = surgePct.value / 100
+  if (p <= 0) return 0
+  const Umax = 2.0576 // 4 knots in m/s
+  return ((-0.2 + Math.sqrt(0.04 + 3.2 * p)) / 1.6) * Umax
+})
+const expectedSpeedKnots = computed(() => expectedSpeedMs.value / 0.5144)
 
 const triggerFileInput = () => {
   fileInput.value?.click()
@@ -183,37 +215,20 @@ const start = () => {
     startWarnings.value = store.autoModeWarnings
   }
 
-  if (simMode.value === 'SIMULATION') {
-    // Route through RT Sim
-    const startMode = direction.value === 'reverse' ? 'last_wp' : 'first_wp'
-    store.wpRouteActive = true
-    store.startRTSim({
-      start_mode: startMode,
-      completion_mode: completion.value === 'stop' ? 'one_way' : completion.value,
-      waypoints: wps.map(wp => ({
-        lat: wp.lat, lon: wp.lon,
-        radius: wp.radius || 5.0,
-        speed: wp.speed || 1.0,
-      })),
-    })
-  } else {
-    store.startWpRoute({
-      waypoints: wps,
-      direction: direction.value,
-      completion: completion.value,
-    })
-  }
+  // Decoupled start - sends START_WP_ROUTE regardless of simulation mode
+  store.startWpRoute({
+    waypoints: wps,
+    direction: direction.value,
+    completion: completion.value,
+    tau_x: surgeForceN.value
+  })
 }
 
 const stop = () => {
   startError.value = ''
   startWarnings.value = []
   store.wpRouteActive = false
-  if (simMode.value === 'SIMULATION') {
-    store.stopRTSim()
-  } else {
-    store.stopWpRoute()
-  }
+  store.stopWpRoute()
 }
 
 const saveRouteToFile = () => {
@@ -406,5 +421,43 @@ select:disabled {
   background: #4a3a1a;
   color: #ffaa00;
   border: 1px solid #ffaa00;
+}
+
+/* Surge slider */
+.surge-field {
+  background: #252525;
+  padding: 8px;
+  border-radius: 6px;
+  margin-top: 4px;
+}
+
+.surge-slider-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.surge-slider {
+  flex: 1;
+  cursor: pointer;
+  accent-color: #FFA500;
+}
+
+.surge-val {
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #FFA500;
+  min-width: 32px;
+  text-align: right;
+}
+
+.surge-metrics {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 0.7rem;
+  color: #888;
+  font-family: monospace;
 }
 </style>

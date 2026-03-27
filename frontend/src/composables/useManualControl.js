@@ -4,12 +4,13 @@ import { storeToRefs } from 'pinia'
 
 /**
  * Composable for arcade-style manual control (keyboard).
- * Only active when vehicleMode === 'MANUAL' and currentTab === 'map'.
+ * Active when vehicleMode === 'MANUAL' and isArmed.
+ * Keyboard input works even when the user switches tabs (e.g. to view plots).
  * Sends throttle/steering at ~10 Hz via the telemetry store.
  */
 export function useManualControl() {
   const store = useTelemetryStore()
-  const { vehicleMode, currentTab, isArmed } = storeToRefs(store)
+  const { vehicleMode, isArmed } = storeToRefs(store)
 
   const throttle = ref(0)
   const steering = ref(0)
@@ -29,7 +30,7 @@ export function useManualControl() {
   }
 
   const onKeyDown = (e) => {
-    if (vehicleMode.value !== 'MANUAL' || currentTab.value !== 'map') return
+    if (vehicleMode.value !== 'MANUAL') return
     const key = e.key
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd'].includes(key)) {
       e.preventDefault()
@@ -69,9 +70,9 @@ export function useManualControl() {
     store.manualSteering = 0
   }
 
-  // Start/stop based on mode
-  watch([vehicleMode, currentTab], ([mode, tab]) => {
-    if (mode === 'MANUAL' && tab === 'map') {
+  // Start/stop based on mode only (NOT tab)
+  watch(vehicleMode, (mode) => {
+    if (mode === 'MANUAL') {
       startSending()
     } else {
       stopSending()

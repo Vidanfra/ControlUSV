@@ -1,6 +1,6 @@
 from src.core.process import ServiceProcess
 from src.core.messaging import PubSubBroker, Publisher, Subscriber, Topics
-from src.core.models import CommandMessage, CommandType, USVState, VehicleMode, FailsafeConfig
+from src.core.models import CommandMessage, CommandType, USVState, VehicleMode, FailsafeConfig, GncConfig
 from src.core.config import settings
 from loguru import logger
 import json
@@ -33,6 +33,7 @@ class ManagerProcess(ServiceProcess):
         # Fail-safe state
         self.home_wp = None  # {lat, lon}
         self.failsafe_config = FailsafeConfig()
+        self.gnc_config = GncConfig()
         self.gnss_fix_type = 0
         self.battery_level_pct = 0.0
         self.last_command_time = time.time()
@@ -74,6 +75,7 @@ class ManagerProcess(ServiceProcess):
             "battery_level_pct": self.battery_level_pct,
             "home_wp": self.home_wp,
             "failsafe_config": self.failsafe_config.model_dump(),
+            "gnc_config": self.gnc_config.model_dump(),
             "battery_voltage": 12.6,
             "system_status": "ACTIVE"
         }
@@ -132,6 +134,8 @@ class ManagerProcess(ServiceProcess):
                 logger.info(f"Station WP set: {self.station_wp}, reaching: {self.station_reaching_radius}m, station: {self.station_radius}m")
 
             elif cmd.type == CommandType.START_STATION:
+                if 'tau_x' in cmd.payload:
+                    self.gnc_config.tau_x = cmd.payload['tau_x']
                 self.station_active = True
                 logger.info("Station keeping STARTED")
 
@@ -140,6 +144,8 @@ class ManagerProcess(ServiceProcess):
                 logger.info("Station keeping STOPPED")
 
             elif cmd.type == CommandType.START_WP_ROUTE:
+                if 'tau_x' in cmd.payload:
+                    self.gnc_config.tau_x = cmd.payload['tau_x']
                 self.wp_route_active = True
                 logger.info(f"WP Route STARTED: {cmd.payload}")
 
@@ -160,6 +166,13 @@ class ManagerProcess(ServiceProcess):
                     logger.info(f"Failsafe config updated: {self.failsafe_config}")
                 except Exception as e:
                     logger.error(f"Invalid failsafe config: {e}")
+
+            elif cmd.type == CommandType.SET_GNC_CONFIG:
+                try:
+                    self.gnc_config = GncConfig(**cmd.payload)
+                    logger.info(f"GNC config updated: {self.gnc_config}")
+                except Exception as e:
+                    logger.error(f"Invalid GNC config: {e}")
 
         except Exception as e:
             logger.error(f"Failed to handle command: {e}")

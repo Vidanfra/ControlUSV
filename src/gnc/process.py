@@ -23,7 +23,7 @@ from src.core.process import ServiceProcess
 from src.core.messaging import Publisher, Subscriber, Topics
 from src.core.models import (
     CommandMessage, CommandType, ControlDebugMessage, MissionPayload, Waypoint,
-    RTSimConfig, RTSimStatus, FailsafeConfig,
+    RTSimConfig, RTSimStatus, FailsafeConfig, GncConfig
 )
 from src.core.config import settings
 from src.gnc.gnc_utils import latlon_to_ned, ned_to_latlon, ssa, attitudeEuler
@@ -40,19 +40,21 @@ SALPA1_N_MAX = 175.9
 SALPA1_N_MIN = -175.0
 
 
-def _make_default_controller():
-    """Create a GNCController with Salpa 1 defaults."""
+def _make_default_controller(config: GncConfig = None):
+    """Create a GNCController with Salpa 1 defaults or given config."""
     B = SALPA1_K_POS * np.array([[1, 1], [-SALPA1_L1, -SALPA1_L2]])
     B_inv = np.linalg.inv(B)
+    if config is None:
+        config = GncConfig()
     return GNCController(
         m_yaw=SALPA1_IZZ,
         B_inv=B_inv,
         n_max=SALPA1_N_MAX,
         n_min=SALPA1_N_MIN,
-        wn=4.0, zeta=0.5,
+        wn=config.wn, zeta=config.zeta,
         wn_d=1.0, zeta_d=1.0,
-        delta=5.0, gamma=0.0,
-        tau_X=150.0,
+        delta=config.delta, gamma=config.gamma,
+        tau_X=config.tau_x,
     )
 
 
@@ -91,8 +93,15 @@ class GNCProcess(ServiceProcess):
         # Command publisher (for MUTE/UNMUTE)
         self.cmd_pub = Publisher(Topics.COMMAND_USER)
 
+        # GNC Config
+        self.gnc_config = GncConfig()
+
         # Controller
-        self.controller = _make_default_controller()
+        self.controller = _make_default_controller(self.gnc_config)
+
+        # Motor Output Memory for physical sim
+        self.current_n1 = 0.0
+        self.current_n2 = 0.0
 
         # Navigation state (from gnc/ekf_state)
         self.lat = 0.0
@@ -162,12 +171,13 @@ class GNCProcess(ServiceProcess):
         self._consume_commands()
         self._consume_status()
 
-        # 2. If RT sim is active, run the simulation step
+        # 2. If RT sim is active, run the simulation drifting/physics step
+        #    Notice we do not return! The physics runs, sensors are spoofed,
+        #    and normal navigation consumes them naturally below.
         if self.rt_sim_active:
             self._rt_sim_step(now)
-            return
 
-        # 3. Consume navigation state (normal mode)
+        # 3. Consume navigation state (normal mode relies on sensor spoof/real)
         self._consume_nav()
 
         # 4. Fail-safe checks (only when armed in auto modes)
@@ -191,7 +201,7 @@ class GNCProcess(ServiceProcess):
         if self.lat == 0.0 and self.lon == 0.0:
             return
 
-        if not self.mission_loaded:
+        if not self.mission_loaded or not self.controller:
             return
 
         # Build eta/nu from navigation state
@@ -249,9 +259,16 @@ class GNCProcess(ServiceProcess):
                 break
             _, data = msg
             self.last_heartbeat_time = time.time()
-            if not self.rt_sim_active:
-                self.is_armed = data.get('is_armed', self.is_armed)
-                self.mode = data.get('mode', self.mode)
+            # Always sync armed/mode from manager (the authority)
+            self.is_armed = data.get('is_armed', self.is_armed)
+            new_mode = data.get('mode', self.mode)
+            if new_mode != self.mode:
+                # Mode changed via heartbeat — deactivate stale auto modes
+                if new_mode != 'WP_ROUTE' and self.wp_route_active:
+                    self._stop_wp_route()
+                if new_mode != 'STATION' and self.station_active:
+                    self._stop_station()
+                self.mode = new_mode
             # Track GNSS fix type from system status
             if 'gnss_fix_type' in data:
                 self.last_gnss_fix_type = data['gnss_fix_type']
@@ -272,15 +289,30 @@ class GNCProcess(ServiceProcess):
 
         elif cmd.type == CommandType.DISARM:
             self.is_armed = False
-            self.controller.reset()
+            if self.controller:
+                self.controller.reset()
+            # Also deactivate any auto modes
+            if self.wp_route_active:
+                self._stop_wp_route()
+            if self.station_active:
+                self._stop_station()
             logger.info("GNC: Disarmed — controller reset")
 
         elif cmd.type == CommandType.SET_MODE:
             new_mode = cmd.payload.get('mode', self.mode)
+            old_mode = self.mode
             self.mode = new_mode
+            # Deactivate auto modes when switching away from them
+            if new_mode != 'WP_ROUTE' and self.wp_route_active:
+                self._stop_wp_route()
+                logger.info("GNC: WP Route auto-stopped on mode change")
+            if new_mode != 'STATION' and self.station_active:
+                self._stop_station()
+                logger.info("GNC: Station keeping auto-stopped on mode change")
             if new_mode == 'AUTO' and self.mission_loaded:
                 heading = self.heading_rad
-                self.controller.reset(psi_init=heading)
+                if self.controller:
+                    self.controller.reset(psi_init=heading)
                 logger.info("GNC: AUTO mode — controller activated")
 
         elif cmd.type == CommandType.START_RT_SIM:
@@ -308,6 +340,18 @@ class GNCProcess(ServiceProcess):
             }
             logger.info(f"GNC: Home WP set: {self.home_wp}")
 
+        elif cmd.type == CommandType.MANUAL_INPUT:
+            # When simulator is active and we are armed in manual mode,
+            # we must spoof the motor commands so the physics model actually moves.
+            if self.rt_sim_active and self.is_armed and self.mode == 'MANUAL':
+                throttle = cmd.payload.get("throttle", 0.0)
+                steering = cmd.payload.get("steering", 0.0)
+                port_pct = max(-100, min(100, (throttle + steering) * 100))
+                stbd_pct = max(-100, min(100, (throttle - steering) * 100))
+                
+                self.current_n1 = (port_pct / 100.0) * SALPA1_N_MAX
+                self.current_n2 = (stbd_pct / 100.0) * SALPA1_N_MAX
+
         elif cmd.type == CommandType.SET_FAILSAFE_CONFIG:
             try:
                 self.failsafe_config = FailsafeConfig(**cmd.payload)
@@ -315,14 +359,31 @@ class GNCProcess(ServiceProcess):
             except Exception as e:
                 logger.error(f"GNC: Invalid failsafe config: {e}")
 
-        elif cmd.type == CommandType.MANUAL_INPUT:
-            # In manual RT sim mode, convert throttle/steering to thruster RPMs
-            if self.rt_sim_active and self.rt_sim_manual_mode:
-                throttle = cmd.payload.get('throttle', 0.0)
-                steering = cmd.payload.get('steering', 0.0)
-                n_max = self.rt_sim_model.n_max if self.rt_sim_model else SALPA1_N_MAX
-                self.rt_sim_manual_n1 = max(-n_max, min(n_max, (throttle + steering) * n_max))
-                self.rt_sim_manual_n2 = max(-n_max, min(n_max, (throttle - steering) * n_max))
+        elif cmd.type == CommandType.SET_GNC_CONFIG:
+            try:
+                self.gnc_config = GncConfig(**cmd.payload)
+                self._apply_gnc_config()
+                logger.info(f"GNC: Parameters updated: {self.gnc_config}")
+            except Exception as e:
+                logger.error(f"GNC: Failed to apply GNC config: {e}")
+
+    def _apply_gnc_config(self):
+        """Update active controllers with the new GNC Config parameters."""
+        # Update main path-following controller
+        if self.controller:
+            self.controller.wn = self.gnc_config.wn
+            self.controller.zeta = self.gnc_config.zeta
+            self.controller.delta = self.gnc_config.delta
+            self.controller.gamma = self.gnc_config.gamma
+            self.controller.tau_X = self.gnc_config.tau_x
+
+        # Update station keeper if active
+        if self.station_keeper:
+            self.station_keeper.wn = self.gnc_config.wn
+            self.station_keeper.zeta = self.gnc_config.zeta
+            self.station_keeper.delta = self.gnc_config.delta
+            self.station_keeper.gamma = self.gnc_config.gamma
+            self.station_keeper.tau_X = self.gnc_config.tau_x
 
     def _load_mission(self):
         """Convert waypoints from lat/lon to NED and load into controller."""
@@ -352,8 +413,10 @@ class GNCProcess(ServiceProcess):
 
     def _publish_control(self, n1, n2, debug, now):
         """Publish motor commands and debug data."""
-        port_pct = (n1 / SALPA1_N_MAX) * 100.0 if SALPA1_N_MAX != 0 else 0.0
-        stbd_pct = (n2 / SALPA1_N_MAX) * 100.0 if SALPA1_N_MAX != 0 else 0.0
+        self.current_n1 = float(n1)
+        self.current_n2 = float(n2)
+        port_pct = (self.current_n1 / SALPA1_N_MAX) * 100.0 if SALPA1_N_MAX != 0 else 0.0
+        stbd_pct = (self.current_n2 / SALPA1_N_MAX) * 100.0 if SALPA1_N_MAX != 0 else 0.0
 
         self.control_cmd_pub.publish({
             'timestamp': now,
@@ -384,6 +447,12 @@ class GNCProcess(ServiceProcess):
             logger.error("GNC: WP Route needs at least 2 waypoints")
             return
 
+        # Override tau_x if provided
+        tau_x_override = payload.get('tau_x')
+        if tau_x_override is not None:
+            self.gnc_config.tau_x = float(tau_x_override)
+            self._apply_gnc_config()
+
         direction = payload.get('direction', 'forward')
         completion = payload.get('completion', 'stop')
 
@@ -411,7 +480,7 @@ class GNCProcess(ServiceProcess):
             wp_ned.append({'N': N, 'E': E, 'radius': wp.radius, 'speed': wp.speed})
 
         # Create controller and load waypoints
-        self.controller = _make_default_controller()
+        self.controller = _make_default_controller(self.gnc_config)
         self.controller.set_waypoints(wp_ned)
 
         # Determine start heading
@@ -436,6 +505,8 @@ class GNCProcess(ServiceProcess):
         if not self.wp_route_active:
             return
         self.wp_route_active = False
+        self.current_n1 = 0.0
+        self.current_n2 = 0.0
         # Publish zero motor commands
         self.control_cmd_pub.publish({
             'timestamp': time.time(),
@@ -451,7 +522,7 @@ class GNCProcess(ServiceProcess):
         """Execute one WP route control step."""
         if self.lat == 0.0 and self.lon == 0.0:
             return
-        if not self.wp_route_origin:
+        if not self.wp_route_origin or not self.controller:
             return
 
         lat0, lon0 = self.wp_route_origin
@@ -527,6 +598,12 @@ class GNCProcess(ServiceProcess):
         reaching_radius = payload.get('reaching_radius', 3.0)
         station_radius = payload.get('station_radius', 10.0)
 
+        # Override tau_x if provided
+        tau_x_override = payload.get('tau_x')
+        if tau_x_override is not None:
+            self.gnc_config.tau_x = float(tau_x_override)
+            self._apply_gnc_config()
+
         if lat_s == 0.0 and lon_s == 0.0:
             logger.error("GNC: Station keeping needs a valid position")
             return
@@ -547,6 +624,11 @@ class GNCProcess(ServiceProcess):
             B_inv=B_inv,
             n_max=SALPA1_N_MAX,
             n_min=SALPA1_N_MIN,
+            wn=self.gnc_config.wn,
+            zeta=self.gnc_config.zeta,
+            delta=self.gnc_config.delta,
+            gamma=self.gnc_config.gamma,
+            tau_X=self.gnc_config.tau_x,
         )
 
         # Initialize approach path from current position
@@ -567,6 +649,8 @@ class GNCProcess(ServiceProcess):
             return
         self.station_active = False
         self.station_keeper = None
+        self.current_n1 = 0.0
+        self.current_n2 = 0.0
         self.control_cmd_pub.publish({
             'timestamp': time.time(),
             'port_pct': 0.0,
@@ -632,6 +716,8 @@ class GNCProcess(ServiceProcess):
         self.station_active = False
         self.station_keeper = None
         self.is_armed = False
+        self.current_n1 = 0.0
+        self.current_n2 = 0.0
         self.control_cmd_pub.publish({
             'timestamp': time.time(),
             'port_pct': 0.0,
@@ -680,123 +766,36 @@ class GNCProcess(ServiceProcess):
     # ================================================================
 
     def _start_rt_sim(self, payload: dict):
-        """Initialize and start the real-time simulation."""
+        """Initialize and start the real-time simulation physics engine."""
         try:
             cfg = RTSimConfig(**payload)
         except Exception as e:
             logger.error(f"GNC: Invalid RT sim config: {e}")
             return
 
-        self.rt_sim_manual_mode = cfg.manual_mode
         self.rt_sim_config = cfg
+        # Just start physics at the given origin 
+        logger.info("GNC: Starting RT simulation (Physics Engine Only)")
 
-        if cfg.manual_mode:
-            # ----- Manual mode: physics model only, no waypoints/controller -----
-            logger.info("GNC: Starting RT simulation in MANUAL mode")
-
-            lat0 = cfg.current_lat
-            lon0 = cfg.current_lon
-            self.rt_sim_origin = (lat0, lon0)
-            self.rt_sim_waypoints = []
-            self.rt_sim_wp_ned = []
-
-            self.rt_sim_eta = np.zeros(6)
-            self.rt_sim_eta[5] = math.radians(cfg.current_heading)
-            self.rt_sim_nu = np.zeros(6)
-            self.rt_sim_u_actual = np.array([0.0, 0.0])
-            self.rt_sim_manual_n1 = 0.0
-            self.rt_sim_manual_n2 = 0.0
-
-            self.rt_sim_model = Salpa1Model(
-                payload_mass=cfg.payload_kg,
-                V_current=cfg.current_speed,
-                beta_current=cfg.current_dir,
-                tau_X=cfg.surge_force,
-            )
-            self.rt_sim_controller = None
-
-            self.rt_sim_t = 0.0
-            self.rt_sim_start_time = time.time()
-            self.rt_sim_loops = 0
-
-            self.cmd_pub.publish(CommandMessage(
-                timestamp=time.time(),
-                type=CommandType.MUTE_SENSORS,
-                payload={},
-            ).model_dump())
-
-            self.is_armed = True
-            self.mode = "MANUAL"
-            self.rt_sim_active = True
-            logger.info("GNC: Manual RT simulation started")
-            return
-
-        # ----- Auto mode: waypoints + controller -----
-        if len(cfg.waypoints) < 2:
-            logger.error("GNC: RT sim needs at least 2 waypoints")
-            return
-
-        logger.info(f"GNC: Starting RT simulation — {len(cfg.waypoints)} WPs, "
-                     f"mode={cfg.gnss_mode}, completion={cfg.completion_mode}")
-
-        # Build waypoint list (possibly reversed)
-        wps = list(cfg.waypoints)
-        if cfg.start_mode == 'last_wp':
-            wps = list(reversed(wps))
-            self.rt_sim_forward = False
-        else:
-            self.rt_sim_forward = True
-
-        self.rt_sim_waypoints = wps
-
-        # Origin = first waypoint of the (possibly reversed) list
-        lat0 = wps[0].lat
-        lon0 = wps[0].lon
+        lat0 = cfg.current_lat
+        lon0 = cfg.current_lon
         self.rt_sim_origin = (lat0, lon0)
+        self.rt_sim_waypoints = []
+        self.rt_sim_wp_ned = []
 
-        # Convert to NED
-        wp_ned = []
-        for wp in wps:
-            N, E = latlon_to_ned(wp.lat, wp.lon, lat0, lon0)
-            wp_ned.append({'N': N, 'E': E, 'radius': wp.radius, 'speed': wp.speed})
-        self.rt_sim_wp_ned = wp_ned
-
-        # Determine start heading
-        dn = wp_ned[1]['N'] - wp_ned[0]['N']
-        de = wp_ned[1]['E'] - wp_ned[0]['E']
-        psi0 = math.atan2(de, dn)
-
-        # Initial state
         self.rt_sim_eta = np.zeros(6)
-        self.rt_sim_eta[0] = wp_ned[0]['N']
-        self.rt_sim_eta[1] = wp_ned[0]['E']
-        self.rt_sim_eta[5] = psi0
+        self.rt_sim_eta[5] = math.radians(cfg.current_heading)
         self.rt_sim_nu = np.zeros(6)
         self.rt_sim_u_actual = np.array([0.0, 0.0])
 
-        # Create vehicle model
         self.rt_sim_model = Salpa1Model(
             payload_mass=cfg.payload_kg,
             V_current=cfg.current_speed,
             beta_current=cfg.current_dir,
             tau_X=cfg.surge_force,
         )
+        self.rt_sim_controller = None
 
-        # Create dedicated controller for sim
-        self.rt_sim_controller = GNCController(
-            m_yaw=self.rt_sim_model.Izz_total,
-            B_inv=self.rt_sim_model.Binv,
-            n_max=self.rt_sim_model.n_max,
-            n_min=self.rt_sim_model.n_min,
-            wn=cfg.wn_pid, zeta=cfg.zeta_pid,
-            wn_d=cfg.wn_ref, zeta_d=cfg.zeta_ref,
-            delta=cfg.delta, gamma=cfg.gamma,
-            tau_X=cfg.surge_force,
-        )
-        self.rt_sim_controller.set_waypoints(wp_ned)
-        self.rt_sim_controller.reset(psi0)
-
-        # Timing
         self.rt_sim_t = 0.0
         self.rt_sim_start_time = time.time()
         self.rt_sim_loops = 0
@@ -808,9 +807,10 @@ class GNCProcess(ServiceProcess):
             payload={},
         ).model_dump())
 
-        # Auto-arm + AUTO
-        self.is_armed = True
-        self.mode = "AUTO"
+        # Reset motor commands to zeroes
+        self.current_n1 = 0.0
+        self.current_n2 = 0.0
+
         self.rt_sim_active = True
 
         logger.info("GNC: RT simulation started")
@@ -829,10 +829,6 @@ class GNCProcess(ServiceProcess):
             payload={},
         ).model_dump())
 
-        # Disarm
-        self.is_armed = False
-        self.mode = "MANUAL"
-
         # Publish final status
         self.sim_status_pub.publish(RTSimStatus(
             timestamp=time.time(),
@@ -842,30 +838,20 @@ class GNCProcess(ServiceProcess):
 
         # Clean up
         self.rt_sim_model = None
-        self.rt_sim_controller = None
         self.rt_sim_eta = None
         self.rt_sim_nu = None
-        self.rt_sim_manual_mode = False
-        self.rt_sim_manual_n1 = 0.0
-        self.rt_sim_manual_n2 = 0.0
-
+        
         logger.info(f"GNC: RT simulation stopped after {self.rt_sim_t:.1f}s")
 
     def _rt_sim_step(self, now):
-        """Execute one RT simulation step: dynamics + GNC + publish."""
+        """Execute one RT simulation step: dynamics + publish."""
         cfg = self.rt_sim_config
         dt = cfg.time_step
         model = self.rt_sim_model
 
         # --- Compute thrust ---
-        if self.rt_sim_manual_mode:
-            n1, n2 = self.rt_sim_manual_n1, self.rt_sim_manual_n2
-            debug = {'psi_d': float(self.rt_sim_eta[5]), 'heading_error': 0.0,
-                     'cross_track_error': 0.0, 'wp_index': 0}
-        else:
-            ctrl = self.rt_sim_controller
-            n1, n2, debug = ctrl.step(self.rt_sim_eta, self.rt_sim_nu, dt)
-        u_control = np.array([n1, n2], dtype=float)
+        # The motor positions are driven by standard routines pushing values to self.current_n1 / n2
+        u_control = np.array([self.current_n1, self.current_n2], dtype=float)
 
         # --- Physics step ---
         self.rt_sim_nu, self.rt_sim_u_actual = model.dynamics(
@@ -891,91 +877,12 @@ class GNCProcess(ServiceProcess):
         imu_msg = simulate_imu(self.rt_sim_eta, self.rt_sim_nu)
         self.sim_imu_pub.publish(imu_msg.model_dump())
 
-        # --- Publish control output ---
-        self._publish_control(n1, n2, debug, now)
-
         # --- Publish sim status ---
+        # Minimal sim status now that pathing is decoupled
         self.sim_status_pub.publish(RTSimStatus(
             timestamp=now,
             running=True,
             elapsed_time=self.rt_sim_t,
             total_time=cfg.total_time,
-            completion_mode=cfg.completion_mode,
             gnss_mode=cfg.gnss_mode,
-            current_wp=debug.get('wp_index', 0),
-            total_wp=len(self.rt_sim_waypoints),
-            loops_completed=self.rt_sim_loops,
         ).model_dump())
-
-        # --- Check completion (skip in manual mode) ---
-        if not self.rt_sim_manual_mode:
-            self._check_rt_sim_completion(self.rt_sim_controller, cfg)
-
-    def _check_rt_sim_completion(self, ctrl, cfg):
-        """Handle completion modes for the RT simulation."""
-        mode = cfg.completion_mode
-
-        if mode == 'stop_time':
-            if self.rt_sim_t >= cfg.total_time:
-                logger.info("GNC: RT sim completed (time limit reached)")
-                self._stop_rt_sim()
-
-        elif mode == 'one_way':
-            if ctrl.is_mission_complete():
-                logger.info("GNC: RT sim completed (route finished)")
-                self._stop_rt_sim()
-
-        elif mode == 'loop':
-            if ctrl.is_mission_complete():
-                self.rt_sim_loops += 1
-                logger.info(f"GNC: RT sim loop #{self.rt_sim_loops} complete, restarting")
-                # Build a bridge from current vehicle position to WP[0] so the
-                # vehicle drives back to the start instead of teleporting.
-                wp_ned = self.rt_sim_wp_ned
-                current_wp = {
-                    'N': float(self.rt_sim_eta[0]),
-                    'E': float(self.rt_sim_eta[1]),
-                    'radius': wp_ned[0]['radius'],
-                    'speed': wp_ned[0]['speed'],
-                }
-                bridge_wps = [current_wp] + list(wp_ned)
-                ctrl.set_waypoints(bridge_wps)
-                psi0 = math.atan2(
-                    wp_ned[0]['E'] - float(self.rt_sim_eta[1]),
-                    wp_ned[0]['N'] - float(self.rt_sim_eta[0]),
-                )
-                ctrl.reset(psi0)
-
-        elif mode == 'loop_reverse':
-            if ctrl.is_mission_complete():
-                self.rt_sim_loops += 1
-                self.rt_sim_forward = not self.rt_sim_forward
-                logger.info(
-                    f"GNC: RT sim loop #{self.rt_sim_loops} complete, "
-                    f"reversing ({'forward' if self.rt_sim_forward else 'backward'})"
-                )
-                # Reverse waypoints
-                wps_reversed = list(reversed(self.rt_sim_waypoints))
-                self.rt_sim_waypoints = wps_reversed
-
-                lat0, lon0 = self.rt_sim_origin
-                wp_ned = []
-                for wp in wps_reversed:
-                    N, E = latlon_to_ned(wp.lat, wp.lon, lat0, lon0)
-                    wp_ned.append({'N': N, 'E': E, 'radius': wp.radius, 'speed': wp.speed})
-                self.rt_sim_wp_ned = wp_ned
-
-                # Bridge from current vehicle position to new WP[0]
-                current_wp = {
-                    'N': float(self.rt_sim_eta[0]),
-                    'E': float(self.rt_sim_eta[1]),
-                    'radius': wp_ned[0]['radius'],
-                    'speed': wp_ned[0]['speed'],
-                }
-                bridge_wps = [current_wp] + list(wp_ned)
-                ctrl.set_waypoints(bridge_wps)
-                psi0 = math.atan2(
-                    wp_ned[0]['E'] - float(self.rt_sim_eta[1]),
-                    wp_ned[0]['N'] - float(self.rt_sim_eta[0]),
-                )
-                ctrl.reset(psi0)

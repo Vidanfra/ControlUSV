@@ -37,12 +37,12 @@
       <button
         class="btn sim-opt-btn"
         :class="{ active: simMode === 'REAL' }"
-        @click="store.simMode = 'REAL'"
+        @click="store.setSimMode('REAL')"
       >REAL</button>
       <button
         class="btn sim-opt-btn sim"
         :class="{ active: simMode === 'SIMULATION' }"
-        @click="store.simMode = 'SIMULATION'"
+        @click="store.setSimMode('SIMULATION')"
       >SIM</button>
     </div>
   </div>
