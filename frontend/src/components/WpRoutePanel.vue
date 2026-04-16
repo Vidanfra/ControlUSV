@@ -89,9 +89,10 @@
         <span v-else class="coord dim">Not set</span>
         <button
           class="btn home-btn"
+          :class="{ active: store.homePickMode }"
           @click="setHome"
-          :disabled="!isConnected || lat === 0"
-        >SET HOME</button>
+          :disabled="wpRouteActive"
+        >{{ store.homePickMode ? 'PICKING...' : 'SET HOME' }}</button>
       </div>
     </div>
 
@@ -197,7 +198,10 @@ const loadFromFile = (e) => {
 }
 
 const setHome = () => {
-  store.setHomeWp(lat.value, lon.value)
+  store.homePickMode = !store.homePickMode
+  if (store.homePickMode) {
+    store.currentTab = 'map'
+  }
 }
 
 const start = () => {
@@ -402,6 +406,17 @@ select:disabled {
   color: white;
   padding: 6px 10px !important;
   font-size: 0.75rem !important;
+}
+
+.home-btn.active {
+  background: #FFA500;
+  color: #000;
+  animation: pulse-pick 1s infinite;
+}
+
+@keyframes pulse-pick {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 .alert {

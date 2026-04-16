@@ -13,6 +13,7 @@ export const useTelemetryStore = defineStore('telemetry', {
     mode: 'MANUAL',
     missionWaypoints: [],
     pathHistory: [],
+    _lastPathPushTime: 0,
     
     // GNC additions
     targetHeading: 0.0,
@@ -96,6 +97,7 @@ export const useTelemetryStore = defineStore('telemetry', {
     gnssHistory: [],   // { timeMs, label, lat, lon, alt }
     imuHistory: [],    // { timeMs, label, roll, pitch, yaw, ax, ay, az, p, q, r }
     gncHistory: [],    // { timeMs, label, actualHeading, targetHeading, headingError, cte, port, starboard }
+    powerHistory: [],  // { timeMs, label, voltage, current, power }
 
     // Vehicle command modes
     vehicleMode: 'MANUAL',        // 'MANUAL', 'STATION', 'WP_ROUTE'
@@ -103,8 +105,8 @@ export const useTelemetryStore = defineStore('telemetry', {
 
     // Station keeping
     stationWaypoint: null,        // { lat, lon } or null
-    stationReachingRadius: 3.0,   // inner radius (idle when inside)
-    stationRadius: 10.0,          // outer radius (re-engage when outside)
+    stationReachingRadius: JSON.parse(localStorage.getItem('stationReachingRadius')) ?? 3.0,
+    stationRadius: JSON.parse(localStorage.getItem('stationRadius')) ?? 10.0,
     stationActive: false,
 
     // WP Route
@@ -125,7 +127,7 @@ export const useTelemetryStore = defineStore('telemetry', {
     failsafeInsAction: 'emergency_stop',
 
     // Home waypoint
-    homeWaypoint: null,           // { lat, lon } or null
+    homeWaypoint: JSON.parse(localStorage.getItem('homeWaypoint')) || null,
 
     // Alert banners
     alertBanners: [],             // [{ id, type:'error'|'warning', message, dismissible }]
@@ -134,14 +136,18 @@ export const useTelemetryStore = defineStore('telemetry', {
     simDefaultLat: 39.4699,
     simDefaultLon: -0.3763,
     simPickMode: false,           // true when user is picking a position on the map
+    stationPickMode: false,       // true when picking station WP on map
+    homePickMode: false,          // true when picking home WP on map
     
     // Loaded from local storage on store creation
     simStartWaypoint: JSON.parse(localStorage.getItem('simStartWp')) || null,
 
     // GNC Configuration state
-    gncConfig: {
+    gncConfig: JSON.parse(localStorage.getItem('gncConfig')) || {
       wn: 4.0,
       zeta: 0.5,
+      wn_ref: 1.0,
+      zeta_ref: 1.0,
       delta: 5.0,
       gamma: 0.0,
       tau_x: 150.0
@@ -274,6 +280,8 @@ export const useTelemetryStore = defineStore('telemetry', {
     },
 
     setGncConfig(config) {
+      this.gncConfig = { ...this.gncConfig, ...config }
+      localStorage.setItem('gncConfig', JSON.stringify(this.gncConfig))
       this.sendCommand('SET_GNC_CONFIG', config)
     },
     
@@ -360,6 +368,15 @@ export const useTelemetryStore = defineStore('telemetry', {
         })
         this.simMode = 'SIMULATION'
       } else {
+        // Stop any active auto modes before switching to REAL
+        if (this.wpRouteActive) {
+          this.wpRouteActive = false
+          this.sendCommand('STOP_WP_ROUTE', {})
+        }
+        if (this.stationActive) {
+          this.stationActive = false
+          this.sendCommand('STOP_STATION', {})
+        }
         this.stopRTSim()
         this.simMode = 'REAL'
       }
@@ -370,10 +387,16 @@ export const useTelemetryStore = defineStore('telemetry', {
     },
 
     disarmVehicle() {
+      // Explicitly stop any active auto modes first
+      if (this.wpRouteActive) {
+        this.wpRouteActive = false
+        this.sendCommand('STOP_WP_ROUTE', {})
+      }
+      if (this.stationActive) {
+        this.stationActive = false
+        this.sendCommand('STOP_STATION', {})
+      }
       this.sendCommand('DISARM', {})
-      // Clear active auto modes locally
-      this.wpRouteActive = false
-      this.stationActive = false
     },
 
     sendManualInput(throttle, steering) {
@@ -387,6 +410,8 @@ export const useTelemetryStore = defineStore('telemetry', {
       this.stationWaypoint = { lat, lon }
       this.stationReachingRadius = reachingRadius
       this.stationRadius = stationRadius
+      localStorage.setItem('stationReachingRadius', JSON.stringify(reachingRadius))
+      localStorage.setItem('stationRadius', JSON.stringify(stationRadius))
       this.sendCommand('SET_STATION', { lat, lon, reaching_radius: reachingRadius, station_radius: stationRadius })
     },
 
@@ -434,6 +459,7 @@ export const useTelemetryStore = defineStore('telemetry', {
     // --- Home WP Actions ---
     setHomeWp(lat, lon) {
       this.homeWaypoint = { lat, lon }
+      localStorage.setItem('homeWaypoint', JSON.stringify({ lat, lon }))
       this.sendCommand('SET_HOME_WP', { lat, lon })
     },
 
@@ -480,6 +506,13 @@ export const useTelemetryStore = defineStore('telemetry', {
       this.socket.onopen = () => {
         this.isConnected = true
         console.log('WebSocket Connected')
+        // Sync persisted settings to backend
+        if (localStorage.getItem('gncConfig')) {
+          this.sendCommand('SET_GNC_CONFIG', this.gncConfig)
+        }
+        if (this.homeWaypoint) {
+          this.sendCommand('SET_HOME_WP', this.homeWaypoint)
+        }
       }
 
       this.socket.onmessage = (event) => {
@@ -547,8 +580,8 @@ export const useTelemetryStore = defineStore('telemetry', {
              // simMode is frontend-only — do NOT overwrite from backend
              if (data.station_active !== undefined) this.stationActive = data.station_active
              if (data.station_wp) this.stationWaypoint = data.station_wp
-             if (data.station_reaching_radius !== undefined) this.stationReachingRadius = data.station_reaching_radius
-             if (data.station_radius !== undefined) this.stationRadius = data.station_radius
+             if (data.station_reaching_radius !== undefined && this.stationActive) this.stationReachingRadius = data.station_reaching_radius
+             if (data.station_radius !== undefined && this.stationActive) this.stationRadius = data.station_radius
              if (data.wp_route_active !== undefined) this.wpRouteActive = data.wp_route_active
              if (data.home_wp) this.homeWaypoint = data.home_wp
              if (data.gnss_fix_type !== undefined) this.gnssFixType = data.gnss_fix_type
@@ -602,6 +635,18 @@ export const useTelemetryStore = defineStore('telemetry', {
              this.batteryMeasurementStart = data.measurement_start
              this.batteryHighAlarm = data.high_voltage_alarm
              this.batteryLowAlarm = data.low_voltage_alarm
+             // Append to power chart history
+             const nowPwr = Date.now()
+             this.powerHistory.push({
+               timeMs: nowPwr,
+               label: new Date(nowPwr).toISOString().substr(11, 8),
+               voltage: data.voltage || 0,
+               current: data.current || 0,
+               power: data.power || 0
+             })
+             const cutoffPwr = nowPwr - 120000
+             if (this.powerHistory.length > 0 && this.powerHistory[0].timeMs < cutoffPwr)
+               this.powerHistory = this.powerHistory.filter(p => p.timeMs > cutoffPwr)
           }
           else if (topic === 'sensor/imu') {
              this.imuRoll = data.roll
@@ -640,20 +685,22 @@ export const useTelemetryStore = defineStore('telemetry', {
              }
           }
 
-          // Update Path History if we have a new position
+          // Update Path History if we have a new position (throttled to 5 Hz)
           if (newLat !== null && newLon !== null && newLat !== 0 && newLon !== 0) {
               const now = Date.now()
-              this.pathHistory.push({
-                lat: newLat,
-                lon: newLon,
-                timestamp: now
-              })
-              
-              // Keep only last 2 minutes (120000 ms)
-              const twoMinutesAgo = now - 120000
-              // Optimization: Only filter if the oldest point is too old
-              if (this.pathHistory.length > 0 && this.pathHistory[0].timestamp < twoMinutesAgo) {
-                 this.pathHistory = this.pathHistory.filter(p => p.timestamp > twoMinutesAgo)
+              if (now - this._lastPathPushTime >= 200) {
+                this._lastPathPushTime = now
+                this.pathHistory.push({
+                  lat: newLat,
+                  lon: newLon,
+                  timestamp: now
+                })
+                
+                // Keep only last 2 minutes (120000 ms)
+                const twoMinutesAgo = now - 120000
+                if (this.pathHistory.length > 0 && this.pathHistory[0].timestamp < twoMinutesAgo) {
+                   this.pathHistory = this.pathHistory.filter(p => p.timestamp > twoMinutesAgo)
+                }
               }
           }
         } catch (error) {

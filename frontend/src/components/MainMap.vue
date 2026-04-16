@@ -151,7 +151,9 @@ onMounted(() => {
         }
       ]
     },
-    center: [-0.3763, 39.4699], // Default center (Valencia, Spain)
+    center: simStartWaypoint.value
+      ? [simStartWaypoint.value.lon, simStartWaypoint.value.lat]
+      : [telemetry.simDefaultLon, telemetry.simDefaultLat], // Default center
     zoom: 15
   })
   
@@ -434,12 +436,20 @@ onMounted(() => {
   .setLngLat([-0.3763, 39.4699])
   .addTo(map)
   
-  // Click Handler for Planning / Sim Pick
+  // Click Handler for Planning / Sim Pick / Station Pick / Home Pick
   map.on('click', (e) => {
       if (telemetry.simPickMode) {
           const { lng, lat } = e.lngLat
           telemetry.setSimStartWp(lat, lng)
           telemetry.simPickMode = false
+      } else if (telemetry.stationPickMode) {
+          const { lng, lat } = e.lngLat
+          telemetry.setStation(lat, lng, telemetry.stationReachingRadius, telemetry.stationRadius)
+          telemetry.stationPickMode = false
+      } else if (telemetry.homePickMode) {
+          const { lng, lat } = e.lngLat
+          telemetry.setHomeWp(lat, lng)
+          telemetry.homePickMode = false
       } else if (telemetry.mapPlanMode) {
           const { lng, lat } = e.lngLat
           telemetry.addWaypoint(lat, lng)
@@ -493,7 +503,7 @@ watch([lat, lon, () => telemetry.bestHeading], ([newLat, newLon, newHeading]) =>
     boatMarker.setLngLat([newLon, newLat])
     if (followVehicle.value) {
       map.setCenter([newLon, newLat])
-      if (Math.abs(map.getZoom() - FOLLOW_ZOOM) > 1) {
+      if (map.getZoom() > FOLLOW_ZOOM) {
         map.setZoom(FOLLOW_ZOOM)
       }
     }

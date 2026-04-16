@@ -52,7 +52,7 @@ def _make_default_controller(config: GncConfig = None):
         n_max=SALPA1_N_MAX,
         n_min=SALPA1_N_MIN,
         wn=config.wn, zeta=config.zeta,
-        wn_d=1.0, zeta_d=1.0,
+        wn_d=config.wn_ref, zeta_d=config.zeta_ref,
         delta=config.delta, gamma=config.gamma,
         tau_X=config.tau_x,
     )
@@ -369,21 +369,17 @@ class GNCProcess(ServiceProcess):
 
     def _apply_gnc_config(self):
         """Update active controllers with the new GNC Config parameters."""
+        cfg = self.gnc_config
+        tuning = dict(wn=cfg.wn, zeta=cfg.zeta, wn_d=cfg.wn_ref, zeta_d=cfg.zeta_ref,
+                      delta=cfg.delta, gamma=cfg.gamma, tau_X=cfg.tau_x)
+
         # Update main path-following controller
         if self.controller:
-            self.controller.wn = self.gnc_config.wn
-            self.controller.zeta = self.gnc_config.zeta
-            self.controller.delta = self.gnc_config.delta
-            self.controller.gamma = self.gnc_config.gamma
-            self.controller.tau_X = self.gnc_config.tau_x
+            self.controller.update_tuning(**tuning)
 
         # Update station keeper if active
-        if self.station_keeper:
-            self.station_keeper.wn = self.gnc_config.wn
-            self.station_keeper.zeta = self.gnc_config.zeta
-            self.station_keeper.delta = self.gnc_config.delta
-            self.station_keeper.gamma = self.gnc_config.gamma
-            self.station_keeper.tau_X = self.gnc_config.tau_x
+        if self.station_keeper and self.station_keeper.controller:
+            self.station_keeper.controller.update_tuning(**tuning)
 
     def _load_mission(self):
         """Convert waypoints from lat/lon to NED and load into controller."""
@@ -481,15 +477,15 @@ class GNCProcess(ServiceProcess):
 
         # Create controller and load waypoints
         self.controller = _make_default_controller(self.gnc_config)
-        self.controller.set_waypoints(wp_ned)
 
-        # Determine start heading
-        if len(wp_ned) >= 2:
-            dn = wp_ned[1]['N'] - wp_ned[0]['N']
-            de = wp_ned[1]['E'] - wp_ned[0]['E']
-            psi0 = math.atan2(de, dn)
-        else:
-            psi0 = self.heading_rad
+        # Bridge from current position to WP[0] so vehicle navigates to WP0 first
+        N_cur, E_cur = latlon_to_ned(self.lat, self.lon, lat0, lon0)
+        current_wp = {'N': N_cur, 'E': E_cur,
+                      'radius': wp_ned[0]['radius'], 'speed': wp_ned[0]['speed']}
+        bridge = [current_wp] + list(wp_ned)
+        self.controller.set_waypoints(bridge)
+
+        psi0 = math.atan2(wp_ned[0]['E'] - E_cur, wp_ned[0]['N'] - N_cur)
         self.controller.reset(psi_init=psi0)
 
         self.wp_route_active = True
@@ -626,6 +622,8 @@ class GNCProcess(ServiceProcess):
             n_min=SALPA1_N_MIN,
             wn=self.gnc_config.wn,
             zeta=self.gnc_config.zeta,
+            wn_d=self.gnc_config.wn_ref,
+            zeta_d=self.gnc_config.zeta_ref,
             delta=self.gnc_config.delta,
             gamma=self.gnc_config.gamma,
             tau_X=self.gnc_config.tau_x,

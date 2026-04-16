@@ -42,6 +42,15 @@
       SET CURRENT POSITION
     </button>
 
+    <button
+      class="btn pick-btn"
+      :class="{ active: store.stationPickMode }"
+      @click="pickFromMap"
+      :disabled="stationActive"
+    >
+      {{ store.stationPickMode ? 'PICKING...' : 'PICK ON MAP' }}
+    </button>
+
     <!-- Surge Force Slider -->
     <div class="field surge-field">
       <label>Nominal Surge Force</label>
@@ -112,14 +121,23 @@ const expectedSpeedKnots = computed(() => expectedSpeedMs.value / 0.5144)
 
 watch(reachingRadius, (val) => {
   store.stationReachingRadius = val
+  localStorage.setItem('stationReachingRadius', JSON.stringify(val))
 })
 
 watch(stationRadiusLocal, (val) => {
   store.stationRadius = val
+  localStorage.setItem('stationRadius', JSON.stringify(val))
 })
 
 const setCurrentPosition = () => {
   store.setStation(lat.value, lon.value, reachingRadius.value, stationRadiusLocal.value)
+}
+
+const pickFromMap = () => {
+  store.stationPickMode = !store.stationPickMode
+  if (store.stationPickMode) {
+    store.currentTab = 'map'
+  }
 }
 
 const start = () => {
@@ -221,6 +239,22 @@ h3 {
 .set-btn {
   background: #33b5e5;
   color: white;
+}
+
+.pick-btn {
+  background: #8855cc;
+  color: white;
+}
+
+.pick-btn.active {
+  background: #FFA500;
+  color: #000;
+  animation: pulse-pick 1s infinite;
+}
+
+@keyframes pulse-pick {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 .start-btn {

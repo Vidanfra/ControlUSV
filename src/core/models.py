@@ -70,6 +70,8 @@ class GncConfig(BaseModel):
     """GNC Controller configuration parameters."""
     wn: float = Field(4.0, description="Heading PID Natural Frequency")
     zeta: float = Field(0.5, description="Heading PID Damping")
+    wn_ref: float = Field(1.0, description="Reference model natural frequency")
+    zeta_ref: float = Field(1.0, description="Reference model damping ratio")
     delta: float = Field(5.0, description="ALOS Look-ahead distance")
     gamma: float = Field(0.0, description="ALOS Adaptive gain")
     tau_x: float = Field(150.0, description="Nominal surge force")

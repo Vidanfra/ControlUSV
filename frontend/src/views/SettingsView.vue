@@ -242,6 +242,22 @@
         </div>
 
         <div class="setting-row">
+          <label for="gncWnRef">Reference Model ω (wn_ref)</label>
+          <div class="input-group">
+            <input id="gncWnRef" v-model.number="gncForm.wn_ref" type="number" min="0.1" max="20" step="0.1" class="text-input" />
+          </div>
+          <p class="hint">Natural frequency of the 3rd-order reference model.</p>
+        </div>
+
+        <div class="setting-row">
+          <label for="gncZetaRef">Reference Model ζ (zeta_ref)</label>
+          <div class="input-group">
+            <input id="gncZetaRef" v-model.number="gncForm.zeta_ref" type="number" min="0.1" max="5.0" step="0.1" class="text-input" />
+          </div>
+          <p class="hint">Damping ratio of the 3rd-order reference model.</p>
+        </div>
+
+        <div class="setting-row">
           <label for="gncDelta">ALOS Look-ahead Distance (delta)</label>
           <div class="input-group">
             <input id="gncDelta" v-model.number="gncForm.delta" type="number" min="1.0" max="50.0" step="0.5" class="text-input" />
@@ -317,6 +333,8 @@ const gnssForm = ref({
 const gncForm = ref({
   wn: 4.0,
   zeta: 0.5,
+  wn_ref: 1.0,
+  zeta_ref: 1.0,
   delta: 5.0,
   gamma: 0.0,
   tau_x: 150.0 // Kept in state but hidden in UI, as WP/Station panels control it
@@ -345,6 +363,8 @@ onMounted(() => {
   if (telemetry.gncConfig) {
     gncForm.value.wn = telemetry.gncConfig.wn
     gncForm.value.zeta = telemetry.gncConfig.zeta
+    gncForm.value.wn_ref = telemetry.gncConfig.wn_ref ?? 1.0
+    gncForm.value.zeta_ref = telemetry.gncConfig.zeta_ref ?? 1.0
     gncForm.value.delta = telemetry.gncConfig.delta
     gncForm.value.gamma = telemetry.gncConfig.gamma
     gncForm.value.tau_x = telemetry.gncConfig.tau_x
@@ -424,6 +444,8 @@ const gncConfigChanged = computed(() => {
   return (
     gncForm.value.wn !== telemetry.gncConfig.wn ||
     gncForm.value.zeta !== telemetry.gncConfig.zeta ||
+    gncForm.value.wn_ref !== (telemetry.gncConfig.wn_ref ?? 1.0) ||
+    gncForm.value.zeta_ref !== (telemetry.gncConfig.zeta_ref ?? 1.0) ||
     gncForm.value.delta !== telemetry.gncConfig.delta ||
     gncForm.value.gamma !== telemetry.gncConfig.gamma
   )

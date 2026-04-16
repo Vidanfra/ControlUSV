@@ -121,7 +121,6 @@ ChartJS.register(
 const telemetry = useTelemetryStore()
 
 const timeWindow = ref(120)
-const history = ref([])
 
 // --- Computed helpers ---
 const measurementStartStr = computed(() => {
@@ -204,40 +203,29 @@ let updateInterval = null
 
 const updateCharts = () => {
   const now = Date.now()
-
-  history.value.push({
-    timeMs: now,
-    label: new Date(now).toISOString().substr(11, 8),
-    voltage: telemetry.batteryVoltage || 0,
-    current: telemetry.batteryCurrent || 0,
-    power: telemetry.batteryPower || 0
-  })
-
   const cutoff = now - (timeWindow.value * 1000)
-  while (history.value.length > 0 && history.value[0].timeMs < cutoff) {
-    history.value.shift()
-  }
+  const visible = telemetry.powerHistory.filter(pt => pt.timeMs >= cutoff)
 
-  const labels = history.value.map(pt => pt.label)
+  const labels = visible.map(pt => pt.label)
 
   voltageChartData.value = {
     labels,
     datasets: [
-      { label: 'Voltage', borderColor: '#FFA500', data: history.value.map(pt => pt.voltage), borderWidth: 2, tension: 0.2, fill: false }
+      { label: 'Voltage', borderColor: '#FFA500', data: visible.map(pt => pt.voltage), borderWidth: 2, tension: 0.2, fill: false }
     ]
   }
 
   currentChartData.value = {
     labels,
     datasets: [
-      { label: 'Current', borderColor: '#33b5e5', data: history.value.map(pt => pt.current), borderWidth: 2, tension: 0.2, fill: false }
+      { label: 'Current', borderColor: '#33b5e5', data: visible.map(pt => pt.current), borderWidth: 2, tension: 0.2, fill: false }
     ]
   }
 
   powerChartData.value = {
     labels,
     datasets: [
-      { label: 'Power', borderColor: '#ff4444', data: history.value.map(pt => pt.power), borderWidth: 2, tension: 0.2, fill: false }
+      { label: 'Power', borderColor: '#ff4444', data: visible.map(pt => pt.power), borderWidth: 2, tension: 0.2, fill: false }
     ]
   }
 }
