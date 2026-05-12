@@ -1,0 +1,20 @@
+{
+  "gnc_config": {
+    "wn": 3.0,
+    "zeta": 2.0,
+    "wn_ref": 3.0,
+    "zeta_ref": 2.0,
+    "delta": 5.0,
+    "gamma": 0.0,
+    "tau_x": 150.0
+  },
+  "failsafe_config": {
+    "min_battery_pct": 25.0,
+    "min_gnss_fix": 1,
+    "comm_timeout": 5.0,
+    "comm_action": "station_keeping",
+    "ins_timeout": 8.0,
+    "ins_action": "emergency_stop"
+  },
+  "home_wp": null
+}

@@ -34,7 +34,10 @@ export const useTelemetryStore = defineStore('telemetry', {
     batteryHighAlarm: 0,
     batteryLowAlarm: 0,
 
-    // GNSS additions
+    // GNSS additions — raw sensor values (NOT EKF-filtered)
+    // lat/lon/heading/speed are authoritative only from gnc/ekf_state
+    gnssRawLat: 0.0,       // raw GNSS latitude (degrees) — used in GNSS diagnostic tab
+    gnssRawLon: 0.0,       // raw GNSS longitude (degrees) — used in GNSS diagnostic tab
     gnssAlt: 0.0,
     gnssFixType: 0,
     gnssNumSats: 0,
@@ -119,12 +122,13 @@ export const useTelemetryStore = defineStore('telemetry', {
     manualSteering: 0.0,          // -1 to 1
 
     // Fail-safe configuration
-    failsafeMinBattery: 25.0,
-    failsafeMinGnssFix: 1,
-    failsafeCommTimeout: 10.0,
-    failsafeCommAction: 'station_keeping',
-    failsafeInsTimeout: 10.0,
-    failsafeInsAction: 'emergency_stop',
+    // Loaded from localStorage so user settings survive page reloads.
+    failsafeMinBattery:   JSON.parse(localStorage.getItem('failsafeConfig'))?.min_battery_pct ?? 25.0,
+    failsafeMinGnssFix:   JSON.parse(localStorage.getItem('failsafeConfig'))?.min_gnss_fix    ?? 1,
+    failsafeCommTimeout:  JSON.parse(localStorage.getItem('failsafeConfig'))?.comm_timeout    ?? 10.0,
+    failsafeCommAction:   JSON.parse(localStorage.getItem('failsafeConfig'))?.comm_action     ?? 'station_keeping',
+    failsafeInsTimeout:   JSON.parse(localStorage.getItem('failsafeConfig'))?.ins_timeout     ?? 10.0,
+    failsafeInsAction:    JSON.parse(localStorage.getItem('failsafeConfig'))?.ins_action      ?? 'emergency_stop',
 
     // Home waypoint
     homeWaypoint: JSON.parse(localStorage.getItem('homeWaypoint')) || null,
@@ -471,6 +475,14 @@ export const useTelemetryStore = defineStore('telemetry', {
       if (config.comm_action !== undefined) this.failsafeCommAction = config.comm_action
       if (config.ins_timeout !== undefined) this.failsafeInsTimeout = config.ins_timeout
       if (config.ins_action !== undefined) this.failsafeInsAction = config.ins_action
+      localStorage.setItem('failsafeConfig', JSON.stringify({
+        min_battery_pct: this.failsafeMinBattery,
+        min_gnss_fix:    this.failsafeMinGnssFix,
+        comm_timeout:    this.failsafeCommTimeout,
+        comm_action:     this.failsafeCommAction,
+        ins_timeout:     this.failsafeInsTimeout,
+        ins_action:      this.failsafeInsAction,
+      }))
       this.sendCommand('SET_FAILSAFE_CONFIG', config)
     },
 
@@ -506,9 +518,21 @@ export const useTelemetryStore = defineStore('telemetry', {
       this.socket.onopen = () => {
         this.isConnected = true
         console.log('WebSocket Connected')
-        // Sync persisted settings to backend
+        // Sync all persisted user settings to backend on every connect.
+        // This ensures the backend always reflects the user's last-saved values,
+        // regardless of whether the backend was restarted.
         if (localStorage.getItem('gncConfig')) {
           this.sendCommand('SET_GNC_CONFIG', this.gncConfig)
+        }
+        if (localStorage.getItem('failsafeConfig')) {
+          this.sendCommand('SET_FAILSAFE_CONFIG', {
+            min_battery_pct: this.failsafeMinBattery,
+            min_gnss_fix:    this.failsafeMinGnssFix,
+            comm_timeout:    this.failsafeCommTimeout,
+            comm_action:     this.failsafeCommAction,
+            ins_timeout:     this.failsafeInsTimeout,
+            ins_action:      this.failsafeInsAction,
+          })
         }
         if (this.homeWaypoint) {
           this.sendCommand('SET_HOME_WP', this.homeWaypoint)
@@ -525,25 +549,23 @@ export const useTelemetryStore = defineStore('telemetry', {
           let newLon = null
 
           if (topic === 'sensor/gnss') {
-            this.lat = data.lat
-            this.lon = data.lon
+            // Raw sensor diagnostics only — do NOT write to lat/lon/heading/speed.
+            // Those are owned exclusively by gnc/ekf_state (EKF-filtered output).
+            this.gnssRawLat = data.lat
+            this.gnssRawLon = data.lon
             this.gnssAlt = data.alt
             this.gnssFixType = data.fix_type
             this.gnssNumSats = data.num_satellites
             this.gnssHdop = data.hdop
             this.gnssVdop = data.vdop
-            this.gnssHeading = data.heading
+            this.gnssHeading = data.heading          // degrees — dual-antenna true heading
             this.gnssHeadingStatus = data.heading_status
-            this.gnssCog = data.cog
-            this.gnssSogKnots = data.sog_knots
-            this.gnssSogKmh = data.sog_kmh
+            this.gnssCog = data.cog                  // degrees — course over ground
+            this.gnssSogKnots = data.sog_knots        // knots
+            this.gnssSogKmh = data.sog_kmh            // km/h
             this.gnssUtcTime = data.utc_time
             this.gnssUtcDate = data.utc_date
-            // Update top-level speed from GNSS SOG (knots -> m/s)
-            this.speed = data.sog_knots * 0.514444
-            newLat = data.lat
-            newLon = data.lon
-            // Append to chart history
+            // Append to raw GNSS chart history
             const nowMs = Date.now()
             this.gnssHistory.push({
               timeMs: nowMs,
@@ -583,20 +605,28 @@ export const useTelemetryStore = defineStore('telemetry', {
              if (data.station_reaching_radius !== undefined && this.stationActive) this.stationReachingRadius = data.station_reaching_radius
              if (data.station_radius !== undefined && this.stationActive) this.stationRadius = data.station_radius
              if (data.wp_route_active !== undefined) this.wpRouteActive = data.wp_route_active
-             if (data.home_wp) this.homeWaypoint = data.home_wp
+             if (data.home_wp) {
+               // Only accept home_wp from backend if user has not set one locally.
+               // User-set value (persisted in localStorage) always takes priority.
+               if (!localStorage.getItem('homeWaypoint')) this.homeWaypoint = data.home_wp
+             }
              if (data.gnss_fix_type !== undefined) this.gnssFixType = data.gnss_fix_type
              if (data.battery_level_pct !== undefined) this.batteryLevelPct = data.battery_level_pct
              if (data.failsafe_config) {
-               const fs = data.failsafe_config
-               if (fs.min_battery_pct !== undefined) this.failsafeMinBattery = fs.min_battery_pct
-               if (fs.min_gnss_fix !== undefined) this.failsafeMinGnssFix = fs.min_gnss_fix
-               if (fs.comm_timeout !== undefined) this.failsafeCommTimeout = fs.comm_timeout
-               if (fs.comm_action !== undefined) this.failsafeCommAction = fs.comm_action
-               if (fs.ins_timeout !== undefined) this.failsafeInsTimeout = fs.ins_timeout
-               if (fs.ins_action !== undefined) this.failsafeInsAction = fs.ins_action
+               // Only sync failsafe config from backend if user has no locally-persisted values.
+               if (!localStorage.getItem('failsafeConfig')) {
+                 const fs = data.failsafe_config
+                 if (fs.min_battery_pct !== undefined) this.failsafeMinBattery = fs.min_battery_pct
+                 if (fs.min_gnss_fix !== undefined) this.failsafeMinGnssFix = fs.min_gnss_fix
+                 if (fs.comm_timeout !== undefined) this.failsafeCommTimeout = fs.comm_timeout
+                 if (fs.comm_action !== undefined) this.failsafeCommAction = fs.comm_action
+                 if (fs.ins_timeout !== undefined) this.failsafeInsTimeout = fs.ins_timeout
+                 if (fs.ins_action !== undefined) this.failsafeInsAction = fs.ins_action
+               }
              }
              if (data.gnc_config) {
-               this.gncConfig = data.gnc_config
+               // Only sync gnc_config from backend if user has no locally-persisted values.
+               if (!localStorage.getItem('gncConfig')) this.gncConfig = data.gnc_config
              }
           }
           else if (topic === 'gnc/control_debug') {

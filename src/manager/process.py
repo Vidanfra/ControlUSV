@@ -4,7 +4,12 @@ from src.core.models import CommandMessage, CommandType, USVState, VehicleMode, 
 from src.core.config import settings
 from loguru import logger
 import json
+import os
 import time
+
+# Persisted user settings survive backend restarts.
+# Path is relative to the project root (two levels above this file).
+_SETTINGS_FILE = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'manager_settings.json')
 
 class ManagerProcess(ServiceProcess):
     def setup(self):
@@ -37,7 +42,10 @@ class ManagerProcess(ServiceProcess):
         self.gnss_fix_type = 0
         self.battery_level_pct = 0.0
         self.last_command_time = time.time()
-        
+
+        # Load previously saved user settings (overrides defaults above)
+        self._load_settings()
+
         logger.info("Manager Process Initialized. Waiting for commands...")
 
     def loop(self):
@@ -159,11 +167,13 @@ class ManagerProcess(ServiceProcess):
                     "lon": cmd.payload.get("lon")
                 }
                 logger.info(f"Home WP set: {self.home_wp}")
+                self._save_settings()
 
             elif cmd.type == CommandType.SET_FAILSAFE_CONFIG:
                 try:
                     self.failsafe_config = FailsafeConfig(**cmd.payload)
                     logger.info(f"Failsafe config updated: {self.failsafe_config}")
+                    self._save_settings()
                 except Exception as e:
                     logger.error(f"Invalid failsafe config: {e}")
 
@@ -171,8 +181,42 @@ class ManagerProcess(ServiceProcess):
                 try:
                     self.gnc_config = GncConfig(**cmd.payload)
                     logger.info(f"GNC config updated: {self.gnc_config}")
+                    self._save_settings()
                 except Exception as e:
                     logger.error(f"Invalid GNC config: {e}")
 
         except Exception as e:
             logger.error(f"Failed to handle command: {e}")
+
+    # ----------------------------------------------------------------
+    #  Settings persistence
+    # ----------------------------------------------------------------
+
+    def _load_settings(self):
+        """Load user-configured settings from JSON file, if it exists."""
+        try:
+            if os.path.exists(_SETTINGS_FILE):
+                with open(_SETTINGS_FILE, 'r') as f:
+                    data = json.load(f)
+                if 'gnc_config' in data:
+                    self.gnc_config = GncConfig(**data['gnc_config'])
+                if 'failsafe_config' in data:
+                    self.failsafe_config = FailsafeConfig(**data['failsafe_config'])
+                if 'home_wp' in data:
+                    self.home_wp = data['home_wp']
+                logger.info(f"Manager: settings loaded from {_SETTINGS_FILE}")
+        except Exception as e:
+            logger.warning(f"Manager: could not load settings ({e}), using defaults")
+
+    def _save_settings(self):
+        """Persist user-configured settings to JSON file."""
+        try:
+            os.makedirs(os.path.dirname(os.path.abspath(_SETTINGS_FILE)), exist_ok=True)
+            with open(_SETTINGS_FILE, 'w') as f:
+                json.dump({
+                    'gnc_config': self.gnc_config.model_dump(),
+                    'failsafe_config': self.failsafe_config.model_dump(),
+                    'home_wp': self.home_wp,
+                }, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Manager: could not save settings: {e}")

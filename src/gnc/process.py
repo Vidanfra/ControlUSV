@@ -274,6 +274,11 @@ class GNCProcess(ServiceProcess):
                 self.last_gnss_fix_type = data['gnss_fix_type']
 
     def _handle_command(self, cmd: CommandMessage):
+        # Commands published by GNC itself (for Manager sync) must be ignored here
+        # to avoid re-processing internal state changes that are already applied.
+        if cmd.payload.get('_source') == 'gnc_internal':
+            return
+
         if cmd.type == CommandType.UPLOAD_MISSION:
             try:
                 mission = MissionPayload(**cmd.payload)
@@ -723,20 +728,49 @@ class GNCProcess(ServiceProcess):
             'n1_rads': 0.0,
             'n2_rads': 0.0,
             'source': 'gnc',
-        })
-
+        })        # Sync Manager state: publish DISARM so it updates its is_armed flag
+        self.cmd_pub.publish(CommandMessage(
+            timestamp=time.time(),
+            type=CommandType.STOP_WP_ROUTE,
+            payload={'_source': 'gnc_internal'},
+        ).model_dump())
+        self.cmd_pub.publish(CommandMessage(
+            timestamp=time.time(),
+            type=CommandType.STOP_STATION,
+            payload={'_source': 'gnc_internal'},
+        ).model_dump())
+        self.cmd_pub.publish(CommandMessage(
+            timestamp=time.time(),
+            type=CommandType.DISARM,
+            payload={'_source': 'gnc_internal'},
+        ).model_dump())
     def _failsafe_station_keeping(self):
         """Switch to station keeping at current position."""
         logger.warning("GNC FAILSAFE: Switching to station keeping at current position")
-        # Stop WP route if active
         self.wp_route_active = False
-        # Start station keeping at current lat/lon
-        self._start_station({
+        station_payload = {
             'lat': self.lat,
             'lon': self.lon,
             'reaching_radius': 3.0,
             'station_radius': 10.0,
-        })
+        }
+        self._start_station(station_payload)
+        # Sync Manager: stop WP route, update station WP, mark station active
+        self.cmd_pub.publish(CommandMessage(
+            timestamp=time.time(),
+            type=CommandType.STOP_WP_ROUTE,
+            payload={'_source': 'gnc_internal'},
+        ).model_dump())
+        self.cmd_pub.publish(CommandMessage(
+            timestamp=time.time(),
+            type=CommandType.SET_STATION,
+            payload={**station_payload, '_source': 'gnc_internal'},
+        ).model_dump())
+        self.cmd_pub.publish(CommandMessage(
+            timestamp=time.time(),
+            type=CommandType.START_STATION,
+            payload={**station_payload, '_source': 'gnc_internal'},
+        ).model_dump())
 
     def _failsafe_return_home(self):
         """Navigate back to the Home waypoint."""
@@ -745,19 +779,34 @@ class GNCProcess(ServiceProcess):
             self._failsafe_station_keeping()
             return
         logger.warning(f"GNC FAILSAFE: Returning home to ({self.home_wp['lat']:.6f}, {self.home_wp['lon']:.6f})")
-        # Stop current modes
         self.wp_route_active = False
         self.station_active = False
         self.station_keeper = None
-        # Create a 2-WP mission from current to home
-        self._start_wp_route({
+        home_route_payload = {
             'waypoints': [
                 {'lat': self.lat, 'lon': self.lon, 'radius': 5.0, 'speed': 1.0},
                 {'lat': self.home_wp['lat'], 'lon': self.home_wp['lon'], 'radius': 5.0, 'speed': 1.0},
             ],
             'direction': 'forward',
             'completion': 'stop',
-        })
+        }
+        self._start_wp_route(home_route_payload)
+        # Sync Manager: stop any active modes, then mark WP route active
+        self.cmd_pub.publish(CommandMessage(
+            timestamp=time.time(),
+            type=CommandType.STOP_STATION,
+            payload={'_source': 'gnc_internal'},
+        ).model_dump())
+        self.cmd_pub.publish(CommandMessage(
+            timestamp=time.time(),
+            type=CommandType.STOP_WP_ROUTE,
+            payload={'_source': 'gnc_internal'},
+        ).model_dump())
+        self.cmd_pub.publish(CommandMessage(
+            timestamp=time.time(),
+            type=CommandType.START_WP_ROUTE,
+            payload={**home_route_payload, '_source': 'gnc_internal'},
+        ).model_dump())
 
     # ================================================================
     #  REAL-TIME SIMULATION

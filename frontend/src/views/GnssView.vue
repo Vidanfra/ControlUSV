@@ -47,15 +47,15 @@
         </div>
       </div>
 
-      <h3 class="mt-3">Position</h3>
+      <h3 class="mt-3">Position <span class="raw-badge">RAW</span></h3>
       <div class="stat-group">
         <div class="stat-box">
           <h4>Latitude</h4>
-          <div class="value">{{ telemetry.lat?.toFixed(8) ?? '0.00000000' }}°</div>
+          <div class="value">{{ telemetry.gnssRawLat?.toFixed(8) ?? '0.00000000' }}°</div>
         </div>
         <div class="stat-box">
           <h4>Longitude</h4>
-          <div class="value">{{ telemetry.lon?.toFixed(8) ?? '0.00000000' }}°</div>
+          <div class="value">{{ telemetry.gnssRawLon?.toFixed(8) ?? '0.00000000' }}°</div>
         </div>
         <div class="stat-box">
           <h4>Altitude</h4>
@@ -283,6 +283,18 @@ const altChartData = computed(() => ({
   flex-direction: column;
   gap: 6px;
   overflow-y: auto;
+}
+
+.raw-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  background: #444;
+  color: #aaa;
+  border: 1px solid #555;
+  border-radius: 3px;
+  padding: 1px 4px;
+  vertical-align: middle;
+  letter-spacing: 0.05em;
 }
 
 .sidebar h3 {
