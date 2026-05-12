@@ -1,4 +1,32 @@
 import { defineStore } from 'pinia'
+import { generateLawnmower } from '../composables/useSurveyGenerator.js'
+
+// ── Mission item helpers ──────────────────────────────────────────────────────
+let _itemIdCounter = 1
+function makeId() { return _itemIdCounter++ }
+
+function makeMissionStartItem(lat = 0, lon = 0) {
+  return { id: makeId(), type: 'mission_start', lat, lon, radius: 10, speed: 1.0 }
+}
+function makeMissionEndItem() {
+  return { id: makeId(), type: 'mission_end', lat: null, lon: null, radius: 5, speed: 1.0 }
+}
+function makeWaypointItem(lat = 0, lon = 0) {
+  return { id: makeId(), type: 'waypoint', lat, lon, radius: 5, speed: 1.0 }
+}
+function makeSurveyItem() {
+  return {
+    id: makeId(),
+    type: 'survey',
+    polygon: [],          // [{lat,lon}]
+    lineAngle: 0,         // degrees
+    lineSpacing: 30,      // metres between transects
+    lineExtension: 10,    // metres overshoot past polygon
+    startWP: 0,           // 0 or 1 (which corner to start from)
+    radius: 3,            // acceptance radius for generated WPs
+    speed: 1.0,
+  }
+}
 
 export const useTelemetryStore = defineStore('telemetry', {
   state: () => ({
@@ -11,7 +39,23 @@ export const useTelemetryStore = defineStore('telemetry', {
     socket: null,
     isArmed: false,
     mode: 'MANUAL',
-    missionWaypoints: [],
+
+    // ── Mission planner items (source of truth) ──────────────────────────
+    // missionItems is the rich list; missionWaypoints (getter) is the flat
+    // [{lat,lon,radius,speed}] array consumed by the backend.
+    missionItems: [
+      makeMissionStartItem(),
+      makeMissionEndItem(),
+    ],
+    // Map interaction state for the mission planner
+    activeSurveyId: null,     // id of the survey item currently being edited
+    surveyDrawMode: false,    // true = map clicks add polygon vertices
+    activeMissionWpId: null,  // id of waypoint item being positioned on map
+
+    // Legacy flat list – kept for SimView (CSV upload / WP planner in sim tab).
+    // When the mission planner is in use missionWaypoints is derived from missionItems.
+    _legacyWaypoints: [],
+
     pathHistory: [],
     _lastPathPushTime: 0,
     
@@ -159,6 +203,45 @@ export const useTelemetryStore = defineStore('telemetry', {
   }),
 
   getters: {
+    // ── Flat waypoint list derived from missionItems ──────────────────────
+    // This is what the backend receives. If missionItems is empty or has no
+    // positioned items the legacy list is returned (used by SimView CSV upload).
+    missionWaypoints(state) {
+      const items = state.missionItems
+      const hasContent = items.some(it =>
+        (it.type === 'waypoint' && it.lat !== 0) ||
+        (it.type === 'survey'   && it.polygon.length >= 3) ||
+        (it.type === 'mission_start' && it.lat !== 0)
+      )
+      if (!hasContent) return state._legacyWaypoints
+
+      const wps = []
+      for (const item of items) {
+        if (item.type === 'mission_start') {
+          if (item.lat !== 0 || item.lon !== 0) {
+            wps.push({ lat: item.lat, lon: item.lon, radius: item.radius ?? 10, speed: item.speed ?? 1.0 })
+          }
+        } else if (item.type === 'waypoint') {
+          if (item.lat !== 0 || item.lon !== 0) {
+            wps.push({ lat: item.lat, lon: item.lon, radius: item.radius ?? 5, speed: item.speed ?? 1.0 })
+          }
+        } else if (item.type === 'survey') {
+          if (item.polygon.length >= 3) {
+            const pts = generateLawnmower(
+              item.polygon, item.lineAngle, item.lineSpacing, item.lineExtension, item.startWP
+            )
+            pts.forEach(p => wps.push({ lat: p.lat, lon: p.lon, radius: item.radius ?? 3, speed: item.speed ?? 1.0 }))
+          }
+        } else if (item.type === 'mission_end') {
+          // Use the item's own position if set
+          if (item.lat !== null && item.lon !== null) {
+            wps.push({ lat: item.lat, lon: item.lon, radius: item.radius ?? 5, speed: item.speed ?? 1.0 })
+          }
+        }
+      }
+      return wps
+    },
+
     // Best heading: prefer GNSS dual-antenna heading if available, fallback to magnetic
     bestHeading(state) {
       if (state.gnssHeadingStatus === 'A' && state.gnssHeading !== 0) {
@@ -198,12 +281,93 @@ export const useTelemetryStore = defineStore('telemetry', {
   },
 
   actions: {
+    // ── Legacy flat-waypoint helpers (used by SimView) ────────────────────
     addWaypoint(lat, lon) {
-      this.missionWaypoints.push({ lat, lon })
+      this._legacyWaypoints.push({ lat, lon, radius: 5, speed: 1.0 })
     },
 
     clearMission() {
-      this.missionWaypoints = []
+      this._legacyWaypoints = []
+    },
+
+    // ── Mission-item actions ──────────────────────────────────────────────
+    addMissionItem(type) {
+      const endIdx = this.missionItems.findIndex(i => i.type === 'mission_end')
+      let item
+      if (type === 'waypoint') item = makeWaypointItem()
+      else if (type === 'survey') item = makeSurveyItem()
+      else return
+      if (endIdx >= 0) {
+        this.missionItems.splice(endIdx, 0, item)
+      } else {
+        this.missionItems.push(item)
+      }
+      return item.id
+    },
+
+    removeMissionItem(id) {
+      const idx = this.missionItems.findIndex(i => i.id === id)
+      if (idx < 0) return
+      const item = this.missionItems[idx]
+      if (item.type === 'mission_start' || item.type === 'mission_end') return // immovable
+      this.missionItems.splice(idx, 1)
+      if (this.activeSurveyId === id) {
+        this.activeSurveyId = null
+        this.surveyDrawMode = false
+      }
+      if (this.activeMissionWpId === id) {
+        this.activeMissionWpId = null
+      }
+    },
+
+    updateMissionItem(id, patch) {
+      const item = this.missionItems.find(i => i.id === id)
+      if (!item) return
+      Object.assign(item, patch)
+    },
+
+    reorderMissionItems(newMiddleItems) {
+      // Replace middle items (between mission_start and mission_end)
+      const start = this.missionItems.find(i => i.type === 'mission_start')
+      const end   = this.missionItems.find(i => i.type === 'mission_end')
+      this.missionItems = [
+        ...(start ? [start] : []),
+        ...newMiddleItems,
+        ...(end   ? [end]   : []),
+      ]
+    },
+
+    clearMissionItems() {
+      this.missionItems = [
+        makeMissionStartItem(this.lat, this.lon),
+        makeMissionEndItem(),
+      ]
+      this.activeSurveyId = null
+      this.surveyDrawMode = false
+      this.activeMissionWpId = null
+    },
+
+    setMissionStartPosition(lat, lon) {
+      const item = this.missionItems.find(i => i.type === 'mission_start')
+      if (item) { item.lat = lat; item.lon = lon }
+    },
+
+    // Polygon vertex management for surveys
+    addSurveyVertex(id, lat, lon) {
+      const item = this.missionItems.find(i => i.id === id && i.type === 'survey')
+      if (item) item.polygon.push({ lat, lon })
+    },
+
+    updateSurveyVertex(id, index, lat, lon) {
+      const item = this.missionItems.find(i => i.id === id && i.type === 'survey')
+      if (item && item.polygon[index]) {
+        item.polygon[index] = { lat, lon }
+      }
+    },
+
+    clearSurveyPolygon(id) {
+      const item = this.missionItems.find(i => i.id === id && i.type === 'survey')
+      if (item) item.polygon = []
     },
 
     uploadMission() {
@@ -248,8 +412,8 @@ export const useTelemetryStore = defineStore('telemetry', {
       
       if (newMode === 'SIMULATION') {
         // Start RT Simulator continuously
-        const lat = this.simStartWaypoint ? this.simStartWaypoint.lat : 0.0
-        const lon = this.simStartWaypoint ? this.simStartWaypoint.lon : 0.0
+        const lat = this.simStartWaypoint ? this.simStartWaypoint.lat : this.simDefaultLat
+        const lon = this.simStartWaypoint ? this.simStartWaypoint.lon : this.simDefaultLon
         const tauX = this.gncConfig ? this.gncConfig.tau_x : 150.0
         
         this.sendCommand('START_RT_SIM', {
@@ -440,10 +604,11 @@ export const useTelemetryStore = defineStore('telemetry', {
     startWpRoute(config) {
       this.wpRouteActive = true
       // config: { direction, completion, waypoints, tau_x }
+      const wps = config.waypoints || this.missionWaypoints
       const payload = {
         direction: config.direction || this.wpRouteDirection,
         completion: config.completion || this.wpRouteCompletion,
-        waypoints: (config.waypoints || this.missionWaypoints).map(wp => ({
+        waypoints: wps.map(wp => ({
           lat: wp.lat,
           lon: wp.lon,
           radius: wp.radius || 5.0,

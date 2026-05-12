@@ -389,7 +389,13 @@ async function launchSimulation() {
 
 function launchRTSim() {
   const p = profiles.value[0] || {}
+  const startLat = telemetry.simStartWaypoint?.lat ?? telemetry.simDefaultLat
+  const startLon = telemetry.simStartWaypoint?.lon ?? telemetry.simDefaultLon
   telemetry.startRTSim({
+    // Start position
+    current_lat:     startLat,
+    current_lon:     startLon,
+    current_heading: telemetry.heading,
     // Profile 0 vehicle / controller / environment parameters
     payload_kg:    p.payload_kg    ?? 25,
     wn_pid:        p.wn_pid        ?? 4.0,

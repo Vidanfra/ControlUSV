@@ -7,7 +7,7 @@
       <StationPanel />
     </div>
     <div v-else-if="vehicleMode === 'WP_ROUTE'" class="left-sidebar">
-      <WpRoutePanel />
+      <MissionPlannerPanel />
     </div>
 
     <!-- Manual mode HUD (throttle/steering indicator) -->
@@ -58,6 +58,7 @@ import ControlPanel from '../components/ControlPanel.vue'
 import Dashboard from '../components/Dashboard.vue'
 import StationPanel from '../components/StationPanel.vue'
 import WpRoutePanel from '../components/WpRoutePanel.vue'
+import MissionPlannerPanel from '../components/MissionPlannerPanel.vue'
 import { useTelemetryStore } from '../stores/telemetry'
 import { useManualControl } from '../composables/useManualControl'
 

@@ -6,7 +6,7 @@
     "zeta_ref": 2.0,
     "delta": 5.0,
     "gamma": 0.0,
-    "tau_x": 150.0
+    "tau_x": 148.89600000000002
   },
   "failsafe_config": {
     "min_battery_pct": 25.0,
@@ -16,5 +16,8 @@
     "ins_timeout": 8.0,
     "ins_action": "emergency_stop"
   },
-  "home_wp": null
+  "home_wp": {
+    "lat": 39.323132119066514,
+    "lon": -0.5825424731710598
+  }
 }

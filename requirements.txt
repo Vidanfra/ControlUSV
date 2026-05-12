@@ -11,4 +11,3 @@ pyserial
 minimalmodbus
 pynmea2
 numpy
-pyserialminimalmodbus

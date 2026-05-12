@@ -81,9 +81,16 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import { useTelemetryStore } from '../stores/telemetry'
 import { storeToRefs } from 'pinia'
 import ThrustIndicator from './ThrustIndicator.vue'
+import { generateLawnmower, polygonCentroid, angleHandlePosition, spacingHandlePosition } from '../composables/useSurveyGenerator.js'
 
 const telemetry = useTelemetryStore()
-const { lat, lon, missionWaypoints, pathHistory, simulationResults, simulationOverlayVisible, stationWaypoint, stationRadius, stationReachingRadius, homeWaypoint, simStartWaypoint } = storeToRefs(telemetry)
+const { lat, lon, missionWaypoints, missionItems, pathHistory, simulationResults, simulationOverlayVisible, stationWaypoint, stationRadius, stationReachingRadius, homeWaypoint, simStartWaypoint } = storeToRefs(telemetry)
+
+// Survey drag-marker state
+let polyVertexMarkers = []   // maplibregl.Marker[] — one per polygon vertex
+let angleHandleMarker = null // maplibregl.Marker — rotate line-angle
+let spacingHandleMarker = null // maplibregl.Marker — adjust line-spacing
+let lastActiveSurveyId = null // track which survey had markers
 
 const currentThemeName = ref('satellite')
 const showMapMenu = ref(false)
@@ -420,6 +427,88 @@ onMounted(() => {
       }
   })
 
+  // ── Survey map sources & layers ───────────────────────────────────────────
+  map.on('load', () => {
+    // Polygon fill + stroke
+    map.addSource('survey-polygon', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] }
+    })
+    map.addLayer({
+      id: 'survey-polygon-fill',
+      type: 'fill',
+      source: 'survey-polygon',
+      paint: { 'fill-color': '#22bb66', 'fill-opacity': 0.18 }
+    })
+    map.addLayer({
+      id: 'survey-polygon-stroke',
+      type: 'line',
+      source: 'survey-polygon',
+      paint: { 'line-color': '#22bb66', 'line-width': 2, 'line-dasharray': [5, 3] }
+    })
+
+    // Lawnmower pattern lines
+    map.addSource('survey-pattern', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] }
+    })
+    map.addLayer({
+      id: 'survey-pattern-lines',
+      type: 'line',
+      source: 'survey-pattern',
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: { 'line-color': '#FFD700', 'line-width': 1.5, 'line-opacity': 0.9 }
+    })
+
+    // All survey polygon outlines (non-active)
+    map.addSource('survey-all-polygons', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] }
+    })
+    map.addLayer({
+      id: 'survey-all-polygons-fill',
+      type: 'fill',
+      source: 'survey-all-polygons',
+      paint: { 'fill-color': '#22bb66', 'fill-opacity': 0.08 }
+    })
+    map.addLayer({
+      id: 'survey-all-polygons-stroke',
+      type: 'line',
+      source: 'survey-all-polygons',
+      paint: { 'line-color': '#22bb66', 'line-width': 1.5, 'line-dasharray': [4, 3], 'line-opacity': 0.6 }
+    })
+
+    // All survey patterns (non-active, dimmed)
+    map.addSource('survey-all-patterns', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] }
+    })
+    map.addLayer({
+      id: 'survey-all-pattern-lines',
+      type: 'line',
+      source: 'survey-all-patterns',
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: { 'line-color': '#FFD700', 'line-width': 1, 'line-opacity': 0.45 }
+    })
+
+    // Entry/exit waypoints of active pattern
+    map.addSource('survey-entry', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] }
+    })
+    map.addLayer({
+      id: 'survey-entry-points',
+      type: 'circle',
+      source: 'survey-entry',
+      paint: {
+        'circle-radius': 5,
+        'circle-color': '#FFD700',
+        'circle-stroke-width': 1.5,
+        'circle-stroke-color': '#000',
+      }
+    })
+  })
+
   // Create Custom Boat Marker Element
   const el = document.createElement('div')
   el.className = 'boat-marker'
@@ -436,9 +525,18 @@ onMounted(() => {
   .setLngLat([-0.3763, 39.4699])
   .addTo(map)
   
-  // Click Handler for Planning / Sim Pick / Station Pick / Home Pick
+  // Click Handler for Planning / Sim Pick / Station Pick / Home Pick / Survey Draw
   map.on('click', (e) => {
-      if (telemetry.simPickMode) {
+      if (telemetry.surveyDrawMode && telemetry.activeSurveyId !== null) {
+          // Add vertex to active survey polygon
+          const { lng, lat } = e.lngLat
+          telemetry.addSurveyVertex(telemetry.activeSurveyId, lat, lng)
+      } else if (telemetry.activeMissionWpId !== null) {
+          // Place a mission waypoint (including mission_start)
+          const { lng, lat } = e.lngLat
+          telemetry.updateMissionItem(telemetry.activeMissionWpId, { lat, lon: lng })
+          telemetry.activeMissionWpId = null
+      } else if (telemetry.simPickMode) {
           const { lng, lat } = e.lngLat
           telemetry.setSimStartWp(lat, lng)
           telemetry.simPickMode = false
@@ -456,6 +554,14 @@ onMounted(() => {
       }
   })
 
+  // Double-click closes the active polygon
+  map.on('dblclick', (e) => {
+      if (telemetry.surveyDrawMode && telemetry.activeSurveyId !== null) {
+          e.preventDefault()
+          telemetry.surveyDrawMode = false
+      }
+  })
+
   // Disable follow mode when user manually drags/pans the map
   map.on('dragstart', () => {
       followVehicle.value = false
@@ -469,7 +575,208 @@ onMounted(() => {
 
 onUnmounted(() => {
     if (trailInterval) clearInterval(trailInterval)
+    clearSurveyHandleMarkers()
   telemetry.connectWebSocket()
+})
+
+// ── Survey draw cursor ────────────────────────────────────────────────────────
+watch(() => telemetry.surveyDrawMode, (drawing) => {
+  if (!map) return
+  map.getCanvas().style.cursor = drawing ? 'crosshair' : ''
+})
+
+watch(() => telemetry.activeMissionWpId, (id) => {
+  if (!map) return
+  map.getCanvas().style.cursor = id !== null ? 'crosshair' : ''
+})
+
+// ── Survey layer update ───────────────────────────────────────────────────────
+function buildPatternFeatures(item) {
+  if (!item || item.polygon.length < 3) return []
+  const pts = generateLawnmower(
+    item.polygon, item.lineAngle, item.lineSpacing, item.lineExtension, item.startWP
+  )
+  if (pts.length < 2) return []
+  const lines = []
+  for (let i = 0; i + 1 < pts.length; i += 2) {
+    lines.push({
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: [[pts[i].lon, pts[i].lat], [pts[i+1].lon, pts[i+1].lat]]
+      }
+    })
+  }
+  return lines
+}
+
+function buildPolyFeature(item) {
+  if (!item || item.polygon.length < 2) return null
+  const coords = item.polygon.map(p => [p.lon, p.lat])
+  if (item.polygon.length >= 3) coords.push(coords[0]) // close ring
+  return {
+    type: 'Feature',
+    geometry: { type: item.polygon.length >= 3 ? 'Polygon' : 'LineString',
+      coordinates: item.polygon.length >= 3 ? [coords] : coords }
+  }
+}
+
+function updateSurveyLayers() {
+  if (!map || !map.getSource('survey-polygon')) return
+  const items = telemetry.missionItems
+  const surveys = items.filter(i => i.type === 'survey')
+  const activeSurvey = surveys.find(i => i.id === telemetry.activeSurveyId) || null
+
+  // Active polygon and pattern
+  if (activeSurvey) {
+    const polyFeat = buildPolyFeature(activeSurvey)
+    map.getSource('survey-polygon').setData({
+      type: 'FeatureCollection',
+      features: polyFeat ? [polyFeat] : []
+    })
+    const patternFeats = buildPatternFeatures(activeSurvey)
+    map.getSource('survey-pattern').setData({ type: 'FeatureCollection', features: patternFeats })
+
+    // Entry/exit points
+    const pts = activeSurvey.polygon.length >= 3
+      ? generateLawnmower(activeSurvey.polygon, activeSurvey.lineAngle, activeSurvey.lineSpacing, activeSurvey.lineExtension, activeSurvey.startWP)
+      : []
+    const entryFeats = []
+    if (pts.length > 0) {
+      entryFeats.push({ type:'Feature', geometry:{ type:'Point', coordinates:[pts[0].lon, pts[0].lat] } })
+      entryFeats.push({ type:'Feature', geometry:{ type:'Point', coordinates:[pts[pts.length-1].lon, pts[pts.length-1].lat] } })
+    }
+    map.getSource('survey-entry').setData({ type: 'FeatureCollection', features: entryFeats })
+  } else {
+    const empty = { type: 'FeatureCollection', features: [] }
+    map.getSource('survey-polygon').setData(empty)
+    map.getSource('survey-pattern').setData(empty)
+    map.getSource('survey-entry').setData(empty)
+  }
+
+  // All other surveys (dim overlay)
+  const otherSurveys = surveys.filter(i => i.id !== telemetry.activeSurveyId)
+  const allPolyFeats = otherSurveys.map(buildPolyFeature).filter(Boolean)
+  const allPatFeats  = otherSurveys.flatMap(buildPatternFeatures)
+  map.getSource('survey-all-polygons').setData({ type:'FeatureCollection', features: allPolyFeats })
+  map.getSource('survey-all-patterns').setData({ type:'FeatureCollection', features: allPatFeats })
+}
+
+// ── Survey vertex + handle drag markers ──────────────────────────────────────
+function createVertexMarkerEl() {
+  const el = document.createElement('div')
+  el.style.cssText = 'width:12px;height:12px;background:#22bb66;border:2px solid #fff;border-radius:50%;cursor:grab;'
+  return el
+}
+function createAngleMarkerEl() {
+  const el = document.createElement('div')
+  el.style.cssText = 'width:14px;height:14px;background:#FF9800;border:2px solid #fff;transform:rotate(45deg);cursor:grab;box-shadow:0 0 4px rgba(0,0,0,0.6);'
+  return el
+}
+function createSpacingMarkerEl() {
+  const el = document.createElement('div')
+  el.style.cssText = 'width:14px;height:10px;background:#e040fb;border:2px solid #fff;border-radius:3px;cursor:ns-resize;box-shadow:0 0 4px rgba(0,0,0,0.6);'
+  return el
+}
+
+function clearSurveyHandleMarkers() {
+  polyVertexMarkers.forEach(m => m.remove())
+  polyVertexMarkers = []
+  if (angleHandleMarker)   { angleHandleMarker.remove();   angleHandleMarker = null }
+  if (spacingHandleMarker) { spacingHandleMarker.remove(); spacingHandleMarker = null }
+  lastActiveSurveyId = null
+}
+
+function syncSurveyHandleMarkers() {
+  if (!map) return
+  const id = telemetry.activeSurveyId
+  const item = id !== null ? telemetry.missionItems.find(i => i.id === id) : null
+
+  // If no active survey or draw mode (just adding verts), only show vertex markers
+  if (!item) {
+    clearSurveyHandleMarkers()
+    return
+  }
+
+  // Rebuild vertex markers if survey changed or count changed
+  const poly = item.polygon
+  if (lastActiveSurveyId !== id || polyVertexMarkers.length !== poly.length) {
+    polyVertexMarkers.forEach(m => m.remove())
+    polyVertexMarkers = []
+    poly.forEach((pt, i) => {
+      const m = new maplibregl.Marker({ element: createVertexMarkerEl(), draggable: true })
+        .setLngLat([pt.lon, pt.lat])
+        .addTo(map)
+      m.on('drag', () => {
+        const ll = m.getLngLat()
+        telemetry.updateSurveyVertex(id, i, ll.lat, ll.lng)
+      })
+      polyVertexMarkers.push(m)
+    })
+    lastActiveSurveyId = id
+  } else {
+    // Just update positions
+    poly.forEach((pt, i) => {
+      if (polyVertexMarkers[i]) polyVertexMarkers[i].setLngLat([pt.lon, pt.lat])
+    })
+  }
+
+  // Angle handle (only if polygon closed)
+  if (poly.length >= 3) {
+    const aPos = angleHandlePosition(poly, item.lineAngle)
+    if (!angleHandleMarker) {
+      angleHandleMarker = new maplibregl.Marker({ element: createAngleMarkerEl(), draggable: true })
+        .setLngLat([aPos.lon, aPos.lat])
+        .addTo(map)
+      angleHandleMarker.on('drag', () => {
+        const c = polygonCentroid(item.polygon)
+        const ll = angleHandleMarker.getLngLat()
+        const R2D = 180 / Math.PI
+        const dE = (ll.lng - c.lon) * Math.cos(c.lat * Math.PI / 180) * 111320
+        const dN = (ll.lat - c.lat) * 111320
+        const angle = Math.atan2(dE, dN) * R2D
+        telemetry.updateMissionItem(id, { lineAngle: Math.round(angle) })
+      })
+    } else {
+      angleHandleMarker.setLngLat([aPos.lon, aPos.lat])
+    }
+
+    // Spacing handle
+    const sPos = spacingHandlePosition(poly, item.lineAngle, item.lineSpacing, item.lineExtension, item.startWP)
+    if (!spacingHandleMarker) {
+      spacingHandleMarker = new maplibregl.Marker({ element: createSpacingMarkerEl(), draggable: true })
+        .setLngLat([sPos.lon, sPos.lat])
+        .addTo(map)
+      spacingHandleMarker.on('drag', () => {
+        const c = polygonCentroid(item.polygon)
+        const ll = spacingHandleMarker.getLngLat()
+        const bearRad = item.lineAngle * Math.PI / 180
+        // lineAngle = bearing from North; perpendicular direction = bearing + 90°
+        // perpDist = |dE * cos(bearing) - dN * sin(bearing)|
+        const dE = (ll.lng - c.lon) * Math.cos(c.lat * Math.PI / 180) * 111320
+        const dN = (ll.lat - c.lat) * 111320
+        const perpDist = Math.abs(Math.cos(bearRad) * dE - Math.sin(bearRad) * dN)
+        const newSpacing = Math.max(5, Math.round(perpDist * 2))
+        telemetry.updateMissionItem(id, { lineSpacing: newSpacing })
+      })
+    } else {
+      spacingHandleMarker.setLngLat([sPos.lon, sPos.lat])
+    }
+  } else {
+    if (angleHandleMarker)   { angleHandleMarker.remove();   angleHandleMarker = null }
+    if (spacingHandleMarker) { spacingHandleMarker.remove(); spacingHandleMarker = null }
+  }
+}
+
+// Watch missionItems for survey layer updates
+watch(missionItems, () => {
+  updateSurveyLayers()
+  syncSurveyHandleMarkers()
+}, { deep: true })
+
+watch(() => telemetry.activeSurveyId, () => {
+  updateSurveyLayers()
+  syncSurveyHandleMarkers()
 })
 
 watch(currentThemeName, (val) => {
