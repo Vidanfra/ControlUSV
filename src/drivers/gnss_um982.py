@@ -506,7 +506,7 @@ class GnssNode:
                 self._connected = False
                 self._publish_status(SensorStatus.DISCONNECTED, str(e))
                 if not _start_error_logged:
-                    logger.warning(f"[GNSS Node] Cannot open {self._serial_port}: {e}. Retrying in {self._RETRY_INTERVAL}s...")
+                    logger.error(f"[GNSS Node] Cannot open {self._serial_port}: {e}. Retrying in {self._RETRY_INTERVAL}s...")
                     _start_error_logged = True
                 # Wait and retry, but keep checking commands
                 deadline = time.time() + self._RETRY_INTERVAL

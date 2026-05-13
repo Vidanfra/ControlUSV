@@ -287,7 +287,7 @@ class PowerNode:
                 self._connected = False
                 self._publish_status(SensorStatus.DISCONNECTED, str(e))
                 if not self._disconnection_logged:
-                    logger.warning(f"[Power Node] Cannot open {self._port}: {e}. Retrying...")
+                    logger.error(f"[Power Node] Cannot open {self._port}: {e}. Retrying...")
                     self._disconnection_logged = True
                 deadline = time.time() + self._RETRY_INTERVAL
                 while time.time() < deadline:

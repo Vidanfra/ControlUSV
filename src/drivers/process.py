@@ -4,6 +4,7 @@ from src.core.models import CommandMessage, CommandType
 from src.drivers.imu import ImuNode
 from src.drivers.power_pzem import PowerNode
 from src.drivers.gnss_um982 import GnssNode
+from src.drivers.esp32 import Esp32Node
 from src.core.config import settings
 from loguru import logger
 import time
@@ -56,6 +57,16 @@ class HALProcess(ServiceProcess):
         except Exception as e:
             logger.warning(f"Could not start Power Node: {e}. Power data will not be available.")
             self.power_node = None
+
+        # Start ESP32 Motor Controller Node in a background thread
+        try:
+            self.esp32_node = Esp32Node(port="/dev/esp32", baudrate=115200)
+            self.esp32_thread = threading.Thread(target=self.esp32_node.run, daemon=True)
+            self.esp32_thread.start()
+            logger.info("ESP32 Node started on /dev/esp32")
+        except Exception as e:
+            logger.error(f"Could not start ESP32 Node: {e}. Motor control will not be available.")
+            self.esp32_node = None
 
     def loop(self):
         # Process mute/unmute commands

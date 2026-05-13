@@ -289,7 +289,7 @@ class ImuNode:
                 self._connected = False
                 self._publish_status(SensorStatus.DISCONNECTED, str(e))
                 if not _start_error_logged:
-                    logger.warning(f"[IMU Node] Cannot open {self._serial_port}: {e}. Retrying in {self._RETRY_INTERVAL}s...")
+                    logger.error(f"[IMU Node] Cannot open {self._serial_port}: {e}. Retrying in {self._RETRY_INTERVAL}s...")
                     _start_error_logged = True
                 time.sleep(self._RETRY_INTERVAL)
                 # Recreate driver for next attempt
