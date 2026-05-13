@@ -567,8 +567,6 @@ onMounted(() => {
       followVehicle.value = false
   })
 
-  // Connect
-  
   // Start trail update loop (throttle updates to 5Hz)
   trailInterval = setInterval(updateTrail, 200)
 })
@@ -803,15 +801,26 @@ watch(currentThemeName, (val) => {
 })
 
 // Watch for changes in telemetry to update marker
+// When follow button is activated, zoom in once
+watch(followVehicle, (newVal) => {
+  if (newVal && map && lat.value && lon.value && lat.value !== 0 && lon.value !== 0) {
+    // User just pressed follow - zoom and center once
+    map.easeTo({
+      center: [lon.value, lat.value],
+      zoom: FOLLOW_ZOOM,
+      duration: 500
+    })
+  }
+})
+
+// Track vehicle position and center map while following (zoom only changed via follow watch)
 watch([lat, lon, () => telemetry.bestHeading], ([newLat, newLon, newHeading]) => {
   if (!map || !boatMarker) return
   if (newLat !== 0 && newLon !== 0) {
     boatMarker.setLngLat([newLon, newLat])
     if (followVehicle.value) {
+      // Only center map - preserve zoom level set by user or initial follow activation
       map.setCenter([newLon, newLat])
-      if (map.getZoom() > FOLLOW_ZOOM) {
-        map.setZoom(FOLLOW_ZOOM)
-      }
     }
   }
   boatMarker.setRotation(newHeading)

@@ -16,6 +16,10 @@
             {{ missionStart.lat.toFixed(6) }}, {{ missionStart.lon.toFixed(6) }}
           </span>
           <span class="item-coords dim" v-else>Not set</span>
+          <div class="wp-params">
+            <label>R:<input type="number" v-model.number="missionStart.radius" min="1" max="50" step="1" class="param-input" @change="patchItem(missionStart.id,{radius:missionStart.radius})" :disabled="wpRouteActive" /></label>
+            <label>m/s:<input type="number" v-model.number="missionStart.speed" min="0.1" max="5" step="0.1" class="param-input" @change="patchItem(missionStart.id,{speed:missionStart.speed})" :disabled="wpRouteActive" /></label>
+          </div>
         </div>
         <div class="item-actions">
           <button class="act-btn" title="Use current vehicle position" @click="useCurrentPosition" :disabled="wpRouteActive">⊕</button>
@@ -179,6 +183,10 @@
             {{ missionEnd.lat.toFixed(6) }}, {{ missionEnd.lon.toFixed(6) }}
           </span>
           <span class="item-coords dim" v-else>Not set</span>
+          <div class="wp-params">
+            <label>R:<input type="number" v-model.number="missionEnd.radius" min="1" max="50" step="1" class="param-input" @change="patchItem(missionEnd.id,{radius:missionEnd.radius})" :disabled="wpRouteActive" /></label>
+            <label>m/s:<input type="number" v-model.number="missionEnd.speed" min="0.1" max="5" step="0.1" class="param-input" @change="patchItem(missionEnd.id,{speed:missionEnd.speed})" :disabled="wpRouteActive" /></label>
+          </div>
         </div>
         <div class="item-actions">
           <button class="act-btn" title="Use current vehicle position" @click="useCurrentPositionEnd" :disabled="wpRouteActive">⊕</button>

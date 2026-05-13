@@ -5,16 +5,16 @@ import { generateLawnmower } from '../composables/useSurveyGenerator.js'
 let _itemIdCounter = 1
 function makeId() { return _itemIdCounter++ }
 
-function makeMissionStartItem(lat = 0, lon = 0) {
-  return { id: makeId(), type: 'mission_start', lat, lon, radius: 10, speed: 1.0 }
+function makeMissionStartItem(lat = 0, lon = 0, radius = 5, speed = 1.0) {
+  return { id: makeId(), type: 'mission_start', lat, lon, radius, speed }
 }
-function makeMissionEndItem() {
-  return { id: makeId(), type: 'mission_end', lat: null, lon: null, radius: 5, speed: 1.0 }
+function makeMissionEndItem(radius = 5, speed = 1.0) {
+  return { id: makeId(), type: 'mission_end', lat: null, lon: null, radius, speed }
 }
-function makeWaypointItem(lat = 0, lon = 0) {
-  return { id: makeId(), type: 'waypoint', lat, lon, radius: 5, speed: 1.0 }
+function makeWaypointItem(lat = 0, lon = 0, radius = 5, speed = 1.0) {
+  return { id: makeId(), type: 'waypoint', lat, lon, radius, speed }
 }
-function makeSurveyItem() {
+function makeSurveyItem(radius = 3, speed = 1.0) {
   return {
     id: makeId(),
     type: 'survey',
@@ -23,8 +23,8 @@ function makeSurveyItem() {
     lineSpacing: 30,      // metres between transects
     lineExtension: 10,    // metres overshoot past polygon
     startWP: 0,           // 0 or 1 (which corner to start from)
-    radius: 3,            // acceptance radius for generated WPs
-    speed: 1.0,
+    radius,               // acceptance radius for generated WPs
+    speed,
   }
 }
 
@@ -40,13 +40,22 @@ export const useTelemetryStore = defineStore('telemetry', {
     isArmed: false,
     mode: 'MANUAL',
 
+    // Mission plan defaults (persisted to localStorage)
+    missionDefaultWpRadius:     JSON.parse(localStorage.getItem('missionPlanDefaults'))?.wpRadius     ?? 5,
+    missionDefaultWpSpeed:      JSON.parse(localStorage.getItem('missionPlanDefaults'))?.wpSpeed      ?? 1.0,
+    missionDefaultSurveyRadius: JSON.parse(localStorage.getItem('missionPlanDefaults'))?.surveyRadius ?? 3,
+    missionDefaultSurveySpeed:  JSON.parse(localStorage.getItem('missionPlanDefaults'))?.surveySpeed  ?? 1.0,
+
     // ── Mission planner items (source of truth) ──────────────────────────
     // missionItems is the rich list; missionWaypoints (getter) is the flat
     // [{lat,lon,radius,speed}] array consumed by the backend.
-    missionItems: [
-      makeMissionStartItem(),
-      makeMissionEndItem(),
-    ],
+    missionItems: (() => {
+      const d = JSON.parse(localStorage.getItem('missionPlanDefaults')) || {}
+      return [
+        makeMissionStartItem(0, 0, d.wpRadius ?? 5, d.wpSpeed ?? 1.0),
+        makeMissionEndItem(d.wpRadius ?? 5, d.wpSpeed ?? 1.0),
+      ]
+    })(),
     // Map interaction state for the mission planner
     activeSurveyId: null,     // id of the survey item currently being edited
     surveyDrawMode: false,    // true = map clicks add polygon vertices
@@ -291,11 +300,24 @@ export const useTelemetryStore = defineStore('telemetry', {
     },
 
     // ── Mission-item actions ──────────────────────────────────────────────
+    setMissionPlanDefaults(config) {
+      if (config.wpRadius     !== undefined) this.missionDefaultWpRadius     = config.wpRadius
+      if (config.wpSpeed      !== undefined) this.missionDefaultWpSpeed      = config.wpSpeed
+      if (config.surveyRadius !== undefined) this.missionDefaultSurveyRadius = config.surveyRadius
+      if (config.surveySpeed  !== undefined) this.missionDefaultSurveySpeed  = config.surveySpeed
+      localStorage.setItem('missionPlanDefaults', JSON.stringify({
+        wpRadius:     this.missionDefaultWpRadius,
+        wpSpeed:      this.missionDefaultWpSpeed,
+        surveyRadius: this.missionDefaultSurveyRadius,
+        surveySpeed:  this.missionDefaultSurveySpeed,
+      }))
+    },
+
     addMissionItem(type) {
       const endIdx = this.missionItems.findIndex(i => i.type === 'mission_end')
       let item
-      if (type === 'waypoint') item = makeWaypointItem()
-      else if (type === 'survey') item = makeSurveyItem()
+      if (type === 'waypoint') item = makeWaypointItem(0, 0, this.missionDefaultWpRadius, this.missionDefaultWpSpeed)
+      else if (type === 'survey') item = makeSurveyItem(this.missionDefaultSurveyRadius, this.missionDefaultSurveySpeed)
       else return
       if (endIdx >= 0) {
         this.missionItems.splice(endIdx, 0, item)
@@ -339,8 +361,8 @@ export const useTelemetryStore = defineStore('telemetry', {
 
     clearMissionItems() {
       this.missionItems = [
-        makeMissionStartItem(this.lat, this.lon),
-        makeMissionEndItem(),
+        makeMissionStartItem(this.lat, this.lon, this.missionDefaultWpRadius, this.missionDefaultWpSpeed),
+        makeMissionEndItem(this.missionDefaultWpRadius, this.missionDefaultWpSpeed),
       ]
       this.activeSurveyId = null
       this.surveyDrawMode = false

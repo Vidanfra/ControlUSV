@@ -283,6 +283,54 @@
         </div>
       </section>
 
+      <!-- Mission Plan Defaults Section -->
+      <section class="settings-section">
+        <h3>Mission Plan</h3>
+        <p class="hint" style="margin-top:-10px; margin-bottom:15px">
+          Default values applied to newly created waypoints and survey patterns. Existing items are not affected.
+        </p>
+
+        <div class="setting-row">
+          <label for="mpWpRadius">Default Waypoint Acceptance Radius (m)</label>
+          <div class="input-group">
+            <input id="mpWpRadius" v-model.number="mpForm.wpRadius" type="number" min="1" max="100" step="1" class="text-input" />
+          </div>
+          <p class="hint">Applied to new waypoints and to the Mission Start / End items on reset.</p>
+        </div>
+
+        <div class="setting-row">
+          <label for="mpWpSpeed">Default Waypoint Speed (m/s)</label>
+          <div class="input-group">
+            <input id="mpWpSpeed" v-model.number="mpForm.wpSpeed" type="number" min="0.1" max="5" step="0.1" class="text-input" />
+          </div>
+          <p class="hint">Cross speed for new waypoints.</p>
+        </div>
+
+        <div class="setting-row">
+          <label for="mpSurveyRadius">Default Survey Acceptance Radius (m)</label>
+          <div class="input-group">
+            <input id="mpSurveyRadius" v-model.number="mpForm.surveyRadius" type="number" min="1" max="100" step="1" class="text-input" />
+          </div>
+          <p class="hint">Applied to generated survey transect waypoints.</p>
+        </div>
+
+        <div class="setting-row">
+          <label for="mpSurveySpeed">Default Survey Speed (m/s)</label>
+          <div class="input-group">
+            <input id="mpSurveySpeed" v-model.number="mpForm.surveySpeed" type="number" min="0.1" max="5" step="0.1" class="text-input" />
+          </div>
+          <p class="hint">Cross speed for new survey patterns.</p>
+        </div>
+
+        <div class="setting-row">
+          <div class="input-group">
+            <button class="btn btn-primary" @click="saveMissionDefaults" :disabled="!mpChanged">
+              Save Mission Defaults
+            </button>
+          </div>
+        </div>
+      </section>
+
       <!-- Reset Confirmation Dialog -->
       <div v-if="showResetConfirm" class="confirm-overlay" @click.self="showResetConfirm = false">
         <div class="confirm-dialog">
@@ -299,7 +347,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useTelemetryStore } from '../stores/telemetry'
 
 const telemetry = useTelemetryStore()
@@ -340,6 +388,14 @@ const gncForm = ref({
   tau_x: 150.0 // Kept in state but hidden in UI, as WP/Station panels control it
 })
 
+// Mission plan defaults form
+const mpForm = reactive({
+  wpRadius:     5,
+  wpSpeed:      1.0,
+  surveyRadius: 3,
+  surveySpeed:  1.0,
+})
+
 onMounted(() => {
   capacityInput.value = telemetry.batteryCapacityWh || 500
   // Load fail-safe config from store
@@ -369,6 +425,12 @@ onMounted(() => {
     gncForm.value.gamma = telemetry.gncConfig.gamma
     gncForm.value.tau_x = telemetry.gncConfig.tau_x
   }
+
+  // Load mission plan defaults from store
+  mpForm.wpRadius     = telemetry.missionDefaultWpRadius
+  mpForm.wpSpeed      = telemetry.missionDefaultWpSpeed
+  mpForm.surveyRadius = telemetry.missionDefaultSurveyRadius
+  mpForm.surveySpeed  = telemetry.missionDefaultSurveySpeed
 })
 
 const capacityChanged = computed(() => {
@@ -455,12 +517,26 @@ function saveGncConfig() {
   // Always include the current explicit tau_x so it doesn't revert unexpectedly
   telemetry.setGncConfig({ ...gncForm.value, tau_x: telemetry.gncConfig.tau_x })
 }
+
+const mpChanged = computed(() => {
+  return (
+    mpForm.wpRadius     !== telemetry.missionDefaultWpRadius     ||
+    mpForm.wpSpeed      !== telemetry.missionDefaultWpSpeed      ||
+    mpForm.surveyRadius !== telemetry.missionDefaultSurveyRadius ||
+    mpForm.surveySpeed  !== telemetry.missionDefaultSurveySpeed
+  )
+})
+
+function saveMissionDefaults() {
+  telemetry.setMissionPlanDefaults({ ...mpForm })
+}
 </script>
 
 <style scoped>
 .settings-container {
   display: flex;
   justify-content: center;
+  align-items: flex-start;
   height: calc(100vh - 50px);
   background-color: #121212;
   color: white;
