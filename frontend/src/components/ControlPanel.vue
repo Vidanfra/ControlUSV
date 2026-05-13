@@ -5,7 +5,8 @@
       v-if="!isArmed"
       class="btn arm-btn"
       @click="handleArm"
-      :disabled="!isConnected"
+      :disabled="!isConnected || rtSimActive"
+      :title="rtSimActive ? 'ARM disabled — simulation is active' : 'ARM vehicle'"
     >
       ARM
     </button>
@@ -53,7 +54,7 @@ import { useTelemetryStore } from '../stores/telemetry'
 import { storeToRefs } from 'pinia'
 
 const store = useTelemetryStore()
-const { isArmed, isConnected, vehicleMode, simMode } = storeToRefs(store)
+const { isArmed, isConnected, vehicleMode, simMode, rtSimActive } = storeToRefs(store)
 
 const modes = [
   { value: 'MANUAL', label: 'MANUAL' },

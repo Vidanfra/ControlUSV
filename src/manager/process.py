@@ -96,8 +96,11 @@ class ManagerProcess(ServiceProcess):
                 logger.info(f"Manager received command: {cmd.type}")
 
             if cmd.type == CommandType.ARM:
-                self.is_armed = True
-                logger.warning(">>> VEHICLE ARMED <<<")
+                if self.sim_mode == 'SIMULATION':
+                    logger.warning("Manager: ARM rejected — RT simulation is active")
+                else:
+                    self.is_armed = True
+                    logger.warning(">>> VEHICLE ARMED <<<")
                 
             elif cmd.type == CommandType.DISARM:
                 self.is_armed = False
@@ -122,7 +125,9 @@ class ManagerProcess(ServiceProcess):
                 # Arcade differential mixing: port = throttle + steering, stbd = throttle - steering
                 port_pct = max(-100, min(100, (throttle + steering) * 100))
                 stbd_pct = max(-100, min(100, (throttle - steering) * 100))
-                if self.is_armed and self.mode == VehicleMode.MANUAL.value:
+                # Only drive real hardware in REAL mode when ARMED.
+                # In SIM mode the GNC physics process handles the command.
+                if self.is_armed and self.mode == VehicleMode.MANUAL.value and self.sim_mode == 'REAL':
                     self.control_cmd_pub.publish({
                         'timestamp': time.time(),
                         'port_pct': port_pct,
@@ -184,6 +189,15 @@ class ManagerProcess(ServiceProcess):
                     self._save_settings()
                 except Exception as e:
                     logger.error(f"Invalid GNC config: {e}")
+
+            elif cmd.type == CommandType.START_RT_SIM:
+                self.sim_mode = 'SIMULATION'
+                self.is_armed = False   # Real motors must never run during simulation
+                logger.info("Manager: RT Simulation STARTED — vehicle auto-DISARMED")
+
+            elif cmd.type == CommandType.STOP_RT_SIM:
+                self.sim_mode = 'REAL'
+                logger.info("Manager: RT Simulation STOPPED — back to REAL mode")
 
         except Exception as e:
             logger.error(f"Failed to handle command: {e}")

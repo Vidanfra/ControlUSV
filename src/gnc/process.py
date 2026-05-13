@@ -181,22 +181,26 @@ class GNCProcess(ServiceProcess):
         # 3. Consume navigation state (normal mode relies on sensor spoof/real)
         self._consume_nav()
 
-        # 4. Fail-safe checks (only when armed in auto modes)
-        if self.is_armed and (self.wp_route_active or self.station_active):
+        # 4. Fail-safe checks (only in REAL mode when armed in auto modes)
+        if self.is_armed and not self.rt_sim_active and (self.wp_route_active or self.station_active):
             self._check_failsafes(now)
 
+        # Execution gate: REAL mode requires ARM; SIM mode uses rt_sim_active instead.
+        # This ensures real motors NEVER move unless the user explicitly ARMed in REAL mode.
+        can_execute = self.is_armed or self.rt_sim_active
+
         # 5. WP Route execution
-        if self.wp_route_active and self.is_armed:
+        if self.wp_route_active and can_execute:
             self._run_wp_route(now)
             return
 
         # 6. Station Keeping execution
-        if self.station_active and self.is_armed:
+        if self.station_active and can_execute:
             self._run_station_keeping(now)
             return
 
         # 7. Legacy AUTO mode (upload mission + AUTO)
-        if self.mode != "AUTO" or not self.is_armed:
+        if self.mode != "AUTO" or not can_execute:
             return
 
         if self.lat == 0.0 and self.lon == 0.0:
@@ -290,6 +294,9 @@ class GNCProcess(ServiceProcess):
                 logger.error(f"GNC: Failed to parse mission: {e}")
 
         elif cmd.type == CommandType.ARM:
+            if self.rt_sim_active:
+                logger.warning("GNC: ARM rejected — RT simulation is active; real motors cannot be armed during sim")
+                return
             self.is_armed = True
             logger.info("GNC: Armed")
 
@@ -347,16 +354,27 @@ class GNCProcess(ServiceProcess):
             logger.info(f"GNC: Home WP set: {self.home_wp}")
 
         elif cmd.type == CommandType.MANUAL_INPUT:
-            # When simulator is active and we are armed in manual mode,
-            # we must spoof the motor commands so the physics model actually moves.
-            if self.rt_sim_active and self.is_armed and self.mode == 'MANUAL':
+            # REAL mode: ARM is required to drive real motors.
+            # SIM mode: vehicle is always DISARMED; physics input works via rt_sim_active.
+            if (self.is_armed or self.rt_sim_active) and self.mode == 'MANUAL':
                 throttle = cmd.payload.get("throttle", 0.0)
                 steering = cmd.payload.get("steering", 0.0)
                 port_pct = max(-100, min(100, (throttle + steering) * 100))
                 stbd_pct = max(-100, min(100, (throttle - steering) * 100))
-                
+
                 self.current_n1 = (port_pct / 100.0) * SALPA1_N_MAX
                 self.current_n2 = (stbd_pct / 100.0) * SALPA1_N_MAX
+
+                # Publish so frontend indicators and charts update in real-time.
+                # source='sim' ensures hardware drivers skip this command in SIM mode.
+                self.control_cmd_pub.publish({
+                    'timestamp': time.time(),
+                    'port_pct': port_pct,
+                    'starboard_pct': stbd_pct,
+                    'n1_rads': self.current_n1,
+                    'n2_rads': self.current_n2,
+                    'source': 'sim' if self.rt_sim_active else 'manual',
+                })
 
         elif cmd.type == CommandType.SET_FAILSAFE_CONFIG:
             try:
@@ -444,6 +462,9 @@ class GNCProcess(ServiceProcess):
 
     def _start_wp_route(self, payload: dict):
         """Start WP Route following."""
+        if not self.is_armed and not self.rt_sim_active:
+            logger.warning("GNC: Cannot start WP Route — vehicle not armed (ARM first in REAL mode)")
+            return
         waypoints_raw = payload.get('waypoints', [])
         if len(waypoints_raw) < 2:
             logger.error("GNC: WP Route needs at least 2 waypoints")
@@ -596,6 +617,9 @@ class GNCProcess(ServiceProcess):
 
     def _start_station(self, payload: dict):
         """Start station keeping."""
+        if not self.is_armed and not self.rt_sim_active:
+            logger.warning("GNC: Cannot start Station Keeping — vehicle not armed (ARM first in REAL mode)")
+            return
         lat_s = payload.get('lat', self.lat)
         lon_s = payload.get('lon', self.lon)
         reaching_radius = payload.get('reaching_radius', 3.0)
@@ -825,8 +849,17 @@ class GNCProcess(ServiceProcess):
             return
 
         self.rt_sim_config = cfg
-        # Just start physics at the given origin 
         logger.info("GNC: Starting RT simulation (Physics Engine Only)")
+
+        # Safety: force DISARM before sim so real motors cannot be activated.
+        if self.is_armed:
+            self.is_armed = False
+            self.cmd_pub.publish(CommandMessage(
+                timestamp=time.time(),
+                type=CommandType.DISARM,
+                payload={'_source': 'gnc_internal'},
+            ).model_dump())
+            logger.warning("GNC: Auto-DISARMED — real motors cannot run during simulation")
 
         lat0 = cfg.current_lat
         lon0 = cfg.current_lon

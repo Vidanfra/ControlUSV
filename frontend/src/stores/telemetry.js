@@ -385,8 +385,8 @@ export const useTelemetryStore = defineStore('telemetry', {
     },
 
     sendCommand(type, payload = {}) {
-      if (!this.isConnected || !this.socket) {
-        console.warn("Cannot send command: WebSocket disconnected")
+      if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+        console.warn(`Cannot send command '${type}': WebSocket not open (readyState=${this.socket?.readyState})`)
         return
       }
       
@@ -411,6 +411,11 @@ export const useTelemetryStore = defineStore('telemetry', {
       this.simMode = newMode
       
       if (newMode === 'SIMULATION') {
+        // Safety: disarm before starting simulation so real motors cannot activate.
+        if (this.isArmed) {
+          this.sendCommand('DISARM', {})
+          this.isArmed = false
+        }
         // Start RT Simulator continuously
         const lat = this.simStartWaypoint ? this.simStartWaypoint.lat : this.simDefaultLat
         const lon = this.simStartWaypoint ? this.simStartWaypoint.lon : this.simDefaultLon
@@ -669,18 +674,37 @@ export const useTelemetryStore = defineStore('telemetry', {
     },
 
     connectWebSocket() {
-      // Avoid multiple connections
-      if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      // Avoid duplicate connections: block if already open OR still connecting.
+      if (this.socket && (
+        this.socket.readyState === WebSocket.OPEN ||
+        this.socket.readyState === WebSocket.CONNECTING
+      )) {
         return
       }
 
+      // Neutralise any previous socket's event handlers so orphaned sockets
+      // can no longer update store state or schedule reconnects.
+      if (this.socket) {
+        const stale = this.socket
+        stale.onopen    = null
+        stale.onmessage = null
+        stale.onclose   = null
+        stale.onerror   = null
+        // If still open/connecting, close it cleanly.
+        if (stale.readyState === WebSocket.OPEN || stale.readyState === WebSocket.CONNECTING) {
+          stale.close()
+        }
+      }
+
       console.log('Attempting to connect to WebSocket...')
-      this.socket = new WebSocket(
+      const ws = new WebSocket(
         // Dynamically determine protocol (ws or wss) and host
         `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8000/ws`
       )
+      this.socket = ws
 
-      this.socket.onopen = () => {
+      ws.onopen = () => {
+        if (this.socket !== ws) return   // superseded by a newer socket
         this.isConnected = true
         console.log('WebSocket Connected')
         // Sync all persisted user settings to backend on every connect.
@@ -704,7 +728,8 @@ export const useTelemetryStore = defineStore('telemetry', {
         }
       }
 
-      this.socket.onmessage = (event) => {
+      ws.onmessage = (event) => {
+        if (this.socket !== ws) return   // orphaned socket — discard
         try {
           const payload = JSON.parse(event.data)
           // Payload structure: { topic: "...", data: { ... } }
@@ -903,7 +928,8 @@ export const useTelemetryStore = defineStore('telemetry', {
         }
       }
 
-      this.socket.onclose = () => {
+      ws.onclose = () => {
+        if (this.socket !== ws) return   // orphaned socket — ignore
         this.isConnected = false
         console.warn('WebSocket Disconnected. Reconnecting in 3s...')
         setTimeout(() => {
@@ -911,11 +937,12 @@ export const useTelemetryStore = defineStore('telemetry', {
         }, 3000)
       }
 
-      this.socket.onerror = (error) => {
+      ws.onerror = (error) => {
+        if (this.socket !== ws) return   // orphaned socket — ignore
         console.error('WebSocket Error:', error)
-        // Ensure we close to trigger onclose and reconnect logic
-        if (this.socket.readyState !== WebSocket.CLOSED) {
-            this.socket.close()
+        // Close to trigger onclose and reconnect logic
+        if (ws.readyState !== WebSocket.CLOSED) {
+          ws.close()
         }
       }
     }

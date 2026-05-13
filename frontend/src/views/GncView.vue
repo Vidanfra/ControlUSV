@@ -158,13 +158,28 @@ const headingChartData = computed(() => ({
   ]
 }))
 
-const motorChartData = computed(() => ({
-  labels: filteredHistory.value.map(pt => pt.label),
-  datasets: [
-    { label: 'Port' + simSuffix(), borderColor: '#FF4444', data: filteredHistory.value.map(pt => pt.port), borderWidth: 2, tension: 0.1 },
-    { label: 'Starboard' + simSuffix(), borderColor: '#00C851', data: filteredHistory.value.map(pt => pt.starboard), borderWidth: 2, tension: 0.1 }
-  ]
-}))
+const motorChartData = computed(() => {
+  const isSim = telemetry.dataSource === 'sim'
+  return {
+    labels: filteredHistory.value.map(pt => pt.label),
+    datasets: [
+      {
+        label: 'Port' + simSuffix(),
+        borderColor: isSim ? '#FF8800' : '#FF4444',
+        data: filteredHistory.value.map(pt => pt.port),
+        borderWidth: 2,
+        tension: 0.1
+      },
+      {
+        label: 'Starboard' + simSuffix(),
+        borderColor: isSim ? '#FFD700' : '#00C851',
+        data: filteredHistory.value.map(pt => pt.starboard),
+        borderWidth: 2,
+        tension: 0.1
+      }
+    ]
+  }
+})
 
 </script>
 

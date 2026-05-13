@@ -126,7 +126,7 @@
       v-if="!wpRouteActive"
       class="btn start-btn"
       @click="start"
-      :disabled="!isConnected || !isArmed || missionWaypoints.length === 0"
+      :disabled="!isConnected || (!isArmed && !rtSimActive) || missionWaypoints.length === 0"
     >
       START
     </button>
@@ -147,7 +147,7 @@ import { useTelemetryStore } from '../stores/telemetry'
 import { storeToRefs } from 'pinia'
 
 const store = useTelemetryStore()
-const { lat, lon, isConnected, isArmed, missionWaypoints, wpRouteActive, homeWaypoint, simMode } = storeToRefs(store)
+const { lat, lon, isConnected, isArmed, rtSimActive, missionWaypoints, wpRouteActive, homeWaypoint, simMode } = storeToRefs(store)
 
 const direction = ref('forward')
 const completion = ref('stop')

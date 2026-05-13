@@ -50,7 +50,7 @@ export function useManualControl() {
   const startSending = () => {
     if (sendInterval) return
     sendInterval = setInterval(() => {
-      if (vehicleMode.value === 'MANUAL' && isArmed.value) {
+      if (vehicleMode.value === 'MANUAL' && (isArmed.value || store.rtSimActive)) {
         store.sendManualInput(throttle.value, steering.value)
         store.manualThrottle = throttle.value
         store.manualSteering = steering.value

@@ -48,6 +48,12 @@
         {{ stbdPct }}%
       </text>
 
+      <!-- SIM mode badge — shown above compass when dataSource is 'sim' -->
+      <rect v-if="isSim" :x="CX - 22" :y="CY - CR - 24" width="44" height="16"
+            rx="3" fill="#FF8800" opacity="0.9" />
+      <text v-if="isSim" :x="CX" :y="CY - CR - 13" text-anchor="middle"
+            fill="#000" font-size="9" font-weight="700" font-family="sans-serif">SIM</text>
+
       <!-- ====== COMPASS CIRCLE ====== -->
       <!-- Outer ring -->
       <circle :cx="CX" :cy="CY" :r="CR" fill="rgba(8,8,8,0.55)" stroke="#555" stroke-width="1.2" />
@@ -91,6 +97,9 @@ import { useTelemetryStore } from '../stores/telemetry'
 
 const telemetry = useTelemetryStore()
 
+// SIM mode flag — drives color scheme
+const isSim = computed(() => telemetry.dataSource === 'sim')
+
 // ── SVG Layout Constants ──
 const W = 320
 const H = 230
@@ -125,12 +134,18 @@ const desiredHeadingDeg = computed(() => {
 // ── Port bar fill ──
 const portFillH = computed(() => Math.abs(portPct.value) / 100 * BAR_HALF)
 const portFillY = computed(() => portPct.value >= 0 ? BAR_MID - portFillH.value : BAR_MID)
-const portColor = computed(() => portPct.value >= 0 ? '#00E5FF' : '#e74c3c')
+const portColor = computed(() => {
+  if (portPct.value >= 0) return isSim.value ? '#FF8800' : '#00E5FF'
+  return '#e74c3c'
+})
 
 // ── Stbd bar fill ──
 const stbdFillH = computed(() => Math.abs(stbdPct.value) / 100 * BAR_HALF)
 const stbdFillY = computed(() => stbdPct.value >= 0 ? BAR_MID - stbdFillH.value : BAR_MID)
-const stbdColor = computed(() => stbdPct.value >= 0 ? '#00E5FF' : '#e74c3c')
+const stbdColor = computed(() => {
+  if (stbdPct.value >= 0) return isSim.value ? '#FF8800' : '#00E5FF'
+  return '#e74c3c'
+})
 
 // ── Bar scale ticks (25%, 50%, 75%, 100%) ──
 const barTicks = [25, 50, 75, 100].map(pct => ({

@@ -576,7 +576,6 @@ onMounted(() => {
 onUnmounted(() => {
     if (trailInterval) clearInterval(trailInterval)
     clearSurveyHandleMarkers()
-  telemetry.connectWebSocket()
 })
 
 // ── Survey draw cursor ────────────────────────────────────────────────────────

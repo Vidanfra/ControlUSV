@@ -80,7 +80,7 @@
       v-if="!stationActive"
       class="btn start-btn"
       @click="start"
-      :disabled="!isConnected || !isArmed || !stationWaypoint"
+      :disabled="!isConnected || (!isArmed && !rtSimActive) || !stationWaypoint"
     >
       START
     </button>
@@ -101,7 +101,7 @@ import { useTelemetryStore } from '../stores/telemetry'
 import { storeToRefs } from 'pinia'
 
 const store = useTelemetryStore()
-const { lat, lon, isConnected, isArmed, stationWaypoint, stationReachingRadius, stationRadius, stationActive, simMode } = storeToRefs(store)
+const { lat, lon, isConnected, isArmed, rtSimActive, stationWaypoint, stationReachingRadius, stationRadius, stationActive, simMode } = storeToRefs(store)
 
 const stationRadiusLocal = ref(stationRadius.value)
 const reachingRadius = ref(stationReachingRadius.value)

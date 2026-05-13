@@ -11,7 +11,7 @@
     </div>
 
     <!-- Manual mode HUD (throttle/steering indicator) -->
-    <div v-if="vehicleMode === 'MANUAL' && isArmed" class="manual-hud">
+    <div v-if="vehicleMode === 'MANUAL' && (isArmed || rtSimActive)" class="manual-hud">
       <div class="hud-row">
         <span class="hud-label">THR</span>
         <div class="hud-bar">
@@ -63,7 +63,7 @@ import { useTelemetryStore } from '../stores/telemetry'
 import { useManualControl } from '../composables/useManualControl'
 
 const store = useTelemetryStore()
-const { vehicleMode, isArmed, manualThrottle, manualSteering, alertBanners } = storeToRefs(store)
+const { vehicleMode, isArmed, rtSimActive, manualThrottle, manualSteering, alertBanners } = storeToRefs(store)
 
 // Activate manual control keyboard listeners
 useManualControl()

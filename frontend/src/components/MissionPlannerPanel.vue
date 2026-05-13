@@ -246,7 +246,7 @@
 
     <!-- ─── Start / Stop ─────────────────────────────────────────── -->
     <button v-if="!wpRouteActive" class="btn start-btn"
-      @click="start" :disabled="!isConnected || !isArmed || missionWaypoints.length === 0">
+      @click="start" :disabled="!isConnected || (!isArmed && !rtSimActive) || missionWaypoints.length === 0">
       START MISSION ({{ missionWaypoints.length }} WPs)
     </button>
     <button v-else class="btn stop-btn" @click="stop" :disabled="!isConnected">
@@ -272,7 +272,7 @@ import { storeToRefs } from 'pinia'
 import { generateLawnmower } from '../composables/useSurveyGenerator.js'
 
 const store = useTelemetryStore()
-const { isConnected, isArmed, missionWaypoints, wpRouteActive, simMode } = storeToRefs(store)
+const { isConnected, isArmed, rtSimActive, missionWaypoints, wpRouteActive, simMode } = storeToRefs(store)
 
 // ── Local UI state ────────────────────────────────────────────────────────────
 const direction = ref('forward')
