@@ -75,6 +75,7 @@ class GncConfig(BaseModel):
     delta: float = Field(5.0, gt=0, description="ALOS Look-ahead distance (must be > 0)")
     gamma: float = Field(0.0, ge=0, description="ALOS Adaptive gain (must be >= 0)")
     tau_x: float = Field(150.0, gt=0, description="Nominal surge force (must be > 0)")
+    e_x_threshold_deg: float = Field(30.0, gt=0, le=90, description="PID anti-windup threshold [deg] (integrator only active when heading error < this value)")
 
 
 class ManualInputMessage(BaseModel):

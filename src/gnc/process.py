@@ -55,6 +55,7 @@ def _make_default_controller(config: GncConfig = None):
         wn_d=config.wn_ref, zeta_d=config.zeta_ref,
         delta=config.delta, gamma=config.gamma,
         tau_X=config.tau_x,
+        e_x_threshold_deg=config.e_x_threshold_deg,
     )
 
 

@@ -30,7 +30,7 @@ class HeadingAutopilot:
     """
 
     def __init__(self, m_yaw, wn=4.0, zeta=0.5, wn_d=1.0, zeta_d=1.0,
-                 r_max_deg=1000.0):
+                 r_max_deg=1000.0, e_x_threshold_deg=30.0):
         """
         Args:
             m_yaw: Yaw moment of inertia including added mass [kg·m²]
@@ -39,6 +39,7 @@ class HeadingAutopilot:
             wn_d: Reference model natural frequency [rad/s]
             zeta_d: Reference model damping ratio [-]
             r_max_deg: Maximum yaw rate [deg/s]
+            e_x_threshold_deg: Anti-windup threshold [deg]. Integrator only active when |e_x| < this value.
         """
         self.m_yaw = m_yaw
         self.wn = wn
@@ -46,6 +47,7 @@ class HeadingAutopilot:
         self.wn_d = wn_d
         self.zeta_d = zeta_d
         self.r_max = math.radians(r_max_deg)
+        self.e_x_threshold = math.radians(e_x_threshold_deg)
 
         # Nomoto model parameters
         T = 1.0
@@ -98,7 +100,8 @@ class HeadingAutopilot:
                 self.m_yaw, self.d, self.k,
                 self.wn_d, self.zeta_d,
                 self.wn, self.zeta,
-                psi_ref, self.r_max, sampleTime
+                psi_ref, self.r_max, sampleTime,
+                e_x_threshold=self.e_x_threshold
             )
 
         return tau_N
@@ -327,7 +330,7 @@ class GNCController:
 
     def __init__(self, m_yaw, B_inv, n_max, n_min,
                  wn=4.0, zeta=0.5, wn_d=1.0, zeta_d=1.0,
-                 delta=5.0, gamma=0.0, tau_X=150.0):
+                 delta=5.0, gamma=0.0, tau_X=150.0, e_x_threshold_deg=30.0):
         """
         Args:
             m_yaw: Yaw moment of inertia [kg·m²]
@@ -339,8 +342,9 @@ class GNCController:
             delta: ALOS look-ahead distance [m]
             gamma: ALOS adaptive gain
             tau_X: Default surge force [N]
+            e_x_threshold_deg: Anti-windup threshold [deg]
         """
-        self.autopilot = HeadingAutopilot(m_yaw, wn, zeta, wn_d, zeta_d)
+        self.autopilot = HeadingAutopilot(m_yaw, wn, zeta, wn_d, zeta_d, e_x_threshold_deg=e_x_threshold_deg)
         self.path_follower = PathFollower(delta, gamma)
         self.B_inv = B_inv
         self.n_max = n_max
@@ -381,13 +385,10 @@ class GNCController:
         r = nu[5]
         tau_N = self.autopilot.compute(psi, r, psi_d, sampleTime)
 
-        # 3. Allocation — convert to propeller speeds
-        n1, n2 = controlAllocation(self.tau_X, tau_N, self.B_inv)
-
-        # Saturate propeller speeds
-        from src.gnc.gnc_utils import sat
-        n1 = sat(n1, self.n_min, self.n_max)
-        n2 = sat(n2, self.n_min, self.n_max)
+        # 3. Allocation — convert to propeller speeds with saturation
+        # Pass motor limits so controlAllocation clamps to realistic values
+        # (this is critical for accurate thrust feedback in the PID)
+        n1, n2 = controlAllocation(self.tau_X, tau_N, self.B_inv, n_max=self.n_max, n_min=self.n_min)
 
         # Store debug info
         self.last_psi_d = psi_d

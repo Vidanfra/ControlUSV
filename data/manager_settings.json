@@ -6,7 +6,8 @@
     "zeta_ref": 2.0,
     "delta": 5.0,
     "gamma": 0.0,
-    "tau_x": 148.89600000000002
+    "tau_x": 148.89600000000002,
+    "e_x_threshold_deg": 30.0
   },
   "failsafe_config": {
     "min_battery_pct": 25.0,

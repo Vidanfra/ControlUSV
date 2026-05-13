@@ -359,5 +359,5 @@ class Salpa1Model:
             psi_ref, self.r_max, sampleTime
         )
 
-        n1, n2 = controlAllocation(self.tauX, tau_N, self.Binv)
+        n1, n2 = controlAllocation(self.tauX, tau_N, self.Binv, n_max=self.n_max, n_min=self.n_min)
         return np.array([n1, n2], float)
