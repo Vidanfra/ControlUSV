@@ -808,6 +808,12 @@ export const useTelemetryStore = defineStore('telemetry', {
             }
           }
           else if (topic === 'system/status') {
+             // ── Watchdog crash alerts ────────────────────────────────────
+             if (data.watchdog_alert) {
+               const type = data.level === 'critical' ? 'error' : 'warning'
+               this.addAlert(type, `[${data.process}] ${data.message}`)
+               return
+             }
              this.isArmed = data.is_armed
              this.mode = data.mode
              if (data.mode) this.vehicleMode = data.mode
