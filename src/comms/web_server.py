@@ -39,8 +39,14 @@ class ConnectionManager:
             try:
                 await connection.send_text(message)
             except Exception as e:
-                logger.warning(f"Failed to send to client: {e}")
+                logger.warning(f"Failed to send to client, removing: {e}")
                 self.disconnect(connection)
+                # Close the WebSocket explicitly so the client's onclose fires
+                # and it reconnects automatically (prevents zombie connections).
+                try:
+                    await connection.close()
+                except Exception:
+                    pass  # Already broken; ignore close errors
 
 manager = ConnectionManager()
 
@@ -48,75 +54,70 @@ manager = ConnectionManager()
 app = FastAPI(title="USV Control System")
 
 # --- Background Task: ZMQ Consumer ---
+_ZMQ_URL = f"tcp://127.0.0.1:{settings.ZMQ_PORT + 1}"
+_ZMQ_TOPICS = [
+    Topics.SENSOR_GNSS,
+    Topics.SENSOR_IMU,
+    Topics.SENSOR_BATTERY,
+    Topics.SENSOR_STATUS,
+    Topics.STATE_ESTIMATION,
+    Topics.SYSTEM_STATUS,
+    Topics.CONTROL_DEBUG,
+    Topics.CONTROL_CMD,
+    Topics.SIM_STATUS,
+]
+
 async def consume_zmq():
     """
     Listens to ZMQ topics and broadcasts them to WebSocket clients.
-    """
-    ctx = zmq.asyncio.Context()
-    sub_socket = ctx.socket(zmq.SUB)
-    
-    # Connect to the XPUB port of the Broker
-    # Note: Using localhost for now since Comms and Broker are on the same machine
-    zmq_url = f"tcp://127.0.0.1:{settings.ZMQ_PORT + 1}"
-    sub_socket.connect(zmq_url)
-    
-    # Subscribe to relevant topics
-    topics_to_subscribe = [
-        Topics.SENSOR_GNSS, 
-        Topics.SENSOR_IMU,
-        Topics.SENSOR_BATTERY,
-        Topics.SENSOR_STATUS,
-        Topics.STATE_ESTIMATION, 
-        Topics.SYSTEM_STATUS,
-        Topics.CONTROL_DEBUG,
-        Topics.CONTROL_CMD,
-        Topics.SIM_STATUS,
-    ]
-    for t in topics_to_subscribe:
-        sub_socket.setsockopt_string(zmq.SUBSCRIBE, t.value)
-        
-    logger.info(f"Web Server ZMQ Consumer connected to {zmq_url} subscribing to {[t.value for t in topics_to_subscribe]}")
 
-    try:
-        while True:
-            # Receive multipart: [topic, payload] or string "topic payload"
-            # Our Publisher sends "topic json_payload" string
-            if sub_socket.poll(100): # Check if message available with short timeout to allow loop yielding
-                msg = await sub_socket.recv_string()
-                
-                # We can broadcast the raw message directly to frontend, 
-                # and let the frontend parse "topic payload"
-                # OR we can parse it here and send a cleaner JSON object.
-                # Let's send a JSON object: {topic: "...", data: ...}
+    The outer ``while True`` restart loop means any unexpected ZMQ error
+    (e.g. a transient socket fault on backend restart) is logged and the
+    subscriber is recreated automatically — the task never dies silently.
+    """
+    while True:
+        ctx        = None
+        sub_socket = None
+        try:
+            ctx        = zmq.asyncio.Context()
+            sub_socket = ctx.socket(zmq.SUB)
+            sub_socket.connect(_ZMQ_URL)
+            for t in _ZMQ_TOPICS:
+                sub_socket.setsockopt_string(zmq.SUBSCRIBE, t.value)
+            logger.info(f"[Web Server] ZMQ consumer subscribed on {_ZMQ_URL}")
+
+            while True:
+                # poll() on a zmq.asyncio socket is a coroutine — must be awaited.
+                # Returns the ready event mask (truthy) or 0 on timeout.
+                if await sub_socket.poll(100):
+                    msg = await sub_socket.recv_string()
+                    try:
+                        topic_str, payload_str = msg.split(" ", 1)
+                        data       = json.loads(payload_str)
+                        ws_payload = json.dumps({"topic": topic_str, "data": data})
+                        await manager.broadcast(ws_payload)
+                    except (ValueError, json.JSONDecodeError) as e:
+                        logger.warning(f"[Web Server] Failed to parse ZMQ message: {e}")
+                # poll timed out → loop again; asyncio event loop yielded during wait
+
+        except asyncio.CancelledError:
+            logger.info("[Web Server] ZMQ consumer task cancelled")
+            return  # clean shutdown — do not restart
+        except Exception as e:
+            logger.error(f"[Web Server] ZMQ consumer crashed: {e}. Restarting in 2 s...")
+        finally:
+            if sub_socket is not None:
                 try:
-                    topic_str, payload_str = msg.split(" ", 1)
-                    # Optimization: sending valid JSON string directly inside a wrapper might avoid double parsing
-                    # but for simplicity let's load and dump or just string format
-                    # To be robust/simple for frontend:
-                    # websocket_msg = json.dumps({"topic": topic_str, "payload": json.loads(payload_str)})
-                    
-                    # Alternatively, just forward the raw string "topic {json}" and handle in JS
-                    # Let's clean it up slightly for the frontend dev experience
-                    data = json.loads(payload_str)
-                    ws_payload = json.dumps({"topic": topic_str, "data": data})
-                    
-                    # Log sensor status messages for debugging
-                    #if "sensor/status" in topic_str:
-                        #logger.info(f"[Web Server] Broadcasting sensor/status: {data}")
-                    
-                    await manager.broadcast(ws_payload)
-                    
-                except (ValueError, json.JSONDecodeError) as e:
-                    # Malformed message
-                    logger.warning(f"[Web Server] Failed to parse message: {e}")
-            else:
-                await asyncio.sleep(0.01)
-                
-    except asyncio.CancelledError:
-        logger.info("ZMQ Consumer task cancelled")
-    finally:
-        sub_socket.close()
-        ctx.term()
+                    sub_socket.close()
+                except Exception:
+                    pass
+            if ctx is not None:
+                try:
+                    ctx.term()
+                except Exception:
+                    pass
+
+        await asyncio.sleep(2.0)  # brief pause before creating a fresh subscriber
 
 @app.on_event("startup")
 async def startup_event():
@@ -129,7 +130,7 @@ async def startup_event():
     cmd_ctx = zmq.Context()
     cmd_pub = cmd_ctx.socket(zmq.PUB)
     cmd_pub.connect(f"tcp://127.0.0.1:{settings.ZMQ_PORT}")
-    import time; time.sleep(0.2)   # allow ZMQ connection establishment
+    await asyncio.sleep(0.2)   # allow ZMQ connection establishment (async — does not block event loop)
     logger.info("Command publisher connected to ZMQ broker")
 
     # Run the ZMQ consumer in the background

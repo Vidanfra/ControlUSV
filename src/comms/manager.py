@@ -26,6 +26,9 @@ class CommsProcess(ServiceProcess):
         # To keep it simple and avoid conflict/duplication:
         try:
             uvicorn.run(app, host="0.0.0.0", port=8000, log_config=None)
+        except KeyboardInterrupt:
+            # Ctrl+C pressed — exit cleanly without traceback
+            pass
         except Exception as e:
             logger.error(f"Web server crashed: {e}")
         finally:

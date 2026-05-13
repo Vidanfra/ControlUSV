@@ -728,30 +728,38 @@ export const useTelemetryStore = defineStore('telemetry', {
       ws.onopen = () => {
         if (this.socket !== ws) return   // superseded by a newer socket
         this.isConnected = true
-        console.log('WebSocket Connected')
-        // Sync all persisted user settings to backend on every connect.
-        // This ensures the backend always reflects the user's last-saved values,
-        // regardless of whether the backend was restarted.
-        if (localStorage.getItem('gncConfig')) {
-          this.sendCommand('SET_GNC_CONFIG', this.gncConfig)
-        }
-        if (localStorage.getItem('failsafeConfig')) {
-          this.sendCommand('SET_FAILSAFE_CONFIG', {
-            min_battery_pct: this.failsafeMinBattery,
-            min_gnss_fix:    this.failsafeMinGnssFix,
-            comm_timeout:    this.failsafeCommTimeout,
-            comm_action:     this.failsafeCommAction,
-            ins_timeout:     this.failsafeInsTimeout,
-            ins_action:      this.failsafeInsAction,
-          })
-        }
-        if (this.homeWaypoint) {
-          this.sendCommand('SET_HOME_WP', this.homeWaypoint)
-        }
+        console.log('WebSocket Connected — waiting for system/status to sync config from backend')
+        // Do NOT push localStorage values to the backend here.
+        // The backend is authoritative: it persists config to manager_settings.json and
+        // reloads it on every restart. Pushing stale localStorage values would silently
+        // overwrite any backend-side changes made between sessions (B-09).
+        // Config will be received via the first system/status heartbeat below.
+
+        // ── Zombie-connection detector (B-15) ─────────────────────────────────
+        // If we are "connected" (onclose has not fired) but no messages have been
+        // received for 10 seconds, the WebSocket is in a zombie state:
+        //   - The server dropped us from its broadcast list (e.g. after a failed
+        //     send_text()) but never sent a close frame.
+        //   - Commands still reach the backend (TCP is alive), but the frontend
+        //     never receives telemetry updates.
+        // Forcing ws.close() here triggers onclose → automatic reconnect.
+        let _lastMsgTime = Date.now()
+        const _heartbeatTimer = setInterval(() => {
+          if (this.socket !== ws) { clearInterval(_heartbeatTimer); return }
+          if (this.isConnected && Date.now() - _lastMsgTime > 10000) {
+            console.warn('[WS] No data received for 10 s — zombie connection detected, forcing reconnect')
+            clearInterval(_heartbeatTimer)
+            ws.close()
+          }
+        }, 2000)
+
+        // Expose updater so onmessage can reset the timer
+        ws._updateLastMsgTime = () => { _lastMsgTime = Date.now() }
       }
 
       ws.onmessage = (event) => {
         if (this.socket !== ws) return   // orphaned socket — discard
+        if (ws._updateLastMsgTime) ws._updateLastMsgTime()  // reset zombie-detector timer
         try {
           const payload = JSON.parse(event.data)
           // Payload structure: { topic: "...", data: { ... } }
@@ -824,27 +832,36 @@ export const useTelemetryStore = defineStore('telemetry', {
              if (data.station_radius !== undefined && this.stationActive) this.stationRadius = data.station_radius
              if (data.wp_route_active !== undefined) this.wpRouteActive = data.wp_route_active
              if (data.home_wp) {
-               // Only accept home_wp from backend if user has not set one locally.
-               // User-set value (persisted in localStorage) always takes priority.
-               if (!localStorage.getItem('homeWaypoint')) this.homeWaypoint = data.home_wp
+               // Backend is authoritative. Always accept home_wp and update localStorage
+               // so the next reload starts with the current backend value (fixes B-09).
+               this.homeWaypoint = data.home_wp
+               localStorage.setItem('homeWaypoint', JSON.stringify(data.home_wp))
              }
              if (data.gnss_fix_type !== undefined) this.gnssFixType = data.gnss_fix_type
              if (data.battery_level_pct !== undefined) this.batteryLevelPct = data.battery_level_pct
              if (data.failsafe_config) {
-               // Only sync failsafe config from backend if user has no locally-persisted values.
-               if (!localStorage.getItem('failsafeConfig')) {
-                 const fs = data.failsafe_config
-                 if (fs.min_battery_pct !== undefined) this.failsafeMinBattery = fs.min_battery_pct
-                 if (fs.min_gnss_fix !== undefined) this.failsafeMinGnssFix = fs.min_gnss_fix
-                 if (fs.comm_timeout !== undefined) this.failsafeCommTimeout = fs.comm_timeout
-                 if (fs.comm_action !== undefined) this.failsafeCommAction = fs.comm_action
-                 if (fs.ins_timeout !== undefined) this.failsafeInsTimeout = fs.ins_timeout
-                 if (fs.ins_action !== undefined) this.failsafeInsAction = fs.ins_action
-               }
+               // Always sync failsafe config from backend and update localStorage.
+               // Backend is authoritative; localStorage is just a display cache (fixes B-09).
+               const fs = data.failsafe_config
+               if (fs.min_battery_pct !== undefined) this.failsafeMinBattery = fs.min_battery_pct
+               if (fs.min_gnss_fix !== undefined) this.failsafeMinGnssFix = fs.min_gnss_fix
+               if (fs.comm_timeout !== undefined) this.failsafeCommTimeout = fs.comm_timeout
+               if (fs.comm_action !== undefined) this.failsafeCommAction = fs.comm_action
+               if (fs.ins_timeout !== undefined) this.failsafeInsTimeout = fs.ins_timeout
+               if (fs.ins_action !== undefined) this.failsafeInsAction = fs.ins_action
+               localStorage.setItem('failsafeConfig', JSON.stringify({
+                 min_battery_pct: this.failsafeMinBattery,
+                 min_gnss_fix:    this.failsafeMinGnssFix,
+                 comm_timeout:    this.failsafeCommTimeout,
+                 comm_action:     this.failsafeCommAction,
+                 ins_timeout:     this.failsafeInsTimeout,
+                 ins_action:      this.failsafeInsAction,
+               }))
              }
              if (data.gnc_config) {
-               // Only sync gnc_config from backend if user has no locally-persisted values.
-               if (!localStorage.getItem('gncConfig')) this.gncConfig = data.gnc_config
+               // Always sync gnc_config from backend and update localStorage (fixes B-09).
+               this.gncConfig = data.gnc_config
+               localStorage.setItem('gncConfig', JSON.stringify(data.gnc_config))
              }
           }
           else if (topic === 'gnc/control_debug') {
