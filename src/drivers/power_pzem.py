@@ -324,12 +324,13 @@ class PowerNode:
                         self._connected = False
                         self._publish_status(SensorStatus.DISCONNECTED, "Device disconnected (I/O errors)")
                         break
-                    # Check for data timeout
+                    # Check for data timeout — break to trigger reconnect
                     if self._connected and self._last_data_time > 0:
                         if time.time() - self._last_data_time > self._STATUS_TIMEOUT:
                             self._connected = False
                             self._publish_status(SensorStatus.DISCONNECTED, "No data received (timeout)")
-                            logger.warning("[Power Node] No data timeout")
+                            logger.warning("[Power Node] No data timeout — reconnecting...")
+                            break
                     time.sleep(0.2)
             except KeyboardInterrupt:
                 logger.info("[Power Node] Keyboard interrupt")

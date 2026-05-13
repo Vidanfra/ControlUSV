@@ -26,6 +26,7 @@ class WT901Driver:
         
         # This callback is executed when a 0x53 (Angles) frame arrives
         self.on_data_callback = on_data_callback
+        self._error_logged = False  # Suppress repeated read-error log spam
 
         # Shared sensor data accumulator
         self.data = {
@@ -66,6 +67,7 @@ class WT901Driver:
                 data = self.ser.read(self.ser.in_waiting or 1)
                 if data:
                     buf.extend(data)
+                    self._error_logged = False  # Clear on successful read
 
                 # Process frames
                 while len(buf) >= 11:
@@ -88,7 +90,9 @@ class WT901Driver:
                     pid = frame[1]
                     self._parse_frame(pid, frame[2:10])
             except Exception as e:
-                print(f"WT901 Driver read error: {e}")
+                if not self._error_logged:
+                    logger.warning(f"[WT901] Read error: {e}")
+                    self._error_logged = True
                 time.sleep(0.1)
 
     def _parse_frame(self, pid, payload):
@@ -272,17 +276,21 @@ class ImuNode:
 
     def run(self):
         logger.info("[IMU Node] Starting (with auto-retry)...")
+        _start_error_logged = False
         while True:
             # Try to start the driver
             try:
                 self.driver.start()
+                _start_error_logged = False
                 self._connected = False  # Will become True when first data arrives
                 self._last_data_time = time.time()
                 logger.info(f"[IMU Node] Driver started on {self._serial_port}, waiting for data...")
             except Exception as e:
                 self._connected = False
                 self._publish_status(SensorStatus.DISCONNECTED, str(e))
-                logger.warning(f"[IMU Node] Cannot open {self._serial_port}: {e}. Retrying in {self._RETRY_INTERVAL}s...")
+                if not _start_error_logged:
+                    logger.warning(f"[IMU Node] Cannot open {self._serial_port}: {e}. Retrying in {self._RETRY_INTERVAL}s...")
+                    _start_error_logged = True
                 time.sleep(self._RETRY_INTERVAL)
                 # Recreate driver for next attempt
                 self.driver = WT901Driver(
@@ -303,13 +311,14 @@ class ImuNode:
                         else:
                             self._publish_status(SensorStatus.DISCONNECTED, "No data")
                         self._last_status_publish_time = now
-                    
-                    # Check for data timeout (device unplugged)
+
+                    # Check for data timeout — break to trigger reconnect
                     if self._connected and self._last_data_time > 0:
                         if time.time() - self._last_data_time > self._STATUS_TIMEOUT:
                             self._connected = False
                             self._publish_status(SensorStatus.DISCONNECTED, "No data received (timeout)")
-                            logger.warning("[IMU Node] No data timeout — device may be disconnected")
+                            logger.warning("[IMU Node] No data timeout — reconnecting...")
+                            break
                     time.sleep(0.5)
             except KeyboardInterrupt:
                 logger.info("[IMU Node] Keyboard interrupt")

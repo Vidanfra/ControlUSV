@@ -107,7 +107,6 @@ class UM982Driver:
             self._reader_thread.start()
 
         except Exception as e:
-            logger.error(f"[UM982] Start failed: {e}")
             self.stop()
             raise
 
@@ -494,17 +493,21 @@ class GnssNode:
 
     def run(self):
         logger.info("[GNSS Node] Starting (with auto-retry)...")
+        _start_error_logged = False
         while True:
             # Try to start the driver
             try:
                 self.driver.start()
+                _start_error_logged = False
                 self._connected = False  # Will become True when first data arrives
                 self._last_data_time = time.time()
                 logger.info(f"[GNSS Node] Driver started on {self._serial_port}, waiting for data...")
             except Exception as e:
                 self._connected = False
                 self._publish_status(SensorStatus.DISCONNECTED, str(e))
-                logger.warning(f"[GNSS Node] Cannot open {self._serial_port}: {e}. Retrying in {self._RETRY_INTERVAL}s...")
+                if not _start_error_logged:
+                    logger.warning(f"[GNSS Node] Cannot open {self._serial_port}: {e}. Retrying in {self._RETRY_INTERVAL}s...")
+                    _start_error_logged = True
                 # Wait and retry, but keep checking commands
                 deadline = time.time() + self._RETRY_INTERVAL
                 while time.time() < deadline:
@@ -536,12 +539,13 @@ class GnssNode:
                         else:
                             self._publish_status(SensorStatus.DISCONNECTED, "No data")
                         self._last_status_publish_time = now
-                    # Check for data timeout (device unplugged)
+                    # Check for data timeout — break out to trigger reconnect
                     if self._connected and self._last_data_time > 0:
                         if time.time() - self._last_data_time > self._STATUS_TIMEOUT:
                             self._connected = False
                             self._publish_status(SensorStatus.DISCONNECTED, "No data received (timeout)")
-                            logger.warning("[GNSS Node] No data timeout — device may be disconnected")
+                            logger.warning("[GNSS Node] No data timeout — reconnecting...")
+                            break
                     time.sleep(0.2)
             except KeyboardInterrupt:
                 logger.info("[GNSS Node] Keyboard interrupt")
@@ -551,8 +555,25 @@ class GnssNode:
                 logger.error(f"[GNSS Node] Unexpected error: {e}")
                 self._connected = False
                 self._publish_status(SensorStatus.ERROR, str(e))
-                self.driver.stop()
-                time.sleep(self._RETRY_INTERVAL)
+
+            # Reached after timeout break or unexpected error — stop driver and reconnect
+            self.driver.stop()
+            logger.info(f"[GNSS Node] Reconnecting in {self._RETRY_INTERVAL}s...")
+            deadline = time.time() + self._RETRY_INTERVAL
+            while time.time() < deadline:
+                self._check_commands()
+                time.sleep(0.2)
+            self.driver = UM982Driver(
+                serial_port=self._serial_port,
+                baud_rate=self._baud_rate,
+                ntrip_caster=self._ntrip_caster,
+                ntrip_port=self._ntrip_port,
+                mountpoint=self._mountpoint,
+                username=self._username,
+                password=self._password,
+                command_freq=self._command_freq,
+                on_data_callback=self._on_gnss_data,
+            )
 
     def shutdown(self):
         self.driver.stop()
