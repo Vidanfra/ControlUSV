@@ -131,6 +131,7 @@ class GNCProcess(ServiceProcess):
         # Station keeping state (real mode)
         self.station_active = False
         self.station_keeper = None
+        self._station_origin = None
 
         # Fail-safe state
         self.failsafe_config = FailsafeConfig()
@@ -698,6 +699,9 @@ class GNCProcess(ServiceProcess):
         if self.lat == 0.0 and self.lon == 0.0:
             return
 
+        if self._station_origin is None:
+            logger.warning("GNC: _run_station_keeping() called before _start_station(); aborting.")
+            return
         lat0, lon0 = self._station_origin
         N, E = latlon_to_ned(self.lat, self.lon, lat0, lon0)
 
