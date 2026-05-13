@@ -368,7 +368,7 @@ class GnssNode:
         self._STATUS_PUBLISH_INTERVAL = 5.0  # Publish status every 5 seconds for health heartbeat
 
         # Instantiate driver (will be started in run())
-        self.muted = False  # When True, skip publishing (RT sim active)
+        self._muted = threading.Event()  # Thread-safe mute flag (set = muted)
         self.driver = UM982Driver(
             serial_port=serial_port,
             baud_rate=baud_rate,
@@ -380,6 +380,17 @@ class GnssNode:
             command_freq=command_freq,
             on_data_callback=self._on_gnss_data,
         )
+
+    @property
+    def muted(self) -> bool:
+        return self._muted.is_set()
+
+    @muted.setter
+    def muted(self, value: bool):
+        if value:
+            self._muted.set()
+        else:
+            self._muted.clear()
 
     def _publish_status(self, status: SensorStatus, message: str = ""):
         """Publish sensor health status on the bus."""
