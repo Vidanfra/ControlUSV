@@ -135,7 +135,8 @@ class GNCProcess(ServiceProcess):
         # Fail-safe state
         self.failsafe_config = FailsafeConfig()
         self.last_gnss_fix_type = 0
-        self.gnss_lost_since = None   # timestamp when GNSS fix was lost (None = OK)
+        self.gnss_lost_since = None        # timestamp when GNSS fix was lost (None = OK)
+        self.gnss_failsafe_active = False  # latched True after failsafe fires; clears on GNSS restore
         self.last_heartbeat_time = time.time()
         self.home_wp = None           # {'lat': ..., 'lon': ...}
 
@@ -496,6 +497,7 @@ class GNCProcess(ServiceProcess):
         self.wp_route_active = True
         # Reset failsafe timers
         self.gnss_lost_since = None
+        self.gnss_failsafe_active = False
         self.last_heartbeat_time = time.time()
 
         logger.info(f"GNC: WP Route started — {len(waypoints)} WPs, "
@@ -641,6 +643,7 @@ class GNCProcess(ServiceProcess):
 
         self.station_active = True
         self.gnss_lost_since = None
+        self.gnss_failsafe_active = False
         self.last_heartbeat_time = time.time()
 
         logger.info(f"GNC: Station keeping started at ({lat_s:.6f}, {lon_s:.6f}), "
@@ -693,15 +696,16 @@ class GNCProcess(ServiceProcess):
         if self.last_gnss_fix_type < fs.min_gnss_fix:
             if self.gnss_lost_since is None:
                 self.gnss_lost_since = now
-            elif now - self.gnss_lost_since > fs.ins_timeout:
+            elif not self.gnss_failsafe_active and now - self.gnss_lost_since > fs.ins_timeout:
                 logger.warning(f"GNC FAILSAFE: GNSS lost for {fs.ins_timeout}s — {fs.ins_action}")
                 if fs.ins_action == 'emergency_stop':
                     self._emergency_stop()
                 else:
                     self._failsafe_station_keeping()
-                self.gnss_lost_since = None  # reset after action
+                self.gnss_failsafe_active = True  # latch: prevent re-trigger until GNSS restored
         else:
             self.gnss_lost_since = None
+            self.gnss_failsafe_active = False
 
         # --- Comm loss check ---
         if now - self.last_heartbeat_time > fs.comm_timeout:
