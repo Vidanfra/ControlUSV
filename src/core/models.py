@@ -68,13 +68,13 @@ class FailsafeConfig(BaseModel):
 
 class GncConfig(BaseModel):
     """GNC Controller configuration parameters."""
-    wn: float = Field(4.0, description="Heading PID Natural Frequency")
-    zeta: float = Field(0.5, description="Heading PID Damping")
-    wn_ref: float = Field(1.0, description="Reference model natural frequency")
-    zeta_ref: float = Field(1.0, description="Reference model damping ratio")
-    delta: float = Field(5.0, description="ALOS Look-ahead distance")
-    gamma: float = Field(0.0, description="ALOS Adaptive gain")
-    tau_x: float = Field(150.0, description="Nominal surge force")
+    wn: float = Field(4.0, gt=0, description="Heading PID Natural Frequency (must be > 0)")
+    zeta: float = Field(0.5, gt=0, description="Heading PID Damping (must be > 0)")
+    wn_ref: float = Field(1.0, gt=0, description="Reference model natural frequency (must be > 0)")
+    zeta_ref: float = Field(1.0, gt=0, description="Reference model damping ratio (must be > 0)")
+    delta: float = Field(5.0, gt=0, description="ALOS Look-ahead distance (must be > 0)")
+    gamma: float = Field(0.0, ge=0, description="ALOS Adaptive gain (must be >= 0)")
+    tau_x: float = Field(150.0, gt=0, description="Nominal surge force (must be > 0)")
 
 
 class ManualInputMessage(BaseModel):

@@ -273,6 +273,11 @@
           <p class="hint">Adaptive integral gain for compensating ocean currents.</p>
         </div>
 
+        <div v-if="gncError" class="validation-error">
+          <span>&#9888; {{ gncError }}</span>
+          <button class="close-error" @click="gncError = null">&#x2715;</button>
+        </div>
+
         <div class="setting-row">
           <div class="input-group">
             <button class="btn btn-primary" @click="saveGncConfig" :disabled="!gncConfigChanged">
@@ -347,7 +352,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useTelemetryStore } from '../stores/telemetry'
 
 const telemetry = useTelemetryStore()
@@ -376,6 +381,9 @@ const gnssForm = ref({
   password: '',
   command_freq: 1.0
 })
+
+// GNC config validation error
+const gncError = ref(null)
 
 // GNC config form
 const gncForm = ref({
@@ -513,9 +521,25 @@ const gncConfigChanged = computed(() => {
   )
 })
 
+// Clear GNC error whenever the user edits any field
+watch(gncForm, () => { gncError.value = null }, { deep: true })
+
 function saveGncConfig() {
+  const f = gncForm.value
+  const errors = []
+  if (!Number.isFinite(f.wn)       || f.wn       <= 0) errors.push('wn debe ser > 0')
+  if (!Number.isFinite(f.zeta)     || f.zeta     <= 0) errors.push('zeta debe ser > 0')
+  if (!Number.isFinite(f.wn_ref)   || f.wn_ref   <= 0) errors.push('wn_ref debe ser > 0')
+  if (!Number.isFinite(f.zeta_ref) || f.zeta_ref <= 0) errors.push('zeta_ref debe ser > 0')
+  if (!Number.isFinite(f.delta)    || f.delta    <= 0) errors.push('delta debe ser > 0')
+  if (!Number.isFinite(f.gamma)    || f.gamma    <  0) errors.push('gamma debe ser ≥ 0')
+  if (errors.length > 0) {
+    gncError.value = 'Valores no válidos: ' + errors.join('; ') + '.'
+    return
+  }
+  gncError.value = null
   // Always include the current explicit tau_x so it doesn't revert unexpectedly
-  telemetry.setGncConfig({ ...gncForm.value, tau_x: telemetry.gncConfig.tau_x })
+  telemetry.setGncConfig({ ...f, tau_x: telemetry.gncConfig.tau_x })
 }
 
 const mpChanged = computed(() => {
@@ -765,5 +789,34 @@ select.text-input {
   .info-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+.validation-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #3d1515;
+  border: 1px solid #cc3333;
+  border-radius: 6px;
+  color: #ff6b6b;
+  padding: 10px 14px;
+  margin-bottom: 18px;
+  font-size: 0.9em;
+  gap: 10px;
+}
+
+.close-error {
+  background: none;
+  border: none;
+  color: #ff6b6b;
+  cursor: pointer;
+  font-size: 1em;
+  padding: 0 4px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.close-error:hover {
+  color: #ff9999;
 }
 </style>
