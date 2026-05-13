@@ -173,12 +173,23 @@ class ImuNode:
         logger.info(f"[IMU Node] Publisher connected to ZMQ Bus: {bus_url}")
 
         # Instantiate Driver and register callback
-        self.muted = False  # When True, skip publishing (RT sim active)
+        self._muted = threading.Event()  # Thread-safe mute flag (set = muted)
         self.driver = WT901Driver(
             serial_port=serial_port, 
             baud_rate=baud_rate, 
             on_data_callback=self.publish_imu_data
         )
+
+    @property
+    def muted(self) -> bool:
+        return self._muted.is_set()
+
+    @muted.setter
+    def muted(self, value: bool):
+        if value:
+            self._muted.set()
+        else:
+            self._muted.clear()
 
     def _publish_status(self, status: SensorStatus, message: str = ""):
         try:

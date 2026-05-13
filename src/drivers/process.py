@@ -81,6 +81,6 @@ class HALProcess(ServiceProcess):
                     if self.imu_node:
                         self.imu_node.muted = False
                     logger.info("HAL: Sensors UNMUTED")
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"HAL: Error processing command: {e}")
 
