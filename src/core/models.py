@@ -51,7 +51,7 @@ class Waypoint(BaseModel):
     lat: float
     lon: float
     radius: float = 5.0   # Acceptance radius in meters
-    speed: float = 1.0    # Desired speed in m/s
+    speed: float = 1.0    # Crossing speed in knots (0 = stop, None handled by autopilot)
 
 class MissionPayload(BaseModel):
     waypoints: List[Waypoint]
@@ -74,7 +74,7 @@ class GncConfig(BaseModel):
     zeta_ref: float = Field(1.0, gt=0, description="Reference model damping ratio (must be > 0)")
     delta: float = Field(5.0, gt=0, description="ALOS Look-ahead distance (must be > 0)")
     gamma: float = Field(0.0, ge=0, description="ALOS Adaptive gain (must be >= 0)")
-    tau_x: float = Field(150.0, gt=0, description="Nominal surge force (must be > 0)")
+    cruise_speed_kn: float = Field(3.0, gt=0, le=4.0, description="Cruise speed [knots] (0–4 kn = Salpa 1 Umax)")
     e_x_threshold_deg: float = Field(30.0, gt=0, le=90, description="PID anti-windup threshold [deg] (integrator only active when heading error < this value)")
 
 
@@ -201,6 +201,15 @@ class ControlDebugMessage(BaseModel):
     target_heading: float = Field(..., description="Target heading in radians")
     heading_error: float = Field(..., description="Heading error in radians")
     cross_track_error: float = Field(..., description="Cross-track error in meters")
+    # Surge/sway velocity and acceleration for the speed monitor chart
+    surge_vel: float = Field(0.0, description="Body-frame surge velocity u [m/s]")
+    sway_vel: float = Field(0.0, description="Body-frame sway velocity v [m/s]")
+    surge_acc: float = Field(0.0, description="Surge acceleration du/dt [m/s²]")
+    sway_acc: float = Field(0.0, description="Sway acceleration dv/dt [m/s²]")
+    tau_x_eff: float = Field(0.0, description="Effective surge force after velocity profiler [N]")
+    tau_x_cruise: float = Field(0.0, description="Nominal cruise surge force [N]")
+    v_cruise: float = Field(0.0, description="Equilibrium cruise speed [m/s]")
+    wp_index: int = Field(0, description="Current waypoint index")
 
 
 # ============================================================================

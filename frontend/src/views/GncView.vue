@@ -18,6 +18,10 @@
       <div class="chart-wrapper">
         <Line :data="motorChartData" :options="motorChartOptions" />
       </div>
+
+      <div class="chart-wrapper">
+        <Line :data="speedChartData" :options="speedChartOptions" />
+      </div>
     </div>
     
     <div class="sidebar" :class="{ 'sim-mode': telemetry.dataSource === 'sim' }">
@@ -138,6 +142,39 @@ const motorChartOptions = {
   }
 }
 
+// Dual-Y chart: surge/sway speed (left) + surge/sway accel (right)
+const speedChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: false,
+  elements: { point: { radius: 0 } },
+  interaction: { mode: 'index', intersect: false },
+  plugins: {
+    legend: { labels: { color: 'white' } },
+    title: { display: false }
+  },
+  scales: {
+    x: {
+      ticks: { color: '#aaa', maxTicksLimit: 10 },
+      grid: { color: '#333' }
+    },
+    y: {
+      type: 'linear',
+      position: 'left',
+      ticks: { color: '#4fc3f7' },
+      grid: { color: '#333' },
+      title: { display: true, text: 'Speed [m/s]', color: '#4fc3f7' }
+    },
+    y2: {
+      type: 'linear',
+      position: 'right',
+      ticks: { color: '#ff8a65' },
+      grid: { drawOnChartArea: false },
+      title: { display: true, text: 'Accel [m/s²]', color: '#ff8a65' }
+    }
+  }
+}
+
 // Utility
 const degrees = (rad) => {
   if (rad === undefined || rad === null) return '0.0'
@@ -180,6 +217,54 @@ const motorChartData = computed(() => {
     ]
   }
 })
+
+// Speed + acceleration chart (dual Y)
+const speedChartData = computed(() => ({
+  labels: filteredHistory.value.map(pt => pt.label),
+  datasets: [
+    {
+      label: 'Surge u [m/s]' + simSuffix(),
+      borderColor: '#4fc3f7',
+      data: filteredHistory.value.map(pt => pt.surgeVel || 0),
+      yAxisID: 'y',
+      borderWidth: 2,
+      tension: 0.1
+    },
+    {
+      label: 'Sway v [m/s]' + simSuffix(),
+      borderColor: '#81c784',
+      data: filteredHistory.value.map(pt => pt.swayVel || 0),
+      yAxisID: 'y',
+      borderWidth: 1.5,
+      tension: 0.1
+    },
+    {
+      label: 'Cruise ref [m/s]',
+      borderColor: '#FFA500',
+      borderDash: [6, 3],
+      data: filteredHistory.value.map(pt => pt.vCruise || 0),
+      yAxisID: 'y',
+      borderWidth: 1.5,
+      tension: 0
+    },
+    {
+      label: 'Surge accel [m/s²]' + simSuffix(),
+      borderColor: '#ff8a65',
+      data: filteredHistory.value.map(pt => pt.surgeAcc || 0),
+      yAxisID: 'y2',
+      borderWidth: 1.5,
+      tension: 0.1
+    },
+    {
+      label: 'Sway accel [m/s²]' + simSuffix(),
+      borderColor: '#f06292',
+      data: filteredHistory.value.map(pt => pt.swayAcc || 0),
+      yAxisID: 'y2',
+      borderWidth: 1.5,
+      tension: 0.1
+    }
+  ]
+}))
 
 </script>
 

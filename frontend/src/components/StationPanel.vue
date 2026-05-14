@@ -51,24 +51,24 @@
       {{ store.stationPickMode ? 'PICKING...' : 'PICK ON MAP' }}
     </button>
 
-    <!-- Surge Force Slider -->
+    <!-- Cruise Speed Slider -->
     <div class="field surge-field">
-      <label>Nominal Surge Force</label>
+      <label>Cruise Speed</label>
       <div class="surge-slider-container">
         <input 
           type="range" 
-          v-model.number="surgePct" 
-          min="0" 
-          max="100" 
-          step="1" 
+          v-model.number="cruiseSpeedKn" 
+          min="0.1" 
+          max="4.0" 
+          step="0.1" 
           class="surge-slider"
           :disabled="stationActive"
         />
-        <span class="surge-val">{{ surgePct }}%</span>
+        <span class="surge-val">{{ cruiseSpeedKn.toFixed(1) }} kn</span>
       </div>
       <div class="surge-metrics">
         <span>Force: {{ surgeForceN.toFixed(1) }} N</span>
-        <span>Speed: {{ expectedSpeedMs.toFixed(2) }} m/s ({{ expectedSpeedKnots.toFixed(1) }} kn)</span>
+        <span>Speed: {{ speedMs.toFixed(2) }} m/s</span>
       </div>
     </div>
 
@@ -108,16 +108,15 @@ const reachingRadius = ref(stationReachingRadius.value)
 const startError = ref('')
 const startWarnings = ref([])
 
-// Compute Surge Force and Speed
-const surgePct = ref(66) // Default ~ 66% (approx 150N)
-const surgeForceN = computed(() => (surgePct.value / 100) * 225.6)
-const expectedSpeedMs = computed(() => {
-  const p = surgePct.value / 100
-  if (p <= 0) return 0
-  const Umax = 2.0576 // 4 knots in m/s
-  return ((-0.2 + Math.sqrt(0.04 + 3.2 * p)) / 1.6) * Umax
+// Cruise speed slider (knots, 0.1–4.0 kn)
+const KN_TO_MS = 0.5144
+const cruiseSpeedKn = ref(3.2)   // default 3.2 kn ≈ 150 N
+const speedMs    = computed(() => cruiseSpeedKn.value * KN_TO_MS)
+const surgeForceN = computed(() => {
+  // Drag inversion: tau = Xu_lin*v + Xu_quad*v²  (Salpa 1 coefficients)
+  const v = speedMs.value
+  return 21.94 * v + 42.58 * v * v
 })
-const expectedSpeedKnots = computed(() => expectedSpeedMs.value / 0.5144)
 
 watch(reachingRadius, (val) => {
   store.stationReachingRadius = val
@@ -154,7 +153,7 @@ const start = () => {
   }
 
   // Decoupled start
-  store.startStation(surgeForceN.value)
+  store.startStation(cruiseSpeedKn.value)
 }
 
 const stop = () => {

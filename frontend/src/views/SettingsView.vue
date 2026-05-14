@@ -393,7 +393,7 @@ const gncForm = ref({
   zeta_ref: 1.0,
   delta: 5.0,
   gamma: 0.0,
-  tau_x: 150.0 // Kept in state but hidden in UI, as WP/Station panels control it
+  cruise_speed_kn: 3.0 // Kept in state but hidden in UI, as WP/Station panels control it
 })
 
 // Mission plan defaults form
@@ -431,7 +431,8 @@ onMounted(() => {
     gncForm.value.zeta_ref = telemetry.gncConfig.zeta_ref ?? 1.0
     gncForm.value.delta = telemetry.gncConfig.delta
     gncForm.value.gamma = telemetry.gncConfig.gamma
-    gncForm.value.tau_x = telemetry.gncConfig.tau_x
+    gncForm.value.tau_x = undefined  // legacy field removed
+    gncForm.value.cruise_speed_kn = telemetry.gncConfig.cruise_speed_kn ?? 3.0
   }
 
   // Load mission plan defaults from store
@@ -538,8 +539,8 @@ function saveGncConfig() {
     return
   }
   gncError.value = null
-  // Always include the current explicit tau_x so it doesn't revert unexpectedly
-  telemetry.setGncConfig({ ...f, tau_x: telemetry.gncConfig.tau_x })
+  // Always forward cruise_speed_kn so the profiler doesn't reset to default
+  telemetry.setGncConfig({ ...f, cruise_speed_kn: telemetry.gncConfig.cruise_speed_kn ?? 3.0 })
 }
 
 const mpChanged = computed(() => {

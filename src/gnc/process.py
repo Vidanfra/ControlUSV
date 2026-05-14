@@ -27,17 +27,23 @@ from src.core.models import (
 )
 from src.core.config import settings
 from src.gnc.gnc_utils import latlon_to_ned, ned_to_latlon, ssa, attitudeEuler
-from src.gnc.autopilot import GNCController, StationKeeper
+from src.gnc.autopilot import GNCController, StationKeeper, _XU_LIN, _XU_QUAD
 from src.gnc.vehicle_model import Salpa1Model
 from src.gnc.sim_sensors import simulate_gnss, simulate_imu
 
 # Salpa 1 vehicle parameters (for controller initialization)
-SALPA1_IZZ = 60.0
+SALPA1_IZZ   = 60.0
 SALPA1_K_POS = 0.00365
-SALPA1_L1 = -0.673
-SALPA1_L2 = 0.673
-SALPA1_N_MAX = 175.9
+SALPA1_L1    = -0.673
+SALPA1_L2    =  0.673
+SALPA1_N_MAX =  175.9
 SALPA1_N_MIN = -175.0
+
+
+def _speed_kn_to_tau_x(speed_kn: float) -> float:
+    """Convert cruise speed [knots] to the required surge force [N] via drag inversion."""
+    v = max(speed_kn, 0.0) * 0.5144   # knots → m/s
+    return _XU_LIN * v + _XU_QUAD * v * v
 
 
 def _make_default_controller(config: GncConfig = None):
@@ -54,7 +60,7 @@ def _make_default_controller(config: GncConfig = None):
         wn=config.wn, zeta=config.zeta,
         wn_d=config.wn_ref, zeta_d=config.zeta_ref,
         delta=config.delta, gamma=config.gamma,
-        tau_X=config.tau_x,
+        tau_X=_speed_kn_to_tau_x(config.cruise_speed_kn),
         e_x_threshold_deg=config.e_x_threshold_deg,
     )
 
@@ -103,6 +109,10 @@ class GNCProcess(ServiceProcess):
         # Motor Output Memory for physical sim
         self.current_n1 = 0.0
         self.current_n2 = 0.0
+
+        # Previous nu for acceleration estimation (du/dt, dv/dt)
+        self.prev_nu = np.zeros(6)
+        self.prev_nu_valid = False  # False until first step
 
         # Navigation state (from gnc/ekf_state)
         self.lat = 0.0
@@ -222,7 +232,7 @@ class GNCProcess(ServiceProcess):
         h = 1.0 / settings.LOOP_RATES.get('gnc', 20)
 
         n1, n2, debug = self.controller.step(eta, nu, h)
-        self._publish_control(n1, n2, debug, now)
+        self._publish_control(n1, n2, debug, now, nu=nu)
 
         if self.controller.is_mission_complete():
             logger.info("GNC: Mission complete — holding position")
@@ -397,7 +407,8 @@ class GNCProcess(ServiceProcess):
         """Update active controllers with the new GNC Config parameters."""
         cfg = self.gnc_config
         tuning = dict(wn=cfg.wn, zeta=cfg.zeta, wn_d=cfg.wn_ref, zeta_d=cfg.zeta_ref,
-                      delta=cfg.delta, gamma=cfg.gamma, tau_X=cfg.tau_x)
+                      delta=cfg.delta, gamma=cfg.gamma,
+                      tau_X=_speed_kn_to_tau_x(cfg.cruise_speed_kn))
 
         # Update main path-following controller
         if self.controller:
@@ -433,7 +444,7 @@ class GNCProcess(ServiceProcess):
             f"{len(waypoints_ned)} waypoints in NED"
         )
 
-    def _publish_control(self, n1, n2, debug, now):
+    def _publish_control(self, n1, n2, debug, now, nu=None):
         """Publish motor commands and debug data."""
         self.current_n1 = float(n1)
         self.current_n2 = float(n2)
@@ -449,12 +460,34 @@ class GNCProcess(ServiceProcess):
             'source': 'sim' if self.rt_sim_active else 'sensor',
         })
 
+        # Velocity and acceleration from nu vector
+        h = 1.0 / settings.LOOP_RATES.get('gnc', 20)
+        if nu is not None:
+            u = float(nu[0]);  v_sway = float(nu[1])
+            if self.prev_nu_valid and h > 0:
+                du_dt = (u         - self.prev_nu[0]) / h
+                dv_dt = (v_sway    - self.prev_nu[1]) / h
+            else:
+                du_dt = dv_dt = 0.0
+            self.prev_nu[:] = nu
+            self.prev_nu_valid = True
+        else:
+            u = v_sway = du_dt = dv_dt = 0.0
+
         self.control_debug_pub.publish(
             ControlDebugMessage(
                 timestamp=now,
                 target_heading=debug['psi_d'],
                 heading_error=debug['heading_error'],
                 cross_track_error=debug['cross_track_error'],
+                surge_vel=u,
+                sway_vel=v_sway,
+                surge_acc=du_dt,
+                sway_acc=dv_dt,
+                tau_x_eff=debug.get('tau_X', 0.0),
+                tau_x_cruise=debug.get('tau_X_cruise', 0.0),
+                v_cruise=debug.get('v_cruise', 0.0),
+                wp_index=debug.get('wp_index', 0),
             ).model_dump()
         )
 
@@ -472,10 +505,10 @@ class GNCProcess(ServiceProcess):
             logger.error("GNC: WP Route needs at least 2 waypoints")
             return
 
-        # Override tau_x if provided
-        tau_x_override = payload.get('tau_x')
-        if tau_x_override is not None:
-            self.gnc_config.tau_x = float(tau_x_override)
+        # Override cruise speed if provided
+        cruise_speed_kn_override = payload.get('cruise_speed_kn')
+        if cruise_speed_kn_override is not None:
+            self.gnc_config.cruise_speed_kn = float(cruise_speed_kn_override)
             self._apply_gnc_config()
 
         direction = payload.get('direction', 'forward')
@@ -559,7 +592,7 @@ class GNCProcess(ServiceProcess):
         h = 1.0 / settings.LOOP_RATES.get('gnc', 20)
 
         n1, n2, debug = self.controller.step(eta, nu, h)
-        self._publish_control(n1, n2, debug, now)
+        self._publish_control(n1, n2, debug, now, nu=nu)
 
         # Check mission completion
         if self.controller.is_mission_complete():
@@ -627,10 +660,10 @@ class GNCProcess(ServiceProcess):
         reaching_radius = payload.get('reaching_radius', 3.0)
         station_radius = payload.get('station_radius', 10.0)
 
-        # Override tau_x if provided
-        tau_x_override = payload.get('tau_x')
+        # Override cruise speed if provided
+        tau_x_override = payload.get('cruise_speed_kn')
         if tau_x_override is not None:
-            self.gnc_config.tau_x = float(tau_x_override)
+            self.gnc_config.cruise_speed_kn = float(tau_x_override)
             self._apply_gnc_config()
 
         if lat_s == 0.0 and lon_s == 0.0:
@@ -659,7 +692,7 @@ class GNCProcess(ServiceProcess):
             zeta_d=self.gnc_config.zeta_ref,
             delta=self.gnc_config.delta,
             gamma=self.gnc_config.gamma,
-            tau_X=self.gnc_config.tau_x,
+            tau_X=_speed_kn_to_tau_x(self.gnc_config.cruise_speed_kn),
         )
 
         # Initialize approach path from current position
@@ -711,7 +744,7 @@ class GNCProcess(ServiceProcess):
         h = 1.0 / settings.LOOP_RATES.get('gnc', 20)
 
         n1, n2, debug = self.station_keeper.step(eta, nu, h)
-        self._publish_control(n1, n2, debug, now)
+        self._publish_control(n1, n2, debug, now, nu=nu)
 
     # ================================================================
     #  FAIL-SAFE MONITORING

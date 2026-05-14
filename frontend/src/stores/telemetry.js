@@ -152,7 +152,7 @@ export const useTelemetryStore = defineStore('telemetry', {
     // Pre-collected chart histories (2-min window, collected regardless of active tab)
     gnssHistory: [],   // { timeMs, label, lat, lon, alt }
     imuHistory: [],    // { timeMs, label, roll, pitch, yaw, ax, ay, az, p, q, r }
-    gncHistory: [],    // { timeMs, label, actualHeading, targetHeading, headingError, cte, port, starboard }
+    gncHistory: [],    // { timeMs, label, actualHeading, targetHeading, headingError, cte, port, starboard, surgeVel, swayVel, surgeAcc, swayAcc, vCruise, tauXEff }
     powerHistory: [],  // { timeMs, label, voltage, current, power }
 
     // Vehicle command modes
@@ -207,7 +207,7 @@ export const useTelemetryStore = defineStore('telemetry', {
       zeta_ref: 1.0,
       delta: 5.0,
       gamma: 0.0,
-      tau_x: 150.0
+      cruise_speed_kn: 3.0
     },
   }),
 
@@ -441,7 +441,9 @@ export const useTelemetryStore = defineStore('telemetry', {
         // Start RT Simulator continuously
         const lat = this.simStartWaypoint ? this.simStartWaypoint.lat : this.simDefaultLat
         const lon = this.simStartWaypoint ? this.simStartWaypoint.lon : this.simDefaultLon
-        const tauX = this.gncConfig ? this.gncConfig.tau_x : 150.0
+        const kn = this.gncConfig ? (this.gncConfig.cruise_speed_kn || 3.0) : 3.0
+        const _v = kn * 0.5144
+        const tauX = 21.94 * _v + 42.58 * _v * _v  // equilibrium surge force [N]
         
         this.sendCommand('START_RT_SIM', {
           current_lat: lat,
@@ -610,7 +612,7 @@ export const useTelemetryStore = defineStore('telemetry', {
       this.sendCommand('SET_STATION', { lat, lon, reaching_radius: reachingRadius, station_radius: stationRadius })
     },
 
-    startStation(tauX = null) {
+    startStation(cruiseSpeedKn = null) {
       this.stationActive = true
       const payload = {
         lat: this.stationWaypoint?.lat,
@@ -618,7 +620,7 @@ export const useTelemetryStore = defineStore('telemetry', {
         reaching_radius: this.stationReachingRadius,
         station_radius: this.stationRadius,
       }
-      if (tauX !== null) payload.tau_x = tauX
+      if (cruiseSpeedKn !== null) payload.cruise_speed_kn = cruiseSpeedKn
       this.sendCommand('START_STATION', payload)
     },
 
@@ -630,7 +632,7 @@ export const useTelemetryStore = defineStore('telemetry', {
     // --- WP Route Actions ---
     startWpRoute(config) {
       this.wpRouteActive = true
-      // config: { direction, completion, waypoints, tau_x }
+      // config: { direction, completion, waypoints, cruise_speed_kn }
       const wps = config.waypoints || this.missionWaypoints
       const payload = {
         direction: config.direction || this.wpRouteDirection,
@@ -642,7 +644,7 @@ export const useTelemetryStore = defineStore('telemetry', {
           speed: wp.speed || 1.0,
         })),
       }
-      if (config.tau_x !== undefined) payload.tau_x = config.tau_x
+      if (config.cruise_speed_kn !== undefined) payload.cruise_speed_kn = config.cruise_speed_kn
       
       this.sendCommand('START_WP_ROUTE', payload)
     },
@@ -868,6 +870,15 @@ export const useTelemetryStore = defineStore('telemetry', {
              this.targetHeading = data.target_heading
              this.headingError = data.heading_error
              this.crossTrackError = data.cross_track_error
+             // Cache velocity/accel/tau for chart history
+             this._lastGncDebug = {
+               surgeVel:  data.surge_vel   ?? 0,
+               swayVel:   data.sway_vel    ?? 0,
+               surgeAcc:  data.surge_acc   ?? 0,
+               swayAcc:   data.sway_acc    ?? 0,
+               vCruise:   data.v_cruise    ?? 0,
+               tauXEff:   data.tau_x_eff   ?? 0,
+             }
           }
           else if (topic === 'gnc/control_output') {
              this.motorPort = data.port_pct
@@ -875,6 +886,7 @@ export const useTelemetryStore = defineStore('telemetry', {
              // Append to gnc chart history (heading already updated by control_debug)
              const nowMs = Date.now()
              const RAD2DEG = 180 / Math.PI
+             const dbg = this._lastGncDebug || {}
              this.gncHistory.push({
                timeMs: nowMs,
                label: new Date(nowMs).toISOString().substr(11, 8),
@@ -883,7 +895,13 @@ export const useTelemetryStore = defineStore('telemetry', {
                headingError: (this.headingError || 0) * RAD2DEG,
                cte: this.crossTrackError || 0,
                port: data.port_pct || 0,
-               starboard: data.starboard_pct || 0
+               starboard: data.starboard_pct || 0,
+               surgeVel:  dbg.surgeVel  || 0,
+               swayVel:   dbg.swayVel   || 0,
+               surgeAcc:  dbg.surgeAcc  || 0,
+               swayAcc:   dbg.swayAcc   || 0,
+               vCruise:   dbg.vCruise   || 0,
+               tauXEff:   dbg.tauXEff   || 0,
              })
              const cutoffGnc = nowMs - 120000
              if (this.gncHistory.length > 0 && this.gncHistory[0].timeMs < cutoffGnc)

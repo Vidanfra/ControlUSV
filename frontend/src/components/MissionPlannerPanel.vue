@@ -18,7 +18,7 @@
           <span class="item-coords dim" v-else>Not set</span>
           <div class="wp-params">
             <label>R:<input type="number" v-model.number="missionStart.radius" min="1" max="50" step="1" class="param-input" @change="patchItem(missionStart.id,{radius:missionStart.radius})" :disabled="wpRouteActive" /></label>
-            <label>m/s:<input type="number" v-model.number="missionStart.speed" min="0.1" max="5" step="0.1" class="param-input" @change="patchItem(missionStart.id,{speed:missionStart.speed})" :disabled="wpRouteActive" /></label>
+            <label>kn:<input type="number" v-model.number="missionStart.speed" min="0.1" max="4.0" step="0.1" class="param-input" @change="patchItem(missionStart.id,{speed:missionStart.speed})" :disabled="wpRouteActive" /></label>
           </div>
         </div>
         <div class="item-actions">
@@ -54,7 +54,7 @@
             <span class="item-coords dim" v-else>Click map to place</span>
             <div class="wp-params">
               <label>R:<input type="number" v-model.number="item.radius" min="1" max="50" step="1" class="param-input" @change="patchItem(item.id,{radius:item.radius})" /></label>
-              <label>m/s:<input type="number" v-model.number="item.speed" min="0.1" max="5" step="0.1" class="param-input" @change="patchItem(item.id,{speed:item.speed})" /></label>
+              <label>kn:<input type="number" v-model.number="item.speed" min="0.1" max="4.0" step="0.1" class="param-input" @change="patchItem(item.id,{speed:item.speed})" /></label>
             </div>
           </div>
           <div class="item-actions">
@@ -127,9 +127,9 @@
                 <label class="param-row">
                   <span>Speed</span>
                   <div class="param-input-group">
-                    <input type="number" v-model.number="item.speed" min="0.1" max="5" step="0.1"
+                    <input type="number" v-model.number="item.speed" min="0.1" max="4.0" step="0.1"
                       class="param-input wide" @change="patchItem(item.id,{speed:item.speed})" />
-                    <span class="param-unit">m/s</span>
+                    <span class="param-unit">kn</span>
                   </div>
                 </label>
                 <label class="param-row">
@@ -185,7 +185,7 @@
           <span class="item-coords dim" v-else>Not set</span>
           <div class="wp-params">
             <label>R:<input type="number" v-model.number="missionEnd.radius" min="1" max="50" step="1" class="param-input" @change="patchItem(missionEnd.id,{radius:missionEnd.radius})" :disabled="wpRouteActive" /></label>
-            <label>m/s:<input type="number" v-model.number="missionEnd.speed" min="0.1" max="5" step="0.1" class="param-input" @change="patchItem(missionEnd.id,{speed:missionEnd.speed})" :disabled="wpRouteActive" /></label>
+            <label>kn:<input type="number" v-model.number="missionEnd.speed" min="0.1" max="4.0" step="0.1" class="param-input" @change="patchItem(missionEnd.id,{speed:missionEnd.speed})" :disabled="wpRouteActive" /></label>
           </div>
         </div>
         <div class="item-actions">
@@ -235,16 +235,17 @@
       </select>
     </div>
 
-    <!-- ─── Surge Force ──────────────────────────────────────────── -->
+    <!-- ─── Cruise Speed ─────────────────────────────────────────────── -->
     <div class="field surge-field">
-      <label>Surge Force</label>
+      <label>Cruise Speed</label>
       <div class="surge-slider-container">
-        <input type="range" v-model.number="surgePct" min="0" max="100" step="1"
+        <input type="range" v-model.number="cruiseSpeedKn" min="0.1" max="4.0" step="0.1"
           class="surge-slider" :disabled="wpRouteActive" />
-        <span class="surge-val">{{ surgePct }}%</span>
+        <span class="surge-val">{{ cruiseSpeedKn.toFixed(1) }} kn</span>
       </div>
       <div class="surge-metrics">
-        <span>{{ surgeForceN.toFixed(0) }} N · {{ expectedSpeedMs.toFixed(2) }} m/s ({{ expectedSpeedKnots.toFixed(1) }} kn)</span>
+        <span>Force: {{ surgeForceN.toFixed(1) }} N</span>
+        <span>Speed: {{ speedMs.toFixed(2) }} m/s</span>
       </div>
     </div>
 
@@ -285,7 +286,7 @@ const { isConnected, isArmed, rtSimActive, missionWaypoints, wpRouteActive, simM
 // ── Local UI state ────────────────────────────────────────────────────────────
 const direction = ref('forward')
 const completion = ref('stop')
-const surgePct = ref(66)
+const cruiseSpeedKn = ref(3.2)
 const fileInput = ref(null)
 const startError = ref('')
 const startWarnings = ref([])
@@ -298,14 +299,13 @@ const missionStart = computed(() => store.missionItems.find(i => i.type === 'mis
 const missionEnd   = computed(() => store.missionItems.find(i => i.type === 'mission_end'))
 const middleItems  = computed(() => store.missionItems.filter(i => i.type !== 'mission_start' && i.type !== 'mission_end'))
 
-const surgeForceN = computed(() => (surgePct.value / 100) * 225.6)
-const expectedSpeedMs = computed(() => {
-  const p = surgePct.value / 100
-  if (p <= 0) return 0
-  const Umax = 2.0576
-  return ((-0.2 + Math.sqrt(0.04 + 3.2 * p)) / 1.6) * Umax
+// ── Cruise speed slider (knots, 0.1–4.0 kn) ─────────────────────────────────────
+const KN_TO_MS = 0.5144
+const speedMs     = computed(() => cruiseSpeedKn.value * KN_TO_MS)
+const surgeForceN = computed(() => {
+  const v = speedMs.value
+  return 21.94 * v + 42.58 * v * v
 })
-const expectedSpeedKnots = computed(() => expectedSpeedMs.value / 0.5144)
 
 function surveyNumber(id) {
   return store.missionItems.filter(i => i.type === 'survey').findIndex(i => i.id === id) + 1
@@ -436,7 +436,7 @@ function start() {
   store.startWpRoute({
     direction: direction.value,
     completion: completion.value,
-    tau_x: surgeForceN.value,
+    cruise_speed_kn: cruiseSpeedKn.value,
   })
 }
 function stop() {

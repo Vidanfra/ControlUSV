@@ -6,7 +6,8 @@ High-level autopilot classes combining guidance and control.
 Classes:
 - HeadingAutopilot: PID heading controller with reference model
 - PathFollower: ALOS waypoint path following manager
-- GNCController: Unified controller (PathFollower + HeadingAutopilot + allocation)
+- VelocityProfiler: Open-loop trapezoidal surge force profile
+- GNCController: Unified controller (PathFollower + HeadingAutopilot + VelocityProfiler + allocation)
 
 These classes are used by both the real-time GNC process and the simulator.
 """
@@ -18,6 +19,21 @@ from loguru import logger
 from src.gnc.gnc_utils import ssa, wrapTo2Pi
 from src.gnc.guidance import ALOSpathFollowing
 from src.gnc.control import PIDpolePlacement, controlAllocation
+
+# ── Salpa 1 drag parameters (defaults for VelocityProfiler) ──────────────────
+# Derived from Salpa1Model with 25 kg payload (m_total ≈ 190 kg):
+#   tau_max  = 2 × 11.5 kgf × 9.81 m/s² = 225.63 N   (total max forward thrust)
+#   Umax     = 4 kn = 2.0576 m/s
+#   Xu_lin   = 0.2 × tau_max / Umax    ≈ 21.94 N·s/m
+#   Xu_quad  = 0.8 × tau_max / Umax²   ≈ 42.58 N·s²/m²
+#   m_surge  = m_total + |Xudot|       ≈ 190 + 19 = 209 kg
+_TAU_MAX  = 225.63
+_UMAX     = 2.0576
+_XU_LIN   = 0.2 * _TAU_MAX / _UMAX
+_XU_QUAD  = 0.8 * _TAU_MAX / (_UMAX ** 2)
+_M_SURGE  = 209.0
+
+# (no empirical _RAMP_SCALE — ramp distance is derived numerically; see VelocityProfiler._ramp_distance)
 
 
 class HeadingAutopilot:
@@ -268,9 +284,9 @@ class StationKeeper:
     def _load_approach(self, eta):
         """Build a 2-WP path from current position to station."""
         current_wp = {'N': float(eta[0]), 'E': float(eta[1]),
-                      'radius': self.reaching_radius, 'speed': 1.0}
+                      'radius': self.reaching_radius, 'speed': None}  # full cruise from start
         target_wp = {'N': self.station_ned['N'], 'E': self.station_ned['E'],
-                     'radius': self.reaching_radius, 'speed': 1.0}
+                     'radius': self.reaching_radius, 'speed': 0.0}   # decelerate to stop
         self.controller.set_waypoints([current_wp, target_wp])
         self.controller.reset(psi_init=eta[5])
         self.state = self.APPROACHING
@@ -319,6 +335,271 @@ class StationKeeper:
                                'station_state': self.IDLE, 'station_dist': dist}
 
 
+class VelocityProfiler:
+    """
+    Open-loop trapezoidal surge force profile for waypoint route following.
+
+    Modulates tau_X (surge force) throughout the route to produce a smooth
+    speed profile with controlled acceleration and deceleration at each
+    waypoint, improving turning performance and reducing cross-track error.
+
+    Profile between waypoints k → k+1
+    ──────────────────────────────────
+                tau_cruise
+          ┌─────────────────────┐
+         /                       \\
+        /  accel                  \\ decel
+    ───/    ramp                   \\ ramp ───
+      WP[k]                         WP[k+1]
+    tau[k]                           tau[k+1]
+
+    Speed mapping
+    ─────────────
+    Each waypoint has a 'speed' field (passing/crossing speed [m/s]).
+    tau at a waypoint = tau_cruise × (v_wp / v_cruise)   [user's linear formula]
+
+    If speed ≤ 0 or not set → no constraint, treated as cruise speed.
+
+    Deceleration distance — physics-based numerical shooting
+    ─────────────────────────────────────────────────────────
+    The ramp distance is the distance over which a linearly decreasing thrust,
+    from tau_cruise down to tau_eq(v_wp) = Xu_lin·v_wp + Xu_quad·v_wp², brings
+    the vessel from v_cruise to v_wp.
+
+    Solved by integrating the surge ODE numerically (RK4) and bisecting on the
+    ramp distance until the vessel speed at the end of the ramp is within 5 cm/s
+    of the target speed.  No empirical scaling factor.
+
+    Coast distance (zero-thrust lower bound) is used only to seed the bisection.
+
+    Short segment handling
+    ──────────────────────
+    If accel + decel zones overlap (segment shorter than accel_d + decel_d),
+    both constraints are applied simultaneously and the minimum tau is used,
+    naturally limiting speed throughout the short segment.
+    """
+
+    def __init__(self,
+                 tau_x_cruise: float,
+                 Xu_lin: float  = _XU_LIN,
+                 Xu_quad: float = _XU_QUAD,
+                 m_surge: float = _M_SURGE):
+        """
+        Args:
+            tau_x_cruise: Cruise surge force [N]
+            Xu_lin:       Linear surge drag coefficient [N·s/m]   (positive)
+            Xu_quad:      Quadratic surge drag coefficient [N·s²/m²] (positive)
+            m_surge:      Surge virtual mass  m + |Xudot|  [kg]
+        """
+        self.Xu_lin  = Xu_lin
+        self.Xu_quad = Xu_quad
+        self.m_surge = m_surge
+
+        self._wps        = []   # waypoint dicts passed by GNCController
+        self._wp_tau     = []   # tau_X target at each waypoint [N]
+        self._ramp_dist  = []   # ramp distance (decel before / accel after) each WP [m]
+
+        # Set cruise after drag params are initialised (v_cruise depends on them)
+        self.tau_x_cruise = 0.0
+        self.v_cruise     = 0.0
+        self.update_cruise(tau_x_cruise)
+
+    # ── Physics helpers ────────────────────────────────────────────────────
+
+    def _v_eq(self, tau_x: float) -> float:
+        """Equilibrium surge speed [m/s] at constant tau_x."""
+        if tau_x <= 0.0:
+            return 0.0
+        disc = self.Xu_lin ** 2 + 4.0 * self.Xu_quad * tau_x
+        return (-self.Xu_lin + math.sqrt(disc)) / (2.0 * self.Xu_quad)
+
+    def _coast_distance(self, v_start: float, v_end: float) -> float:
+        """
+        Distance [m] to decelerate from v_start to v_end under pure drag.
+        Analytical solution of  m·dv/ds = -(Xu_lin + Xu_quad·v).
+        """
+        if v_end >= v_start or v_start <= 0.0:
+            return 0.0
+        v_end = max(v_end, 0.01)   # avoid ln(0)
+        return (self.m_surge / self.Xu_quad) * math.log(
+            (self.Xu_lin + self.Xu_quad * v_start) /
+            (self.Xu_lin + self.Xu_quad * v_end)
+        )
+
+    def _ramp_distance(self, v_start: float, v_end: float) -> float:
+        """
+        Find the minimum ramp distance [m] such that a linearly decreasing thrust
+        from tau_cruise to tau_eq(v_end) brings the vessel from v_start to within
+        5 cm/s of v_end.
+
+        Physics:
+            tau(x) = tau_start + (tau_end - tau_start) * x/d_ramp
+            ODE:    m·v·dv/dx = tau(x) - Xu_lin·v - Xu_quad·v²
+
+        where tau_end = Xu_lin·v_end + Xu_quad·v_end² (equilibrium at v_end).
+
+        Solved by RK4 integration + bisection on d_ramp.
+        The pure-coast distance is used as the initial lower bound so bisection
+        always starts inside a valid bracket.
+        """
+        if v_end >= v_start or v_start <= 0.0:
+            return 0.0
+
+        tau_start = self.tau_x_cruise  # = drag(v_start) at cruise equilibrium
+        tau_end   = self.Xu_lin * v_end + self.Xu_quad * v_end ** 2
+        v_tol     = 0.05   # accept vessel within 5 cm/s of target at ramp end [m/s]
+        v_target  = v_end + v_tol
+
+        # ── Bounds: coast_dist (zero thrust → fastest decel) as lower bound ────
+        d_lo = max(self._coast_distance(v_start, v_end), 0.1)
+        d_hi = max(d_lo * 40.0, 1.0)
+
+        def sim(d: float) -> float:
+            """RK4 over d_ramp; return vessel speed at the end."""
+            n  = 300
+            dx = d / n
+            v  = v_start
+            for i in range(n):
+                xi = i / n
+                xm = (i + 0.5) / n
+                xe = (i + 1.0) / n
+                ti = tau_start + (tau_end - tau_start) * xi
+                tm = tau_start + (tau_end - tau_start) * xm
+                te = tau_start + (tau_end - tau_start) * xe
+
+                def f(vi: float, tau_i: float) -> float:
+                    vi = max(vi, 1e-4)
+                    return (tau_i - self.Xu_lin * vi - self.Xu_quad * vi * vi) / (self.m_surge * vi)
+
+                k1 = f(v, ti)
+                k2 = f(max(v + 0.5 * dx * k1, 1e-4), tm)
+                k3 = f(max(v + 0.5 * dx * k2, 1e-4), tm)
+                k4 = f(max(v + dx * k3, 1e-4), te)
+                v  = max(v + dx * (k1 + 2.0 * k2 + 2.0 * k3 + k4) / 6.0, 1e-4)
+                if v <= v_target:
+                    return v   # early exit: decelerated enough
+            return v
+
+        # ── Expand d_hi until sim(d_hi) ≤ v_target ────────────────────────────
+        for _ in range(8):
+            if sim(d_hi) > v_target:
+                d_hi *= 4.0
+            else:
+                break
+        else:
+            logger.warning(
+                f"[VelocityProfiler] _ramp_distance: could not converge "
+                f"v_start={v_start:.3f} v_end={v_end:.3f} — using d={d_hi:.1f} m"
+            )
+            return d_hi
+
+        # ── 25 bisection iterations ≈ sub-mm accuracy ─────────────────────────
+        for _ in range(25):
+            d_mid = 0.5 * (d_lo + d_hi)
+            if sim(d_mid) > v_target:
+                d_lo = d_mid   # need more distance
+            else:
+                d_hi = d_mid   # already decelerates enough
+
+        return d_hi
+
+    # ── Profile management ─────────────────────────────────────────────────
+
+    def update_cruise(self, tau_x_cruise: float) -> None:
+        """Update cruise surge force and recompute the velocity profile."""
+        self.tau_x_cruise = max(tau_x_cruise, 0.0)
+        self.v_cruise     = self._v_eq(self.tau_x_cruise)
+        if self._wps:
+            self._precompute()
+
+    def set_waypoints(self, waypoints: list) -> None:
+        """
+        Load waypoints and precompute the surge force profile.
+
+        Args:
+            waypoints: list of dicts with keys 'N', 'E', 'radius', 'speed'
+                       ('speed' ≤ 0 or absent → treated as cruise speed)
+        """
+        self._wps = waypoints
+        self._precompute()
+
+    def _precompute(self) -> None:
+        """Recompute tau_X and ramp distances for all waypoints."""
+        self._wp_tau    = []
+        self._ramp_dist = []
+
+        for wp in self._wps:
+            # speed field is in knots; None/missing → cruise, ≤ 0 → explicit stop
+            v_wp_kn = wp.get('speed')
+            if v_wp_kn is None:
+                v_wp = self.v_cruise           # no speed constraint → full cruise
+            elif v_wp_kn <= 0.0:
+                v_wp = 0.0                     # explicit stop at this waypoint
+            else:
+                v_wp = min(v_wp_kn * 0.5144, self.v_cruise)   # kn → m/s, clamp to cruise
+
+            # tau at WP = equilibrium thrust that maintains v_wp in steady-state
+            tau_wp = self.Xu_lin * v_wp + self.Xu_quad * v_wp ** 2
+
+            # Ramp distance: physics-based numerical shooting (no empirical constant)
+            d = self._ramp_distance(self.v_cruise, v_wp)
+
+            self._wp_tau.append(tau_wp)
+            self._ramp_dist.append(d)
+
+        logger.debug(
+            f"[VelocityProfiler] v_cruise={self.v_cruise:.2f} m/s  "
+            f"tau_cruise={self.tau_x_cruise:.1f} N  "
+            f"WPs: {[(round(self._ramp_dist[i], 1), round(self._wp_tau[i], 1)) for i in range(len(self._wps))]}"
+        )
+
+    # ── Main query ─────────────────────────────────────────────────────────
+
+    def get_tau_x(self, wp_idx: int,
+                  dist_to_next: float,
+                  dist_from_prev: float) -> float:
+        """
+        Compute desired surge force for the current position.
+
+        Both the deceleration constraint (approaching next WP) and the
+        acceleration constraint (leaving current WP) are evaluated.
+        The minimum of the two is used so that short segments are handled
+        correctly (vessel stays slow throughout).
+
+        Args:
+            wp_idx:         Current from-waypoint index (PathFollower.wp_index)
+            dist_to_next:   Distance to next waypoint [m]
+            dist_from_prev: Distance from current (from) waypoint [m]
+
+        Returns:
+            tau_x: Desired surge force [N]
+        """
+        n = len(self._wps)
+        if n < 2 or wp_idx >= n - 1:
+            return self.tau_x_cruise
+
+        tau_x   = self.tau_x_cruise
+        next_idx = wp_idx + 1
+
+        # ── Deceleration zone: approaching next WP ────────────────────────
+        d_decel = self._ramp_dist[next_idx]
+        if d_decel > 0.0 and dist_to_next <= d_decel:
+            # alpha: 1.0 at start of ramp, 0.0 right at the WP
+            alpha   = dist_to_next / d_decel
+            tau_dec = alpha * self.tau_x_cruise + (1.0 - alpha) * self._wp_tau[next_idx]
+            tau_x   = min(tau_x, tau_dec)
+
+        # ── Acceleration zone: leaving current WP ─────────────────────────
+        d_accel = self._ramp_dist[wp_idx]   # symmetric ramp length
+        if d_accel > 0.0 and dist_from_prev <= d_accel:
+            # alpha: 0.0 right at the WP, 1.0 at end of ramp
+            alpha   = dist_from_prev / d_accel
+            tau_acc = (1.0 - alpha) * self._wp_tau[wp_idx] + alpha * self.tau_x_cruise
+            tau_x   = min(tau_x, tau_acc)
+
+        return max(tau_x, 0.0)
+
+
 class GNCController:
     """
     Unified GNC controller combining PathFollower + HeadingAutopilot + control allocation.
@@ -341,28 +622,32 @@ class GNCController:
             wn_d, zeta_d: Reference model tuning
             delta: ALOS look-ahead distance [m]
             gamma: ALOS adaptive gain
-            tau_X: Default surge force [N]
+            tau_X: Cruise surge force [N]
             e_x_threshold_deg: Anti-windup threshold [deg]
         """
-        self.autopilot = HeadingAutopilot(m_yaw, wn, zeta, wn_d, zeta_d, e_x_threshold_deg=e_x_threshold_deg)
+        self.autopilot    = HeadingAutopilot(m_yaw, wn, zeta, wn_d, zeta_d,
+                                             e_x_threshold_deg=e_x_threshold_deg)
         self.path_follower = PathFollower(delta, gamma)
+        self.vel_profiler  = VelocityProfiler(tau_X)
         self.B_inv = B_inv
         self.n_max = n_max
         self.n_min = n_min
-        self.tau_X = tau_X
+        self.tau_X = tau_X   # cruise force (reference; profiler modulates this)
 
         # Debug output
-        self.last_psi_d = 0.0
-        self.last_ye = 0.0
+        self.last_psi_d    = 0.0
+        self.last_ye       = 0.0
         self.last_wp_index = 0
 
     def set_waypoints(self, waypoints_ned):
-        """Load waypoints. See PathFollower.set_waypoints()."""
+        """Load waypoints into path follower and velocity profiler."""
         self.path_follower.set_waypoints(waypoints_ned)
+        self.vel_profiler.set_waypoints(waypoints_ned)
 
     def set_surge_force(self, tau_X):
-        """Set surge force [N]."""
+        """Update cruise surge force and recalculate velocity profile."""
         self.tau_X = tau_X
+        self.vel_profiler.update_cruise(tau_X)
 
     def step(self, eta, nu, sampleTime):
         """
@@ -375,38 +660,51 @@ class GNCController:
 
         Returns:
             n1, n2: Propeller speed commands [rad/s]
-            debug: dict with psi_d, heading_error, cross_track_error, wp_index
+            debug: dict with psi_d, heading_error, cross_track_error, wp_index,
+                   tau_X_eff (effective surge force from velocity profile)
         """
-        # 1. Guidance — get desired heading from path follower
+        # 1. Guidance — desired heading from path follower
         psi_d, ye, speed, wp_idx = self.path_follower.update(eta, sampleTime)
 
-        # 2. Control — PID heading control
+        # 2. Velocity profile — compute effective surge force for this timestep.
+        #    Distances to/from waypoints drive the trapezoidal ramp.
+        wps = self.path_follower.waypoints
+        tau_x_eff = self.tau_X   # fallback: constant cruise
+        if len(wps) >= 2 and wp_idx < len(wps) - 1:
+            wp_from = wps[wp_idx]
+            wp_to   = wps[min(wp_idx + 1, len(wps) - 1)]
+            dist_to_next  = math.hypot(eta[0] - wp_to['N'],   eta[1] - wp_to['E'])
+            dist_from_prev = math.hypot(eta[0] - wp_from['N'], eta[1] - wp_from['E'])
+            tau_x_eff = self.vel_profiler.get_tau_x(wp_idx, dist_to_next, dist_from_prev)
+
+        # 3. Heading PID control
         psi = eta[5]
-        r = nu[5]
+        r   = nu[5]
         tau_N = self.autopilot.compute(psi, r, psi_d, sampleTime)
 
-        # 3. Allocation — convert to propeller speeds with saturation
-        # Pass motor limits so controlAllocation clamps to realistic values
-        # (this is critical for accurate thrust feedback in the PID)
-        n1, n2 = controlAllocation(self.tau_X, tau_N, self.B_inv, n_max=self.n_max, n_min=self.n_min)
+        # 4. Allocation — effective surge force + yaw torque → propeller speeds
+        n1, n2 = controlAllocation(tau_x_eff, tau_N, self.B_inv,
+                                   n_max=self.n_max, n_min=self.n_min)
 
         # Store debug info
-        self.last_psi_d = psi_d
-        self.last_ye = ye
+        self.last_psi_d    = psi_d
+        self.last_ye       = ye
         self.last_wp_index = wp_idx
 
         heading_error = ssa(psi - psi_d)
 
         debug = {
-            'psi_d': psi_d,
-            'heading_error': heading_error,
+            'psi_d':            psi_d,
+            'heading_error':    heading_error,
             'cross_track_error': ye,
-            'wp_index': wp_idx,
-            'n1': n1,
-            'n2': n2,
-            'tau_N': tau_N,
-            'tau_X': self.tau_X,
-            'speed': speed,
+            'wp_index':         wp_idx,
+            'n1':               n1,
+            'n2':               n2,
+            'tau_N':            tau_N,
+            'tau_X':            tau_x_eff,   # effective value (after profiler)
+            'tau_X_cruise':     self.tau_X,  # user-set cruise value
+            'speed':            speed,
+            'v_cruise':         self.vel_profiler.v_cruise,
         }
 
         return n1, n2, debug
@@ -437,3 +735,4 @@ class GNCController:
             self.path_follower.gamma = kwargs['gamma']
         if 'tau_X' in kwargs:
             self.tau_X = kwargs['tau_X']
+            self.vel_profiler.update_cruise(kwargs['tau_X'])
