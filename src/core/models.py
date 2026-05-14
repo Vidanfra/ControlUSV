@@ -68,14 +68,15 @@ class FailsafeConfig(BaseModel):
 
 class GncConfig(BaseModel):
     """GNC Controller configuration parameters."""
-    wn: float = Field(4.0, gt=0, description="Heading PID Natural Frequency (must be > 0)")
-    zeta: float = Field(0.5, gt=0, description="Heading PID Damping (must be > 0)")
-    wn_ref: float = Field(1.0, gt=0, description="Reference model natural frequency (must be > 0)")
+    wn: float = Field(1.5, gt=0, description="Heading PID Natural Frequency (must be > 0)")
+    zeta: float = Field(0.7, gt=0, description="Heading PID Damping (must be > 0)")
+    wn_ref: float = Field(0.5, gt=0, description="Reference model natural frequency (must be > 0)")
     zeta_ref: float = Field(1.0, gt=0, description="Reference model damping ratio (must be > 0)")
-    delta: float = Field(5.0, gt=0, description="ALOS Look-ahead distance (must be > 0)")
+    k_delta: float = Field(15.0, gt=0, description="ALOS CTE convergence time constant [s]: look-ahead = max(delta_min, k_delta * U). tau_ye = k_delta (constant at all speeds).")
+    delta_min: float = Field(5.0, gt=0, description="ALOS minimum look-ahead distance [m] (low-speed floor)")
     gamma: float = Field(0.0, ge=0, description="ALOS Adaptive gain (must be >= 0)")
     cruise_speed_kn: float = Field(3.0, gt=0, le=4.0, description="Cruise speed [knots] (0–4 kn = Salpa 1 Umax)")
-    e_x_threshold_deg: float = Field(30.0, gt=0, le=90, description="PID anti-windup threshold [deg] (integrator only active when heading error < this value)")
+    e_x_threshold_deg: float = Field(10.0, gt=0, le=90, description="PID anti-windup threshold [deg] (integrator only active when heading error < this value)")
 
 
 class ManualInputMessage(BaseModel):
@@ -209,7 +210,9 @@ class ControlDebugMessage(BaseModel):
     tau_x_eff: float = Field(0.0, description="Effective surge force after velocity profiler [N]")
     tau_x_cruise: float = Field(0.0, description="Nominal cruise surge force [N]")
     v_cruise: float = Field(0.0, description="Equilibrium cruise speed [m/s]")
-    wp_index: int = Field(0, description="Current waypoint index")
+    wp_index: int = Field(0, description="Current (from) waypoint index")
+    dist_to_wp: float = Field(0.0, description="Distance to next waypoint [m]")
+    ref_speed_kn: float = Field(0.0, description="Reference speed from tau_x_eff drag inversion [kn]")
 
 
 # ============================================================================

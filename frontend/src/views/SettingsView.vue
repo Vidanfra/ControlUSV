@@ -41,37 +41,6 @@
         </div>
       </section>
 
-      <!-- Device Info Section -->
-      <section class="settings-section">
-        <h3>Device Info</h3>
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="info-label">Voltage</span>
-            <span class="info-value">{{ telemetry.batteryVoltage?.toFixed(2) ?? '--' }} V</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Current</span>
-            <span class="info-value">{{ telemetry.batteryCurrent?.toFixed(2) ?? '--' }} A</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Power</span>
-            <span class="info-value">{{ telemetry.batteryPower?.toFixed(1) ?? '--' }} W</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">HW Energy</span>
-            <span class="info-value">{{ telemetry.batteryEnergyWh ?? '--' }} Wh</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">SW Energy</span>
-            <span class="info-value">{{ telemetry.batteryAccumulatedWh?.toFixed(2) ?? '--' }} Wh</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Battery Level</span>
-            <span class="info-value">{{ telemetry.batteryLevelPct?.toFixed(1) ?? '--' }} %</span>
-          </div>
-        </div>
-      </section>
-
       <!-- GNSS / NTRIP Section -->
       <section class="settings-section">
         <h3>GNSS / NTRIP Configuration</h3>
@@ -258,11 +227,21 @@
         </div>
 
         <div class="setting-row">
-          <label for="gncDelta">ALOS Look-ahead Distance (delta)</label>
+          <label for="gncKDelta">ALOS Look-ahead Time Constant k<sub>δ</sub> (k_delta)</label>
           <div class="input-group">
-            <input id="gncDelta" v-model.number="gncForm.delta" type="number" min="1.0" max="50.0" step="0.5" class="text-input" />
+            <input id="gncKDelta" v-model.number="gncForm.k_delta" type="number" min="1.0" max="60.0" step="0.5" class="text-input" />
+            <span class="unit">s</span>
           </div>
-          <p class="hint">How far ahead the boat aims on the track (meters).</p>
+          <p class="hint">CTE convergence time constant. Look-ahead Δ = max(delta_min, k_delta × U). τ<sub>ye</sub> = k_delta regardless of speed. Recommended: 15 s (4× autopilot settling time).</p>
+        </div>
+
+        <div class="setting-row">
+          <label for="gncDeltaMin">ALOS Minimum Look-ahead (delta_min)</label>
+          <div class="input-group">
+            <input id="gncDeltaMin" v-model.number="gncForm.delta_min" type="number" min="1.0" max="30.0" step="0.5" class="text-input" />
+            <span class="unit">m</span>
+          </div>
+          <p class="hint">Floor for look-ahead distance at very low speeds. 5 m ≈ 2× hull length.</p>
         </div>
 
         <div class="setting-row">
@@ -304,7 +283,7 @@
         </div>
 
         <div class="setting-row">
-          <label for="mpWpSpeed">Default Waypoint Speed (m/s)</label>
+          <label for="mpWpSpeed">Default Waypoint Speed (knots)</label>
           <div class="input-group">
             <input id="mpWpSpeed" v-model.number="mpForm.wpSpeed" type="number" min="0.1" max="5" step="0.1" class="text-input" />
           </div>
@@ -320,7 +299,7 @@
         </div>
 
         <div class="setting-row">
-          <label for="mpSurveySpeed">Default Survey Speed (m/s)</label>
+          <label for="mpSurveySpeed">Default Survey Speed (knots)</label>
           <div class="input-group">
             <input id="mpSurveySpeed" v-model.number="mpForm.surveySpeed" type="number" min="0.1" max="5" step="0.1" class="text-input" />
           </div>
@@ -427,9 +406,10 @@ onMounted(() => {
   if (telemetry.gncConfig) {
     gncForm.value.wn = telemetry.gncConfig.wn
     gncForm.value.zeta = telemetry.gncConfig.zeta
-    gncForm.value.wn_ref = telemetry.gncConfig.wn_ref ?? 1.0
+    gncForm.value.wn_ref = telemetry.gncConfig.wn_ref ?? 0.5
     gncForm.value.zeta_ref = telemetry.gncConfig.zeta_ref ?? 1.0
-    gncForm.value.delta = telemetry.gncConfig.delta
+    gncForm.value.k_delta = telemetry.gncConfig.k_delta ?? 15.0
+    gncForm.value.delta_min = telemetry.gncConfig.delta_min ?? 5.0
     gncForm.value.gamma = telemetry.gncConfig.gamma
     gncForm.value.tau_x = undefined  // legacy field removed
     gncForm.value.cruise_speed_kn = telemetry.gncConfig.cruise_speed_kn ?? 3.0
@@ -515,9 +495,10 @@ const gncConfigChanged = computed(() => {
   return (
     gncForm.value.wn !== telemetry.gncConfig.wn ||
     gncForm.value.zeta !== telemetry.gncConfig.zeta ||
-    gncForm.value.wn_ref !== (telemetry.gncConfig.wn_ref ?? 1.0) ||
+    gncForm.value.wn_ref !== (telemetry.gncConfig.wn_ref ?? 0.5) ||
     gncForm.value.zeta_ref !== (telemetry.gncConfig.zeta_ref ?? 1.0) ||
-    gncForm.value.delta !== telemetry.gncConfig.delta ||
+    gncForm.value.k_delta !== (telemetry.gncConfig.k_delta ?? 15.0) ||
+    gncForm.value.delta_min !== (telemetry.gncConfig.delta_min ?? 5.0) ||
     gncForm.value.gamma !== telemetry.gncConfig.gamma
   )
 })
@@ -528,12 +509,13 @@ watch(gncForm, () => { gncError.value = null }, { deep: true })
 function saveGncConfig() {
   const f = gncForm.value
   const errors = []
-  if (!Number.isFinite(f.wn)       || f.wn       <= 0) errors.push('wn debe ser > 0')
-  if (!Number.isFinite(f.zeta)     || f.zeta     <= 0) errors.push('zeta debe ser > 0')
-  if (!Number.isFinite(f.wn_ref)   || f.wn_ref   <= 0) errors.push('wn_ref debe ser > 0')
-  if (!Number.isFinite(f.zeta_ref) || f.zeta_ref <= 0) errors.push('zeta_ref debe ser > 0')
-  if (!Number.isFinite(f.delta)    || f.delta    <= 0) errors.push('delta debe ser > 0')
-  if (!Number.isFinite(f.gamma)    || f.gamma    <  0) errors.push('gamma debe ser ≥ 0')
+  if (!Number.isFinite(f.wn)        || f.wn        <= 0) errors.push('wn debe ser > 0')
+  if (!Number.isFinite(f.zeta)      || f.zeta      <= 0) errors.push('zeta debe ser > 0')
+  if (!Number.isFinite(f.wn_ref)    || f.wn_ref    <= 0) errors.push('wn_ref debe ser > 0')
+  if (!Number.isFinite(f.zeta_ref)  || f.zeta_ref  <= 0) errors.push('zeta_ref debe ser > 0')
+  if (!Number.isFinite(f.k_delta)   || f.k_delta   <= 0) errors.push('k_delta debe ser > 0')
+  if (!Number.isFinite(f.delta_min) || f.delta_min <= 0) errors.push('delta_min debe ser > 0')
+  if (!Number.isFinite(f.gamma)     || f.gamma     <  0) errors.push('gamma debe ser ≥ 0')
   if (errors.length > 0) {
     gncError.value = 'Valores no válidos: ' + errors.join('; ') + '.'
     return

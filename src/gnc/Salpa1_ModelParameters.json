@@ -1,0 +1,75 @@
+{
+  "_description": "Salpa 1 USV — single source of truth for all physical and control parameters. All Python modules must read from here via salpa1_params.py.",
+
+  "geometry": {
+    "length_m":       2.4,
+    "beam_m":         1.7,
+    "draft_m":        0.09,
+    "lcf_m":         -0.001,
+    "pontoon_beam_m": 0.35,
+    "pontoon_y_m":    0.673,
+    "cw_pont":        0.75,
+    "cb_pont":        0.871
+  },
+
+  "mass": {
+    "hull_kg":           165.0,
+    "default_payload_kg": 25.0,
+    "cg_hull_m":         [-0.063, 0.0, -0.065],
+    "cg_payload_m":      [0.1,   0.0, -0.1],
+    "r44_coeff":          0.43,
+    "r55_coeff":          0.25,
+    "r66_coeff":          0.25,
+    "izz_total_kgm2":    60.0
+  },
+
+  "added_mass": {
+    "_comment":   "Fraction of translational/rotational inertia — Xudot = xudot_frac * m, etc.",
+    "xudot_frac": -0.1,
+    "yvdot_frac": -1.5,
+    "zwdot_frac": -1.0,
+    "kpdot_frac": -0.2,
+    "mqdot_frac": -0.8,
+    "nrdot_frac": -1.7
+  },
+
+  "propulsion": {
+    "k_pos":                          0.00365,
+    "k_neg":                          0.00255,
+    "max_thrust_per_motor_kgf":      11.5,
+    "max_reverse_thrust_per_motor_kgf": 8.0,
+    "t_prop_s":                       0.1,
+    "max_speed_kn":                   4.0
+  },
+
+  "drag": {
+    "_comment":        "xu_lin_frac and xu_quad_frac split the drag between linear and quadratic terms.",
+    "xu_lin_frac":     0.2,
+    "xu_quad_frac":    0.8,
+    "yaw_quad_fac":   10.0
+  },
+
+  "damping": {
+    "t_sway_s": 1.5,
+    "t_yaw_s":  1.5
+  },
+
+  "control_defaults": {
+    "_comment_wn":          "Inner PID loop natural frequency [rad/s]. Kp = IZZ*wn², Kd = IZZ*2*zeta*wn - IZZ. Saturates at tau_yaw_max/Kp rad ≈ 64° at wn=1.5.",
+    "wn":                   1.5,
+    "_comment_zeta":        "Inner PID damping ratio [-]. 0.7 = Butterworth (no overshoot). Do not go below 0.5.",
+    "zeta":                 0.7,
+    "_comment_wn_ref":      "Reference model (heading pre-filter) frequency [rad/s]. Must be < wn. Smooths the heading command ramp.",
+    "wn_ref":               0.5,
+    "_comment_zeta_ref":    "Reference model damping ratio [-]. 1.0 = critically damped (no overshoot on commanded heading).",
+    "zeta_ref":             1.0,
+    "_comment_r_max":       "Max yaw-rate inside the reference model [deg/s]. 1000 = effectively unlimited. Set e.g. 20 to add hard rate limiting.",
+    "r_max_deg_s":          1000.0,
+    "_comment_delta":       "Speed-proportional look-ahead: Δ = max(delta_min_m, k_delta_s * U). k_delta_s is the CTE convergence time constant [s]: τ_ye = Δ/U = k_delta_s (constant at all speeds). Rule: k_delta_s >> settling_time = 4/(zeta*wn) ≈ 3.8 s. k=15 gives τ_ye=15s (4× margin).",
+    "k_delta_s":            15.0,
+    "_comment_delta_min":   "Minimum look-ahead distance [m]. Safety floor used at very low speeds (< 0.5 m/s) to avoid numerical issues in ALOS. 5m = ~1 body length.",
+    "delta_min_m":          5.0,
+    "_comment_threshold":   "Integrator anti-windup threshold [deg]. Integral only accumulates when |heading_error| < this value. Prevents wind-up during manoeuvres.",
+    "e_x_threshold_deg":    10.0
+  }
+}

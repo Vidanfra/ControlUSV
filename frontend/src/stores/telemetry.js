@@ -74,6 +74,10 @@ export const useTelemetryStore = defineStore('telemetry', {
     crossTrackError: 0.0,
     motorPort: 0.0,
     motorStarboard: 0.0,
+    distToWp: 0.0,
+    currentWpIndex: 0,
+    tauXEff: 0.0,
+    refSpeedKn: 0.0,
 
     // Power additions
     batteryVoltage: 0.0,
@@ -872,13 +876,21 @@ export const useTelemetryStore = defineStore('telemetry', {
              this.crossTrackError = data.cross_track_error
              // Cache velocity/accel/tau for chart history
              this._lastGncDebug = {
-               surgeVel:  data.surge_vel   ?? 0,
-               swayVel:   data.sway_vel    ?? 0,
-               surgeAcc:  data.surge_acc   ?? 0,
-               swayAcc:   data.sway_acc    ?? 0,
-               vCruise:   data.v_cruise    ?? 0,
-               tauXEff:   data.tau_x_eff   ?? 0,
+               surgeVel:    data.surge_vel    ?? 0,
+               swayVel:     data.sway_vel     ?? 0,
+               surgeAcc:    data.surge_acc    ?? 0,
+               swayAcc:     data.sway_acc     ?? 0,
+               vCruise:     data.v_cruise     ?? 0,
+               tauXEff:     data.tau_x_eff    ?? 0,
+               distToWp:    data.dist_to_wp   ?? 0,
+               wpIndex:     data.wp_index     ?? 0,
+               refSpeedKn:  data.ref_speed_kn ?? 0,
              }
+             // Update live sidebar state
+             this.tauXEff        = data.tau_x_eff    ?? 0
+             this.distToWp       = data.dist_to_wp   ?? 0
+             this.currentWpIndex = data.wp_index     ?? 0
+             this.refSpeedKn     = data.ref_speed_kn ?? 0
           }
           else if (topic === 'gnc/control_output') {
              this.motorPort = data.port_pct
@@ -896,12 +908,15 @@ export const useTelemetryStore = defineStore('telemetry', {
                cte: this.crossTrackError || 0,
                port: data.port_pct || 0,
                starboard: data.starboard_pct || 0,
-               surgeVel:  dbg.surgeVel  || 0,
-               swayVel:   dbg.swayVel   || 0,
-               surgeAcc:  dbg.surgeAcc  || 0,
-               swayAcc:   dbg.swayAcc   || 0,
-               vCruise:   dbg.vCruise   || 0,
-               tauXEff:   dbg.tauXEff   || 0,
+               surgeVel:   dbg.surgeVel   || 0,
+               swayVel:    dbg.swayVel    || 0,
+               surgeAcc:   dbg.surgeAcc   || 0,
+               swayAcc:    dbg.swayAcc    || 0,
+               vCruise:    dbg.vCruise    || 0,
+               tauXEff:    dbg.tauXEff    || 0,
+               distToWp:   dbg.distToWp   || 0,
+               wpIndex:    dbg.wpIndex    || 0,
+               refSpeedKn: dbg.refSpeedKn || 0,
              })
              const cutoffGnc = nowMs - 120000
              if (this.gncHistory.length > 0 && this.gncHistory[0].timeMs < cutoffGnc)

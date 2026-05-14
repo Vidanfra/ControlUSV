@@ -19,21 +19,12 @@ from loguru import logger
 from src.gnc.gnc_utils import ssa, wrapTo2Pi
 from src.gnc.guidance import ALOSpathFollowing
 from src.gnc.control import PIDpolePlacement, controlAllocation
-
-# ── Salpa 1 drag parameters (defaults for VelocityProfiler) ──────────────────
-# Derived from Salpa1Model with 25 kg payload (m_total ≈ 190 kg):
-#   tau_max  = 2 × 11.5 kgf × 9.81 m/s² = 225.63 N   (total max forward thrust)
-#   Umax     = 4 kn = 2.0576 m/s
-#   Xu_lin   = 0.2 × tau_max / Umax    ≈ 21.94 N·s/m
-#   Xu_quad  = 0.8 × tau_max / Umax²   ≈ 42.58 N·s²/m²
-#   m_surge  = m_total + |Xudot|       ≈ 190 + 19 = 209 kg
-_TAU_MAX  = 225.63
-_UMAX     = 2.0576
-_XU_LIN   = 0.2 * _TAU_MAX / _UMAX
-_XU_QUAD  = 0.8 * _TAU_MAX / (_UMAX ** 2)
-_M_SURGE  = 209.0
-
-# (no empirical _RAMP_SCALE — ramp distance is derived numerically; see VelocityProfiler._ramp_distance)
+from src.gnc.salpa1_params import (
+    TAU_MAX as _TAU_MAX, UMAX as _UMAX,
+    XU_LIN as _XU_LIN, XU_QUAD as _XU_QUAD,
+    M_SURGE as _M_SURGE,
+    IZZ_TOTAL, N_MAX, N_MIN, WN_AUTOPILOT, ZETA_AUTOPILOT, WN_REF, ZETA_REF,
+)
 
 
 class HeadingAutopilot:
@@ -45,8 +36,8 @@ class HeadingAutopilot:
     or driven by the PathFollower for waypoint following.
     """
 
-    def __init__(self, m_yaw, wn=4.0, zeta=0.5, wn_d=1.0, zeta_d=1.0,
-                 r_max_deg=1000.0, e_x_threshold_deg=30.0):
+    def __init__(self, m_yaw, wn=1.5, zeta=0.7, wn_d=0.5, zeta_d=1.0,
+                 r_max_deg=1000.0, e_x_threshold_deg=10.0):
         """
         Args:
             m_yaw: Yaw moment of inertia including added mass [kg·m²]
@@ -142,13 +133,16 @@ class PathFollower:
     Returns desired heading for the HeadingAutopilot to track.
     """
 
-    def __init__(self, delta=5.0, gamma=0.0):
+    def __init__(self, k_delta=15.0, gamma=0.0, delta_min=5.0):
         """
         Args:
-            delta: Look-ahead distance [m]
-            gamma: ALOS adaptive sideslip gain (0 = no adaptation)
+            k_delta:   CTE convergence time constant [s]. Look-ahead Δ = max(delta_min, k_delta * U),
+                       giving a constant τ_ye = Δ/U = k_delta at all speeds.
+            gamma:     ALOS adaptive sideslip gain (0 = no adaptation)
+            delta_min: Minimum look-ahead distance [m] (low-speed floor)
         """
-        self.delta = delta
+        self.k_delta   = k_delta
+        self.delta_min = delta_min
         self.gamma = gamma
 
         # Waypoints: list of dicts with keys 'N', 'E', 'radius', 'speed'
@@ -176,13 +170,14 @@ class PathFollower:
         self._mission_complete = False
         logger.info(f"PathFollower: loaded {len(waypoints_ned)} waypoints")
 
-    def update(self, eta, sampleTime):
+    def update(self, eta, sampleTime, u_surge=0.0):
         """
         Update path following for one time step.
 
         Args:
-            eta: numpy array [N, E, D, phi, theta, psi] — current state
+            eta:      numpy array [N, E, D, phi, theta, psi] — current state
             sampleTime: Time step [s]
+            u_surge:  Surge speed [m/s] — used to compute speed-proportional look-ahead
 
         Returns:
             psi_d: Desired heading [rad]
@@ -192,6 +187,9 @@ class PathFollower:
         """
         if self._mission_complete or len(self.waypoints) < 2:
             return eta[5], 0.0, 0.0, self.wp_index  # hold current heading
+
+        # Speed-proportional look-ahead: Δ = max(delta_min, k_delta * |u|)
+        delta = max(self.delta_min, self.k_delta * abs(u_surge))
 
         # Current and next waypoints
         wp_current = self.waypoints[self.wp_index]
@@ -213,18 +211,18 @@ class PathFollower:
                 f"{len(self.waypoints)}"
             )
             # Recurse with updated index
-            return self.update(eta, sampleTime)
+            return self.update(eta, sampleTime, u_surge)
 
         # Check mission completion (reached last waypoint)
         if self.wp_index >= len(self.waypoints) - 2 and dist_to_next < wp_next['radius']:
             self._mission_complete = True
             logger.info("PathFollower: mission complete!")
 
-        # ALOS guidance
+        # ALOS guidance (delta computed from speed above)
         psi_d, self.beta_c, ye, self.prev_progress, N_t, E_t = \
             ALOSpathFollowing(
                 eta, wk, wk_1,
-                self.delta, self.gamma, self.beta_c,
+                delta, self.gamma, self.beta_c,
                 sampleTime, self.prev_progress
             )
 
@@ -260,9 +258,9 @@ class StationKeeper:
     IDLE = 'IDLE'
 
     def __init__(self, station_ned, reaching_radius=3.0, station_radius=10.0,
-                 m_yaw=60.0, B_inv=None, n_max=175.9, n_min=-175.0,
-                 wn=4.0, zeta=0.5, wn_d=1.0, zeta_d=1.0,
-                 delta=5.0, gamma=0.0, tau_X=150.0):
+                 m_yaw=IZZ_TOTAL, B_inv=None, n_max=N_MAX, n_min=N_MIN,
+                 wn=WN_AUTOPILOT, zeta=ZETA_AUTOPILOT, wn_d=WN_REF, zeta_d=ZETA_REF,
+                 k_delta=15.0, delta_min=5.0, gamma=0.0, tau_X=150.0):
         """
         Args:
             station_ned: dict with 'N', 'E' keys — station point in NED
@@ -278,7 +276,7 @@ class StationKeeper:
         self.controller = GNCController(
             m_yaw=m_yaw, B_inv=B_inv, n_max=n_max, n_min=n_min,
             wn=wn, zeta=zeta, wn_d=wn_d, zeta_d=zeta_d,
-            delta=delta, gamma=gamma, tau_X=tau_X,
+            k_delta=k_delta, delta_min=delta_min, gamma=gamma, tau_X=tau_X,
         )
 
     def _load_approach(self, eta):
@@ -610,8 +608,9 @@ class GNCController:
     """
 
     def __init__(self, m_yaw, B_inv, n_max, n_min,
-                 wn=4.0, zeta=0.5, wn_d=1.0, zeta_d=1.0,
-                 delta=5.0, gamma=0.0, tau_X=150.0, e_x_threshold_deg=30.0):
+                 wn=1.5, zeta=0.7, wn_d=0.5, zeta_d=1.0,
+                 k_delta=15.0, delta_min=5.0, gamma=0.0,
+                 tau_X=150.0, e_x_threshold_deg=10.0):
         """
         Args:
             m_yaw: Yaw moment of inertia [kg·m²]
@@ -620,14 +619,15 @@ class GNCController:
             n_min: Minimum propeller speed [rad/s] (negative)
             wn, zeta: PID controller tuning
             wn_d, zeta_d: Reference model tuning
-            delta: ALOS look-ahead distance [m]
+            k_delta:   CTE convergence time constant [s]; look-ahead = max(delta_min, k_delta * U)
+            delta_min: Minimum look-ahead distance [m] (low-speed floor)
             gamma: ALOS adaptive gain
             tau_X: Cruise surge force [N]
             e_x_threshold_deg: Anti-windup threshold [deg]
         """
         self.autopilot    = HeadingAutopilot(m_yaw, wn, zeta, wn_d, zeta_d,
                                              e_x_threshold_deg=e_x_threshold_deg)
-        self.path_follower = PathFollower(delta, gamma)
+        self.path_follower = PathFollower(k_delta, gamma, delta_min)
         self.vel_profiler  = VelocityProfiler(tau_X)
         self.B_inv = B_inv
         self.n_max = n_max
@@ -663,13 +663,15 @@ class GNCController:
             debug: dict with psi_d, heading_error, cross_track_error, wp_index,
                    tau_X_eff (effective surge force from velocity profile)
         """
-        # 1. Guidance — desired heading from path follower
-        psi_d, ye, speed, wp_idx = self.path_follower.update(eta, sampleTime)
+        # 1. Guidance — desired heading from path follower (speed-proportional look-ahead)
+        u_surge = float(nu[0])
+        psi_d, ye, speed, wp_idx = self.path_follower.update(eta, sampleTime, u_surge)
 
         # 2. Velocity profile — compute effective surge force for this timestep.
         #    Distances to/from waypoints drive the trapezoidal ramp.
         wps = self.path_follower.waypoints
         tau_x_eff = self.tau_X   # fallback: constant cruise
+        dist_to_next = 0.0
         if len(wps) >= 2 and wp_idx < len(wps) - 1:
             wp_from = wps[wp_idx]
             wp_to   = wps[min(wp_idx + 1, len(wps) - 1)]
@@ -698,6 +700,7 @@ class GNCController:
             'heading_error':    heading_error,
             'cross_track_error': ye,
             'wp_index':         wp_idx,
+            'dist_to_next':     dist_to_next,
             'n1':               n1,
             'n2':               n2,
             'tau_N':            tau_N,
@@ -722,15 +725,17 @@ class GNCController:
         """
         Update tuning parameters.
 
-        Supported kwargs: wn, zeta, wn_d, zeta_d, delta, gamma, tau_X
+        Supported kwargs: wn, zeta, wn_d, zeta_d, k_delta, delta_min, gamma, tau_X
         """
         if 'wn' in kwargs or 'zeta' in kwargs or 'wn_d' in kwargs or 'zeta_d' in kwargs:
             self.autopilot.update_tuning(
                 wn=kwargs.get('wn'), zeta=kwargs.get('zeta'),
                 wn_d=kwargs.get('wn_d'), zeta_d=kwargs.get('zeta_d')
             )
-        if 'delta' in kwargs:
-            self.path_follower.delta = kwargs['delta']
+        if 'k_delta' in kwargs:
+            self.path_follower.k_delta = kwargs['k_delta']
+        if 'delta_min' in kwargs:
+            self.path_follower.delta_min = kwargs['delta_min']
         if 'gamma' in kwargs:
             self.path_follower.gamma = kwargs['gamma']
         if 'tau_X' in kwargs:

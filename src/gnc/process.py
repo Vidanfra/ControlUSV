@@ -27,23 +27,24 @@ from src.core.models import (
 )
 from src.core.config import settings
 from src.gnc.gnc_utils import latlon_to_ned, ned_to_latlon, ssa, attitudeEuler
-from src.gnc.autopilot import GNCController, StationKeeper, _XU_LIN, _XU_QUAD
+from src.gnc.autopilot import GNCController, StationKeeper
+from src.gnc.salpa1_params import (
+    IZZ_TOTAL  as SALPA1_IZZ,
+    K_POS      as SALPA1_K_POS,
+    L1         as SALPA1_L1,
+    L2         as SALPA1_L2,
+    N_MAX      as SALPA1_N_MAX,
+    N_MIN      as SALPA1_N_MIN,
+    XU_LIN, XU_QUAD,
+)
 from src.gnc.vehicle_model import Salpa1Model
 from src.gnc.sim_sensors import simulate_gnss, simulate_imu
 
 # Salpa 1 vehicle parameters (for controller initialization)
-SALPA1_IZZ   = 60.0
-SALPA1_K_POS = 0.00365
-SALPA1_L1    = -0.673
-SALPA1_L2    =  0.673
-SALPA1_N_MAX =  175.9
-SALPA1_N_MIN = -175.0
-
-
 def _speed_kn_to_tau_x(speed_kn: float) -> float:
     """Convert cruise speed [knots] to the required surge force [N] via drag inversion."""
     v = max(speed_kn, 0.0) * 0.5144   # knots → m/s
-    return _XU_LIN * v + _XU_QUAD * v * v
+    return XU_LIN * v + XU_QUAD * v * v
 
 
 def _make_default_controller(config: GncConfig = None):
@@ -59,7 +60,7 @@ def _make_default_controller(config: GncConfig = None):
         n_min=SALPA1_N_MIN,
         wn=config.wn, zeta=config.zeta,
         wn_d=config.wn_ref, zeta_d=config.zeta_ref,
-        delta=config.delta, gamma=config.gamma,
+        k_delta=config.k_delta, delta_min=config.delta_min, gamma=config.gamma,
         tau_X=_speed_kn_to_tau_x(config.cruise_speed_kn),
         e_x_threshold_deg=config.e_x_threshold_deg,
     )
@@ -407,7 +408,7 @@ class GNCProcess(ServiceProcess):
         """Update active controllers with the new GNC Config parameters."""
         cfg = self.gnc_config
         tuning = dict(wn=cfg.wn, zeta=cfg.zeta, wn_d=cfg.wn_ref, zeta_d=cfg.zeta_ref,
-                      delta=cfg.delta, gamma=cfg.gamma,
+                      k_delta=cfg.k_delta, delta_min=cfg.delta_min, gamma=cfg.gamma,
                       tau_X=_speed_kn_to_tau_x(cfg.cruise_speed_kn))
 
         # Update main path-following controller
@@ -474,6 +475,13 @@ class GNCProcess(ServiceProcess):
         else:
             u = v_sway = du_dt = dv_dt = 0.0
 
+        tau_x_eff_val = debug.get('tau_X', 0.0)
+        if tau_x_eff_val > 0:
+            _disc = XU_LIN * XU_LIN + 4.0 * XU_QUAD * tau_x_eff_val
+            ref_speed_kn = ((-XU_LIN + math.sqrt(_disc)) / (2.0 * XU_QUAD)) / 0.5144
+        else:
+            ref_speed_kn = 0.0
+
         self.control_debug_pub.publish(
             ControlDebugMessage(
                 timestamp=now,
@@ -484,10 +492,12 @@ class GNCProcess(ServiceProcess):
                 sway_vel=v_sway,
                 surge_acc=du_dt,
                 sway_acc=dv_dt,
-                tau_x_eff=debug.get('tau_X', 0.0),
+                tau_x_eff=tau_x_eff_val,
                 tau_x_cruise=debug.get('tau_X_cruise', 0.0),
                 v_cruise=debug.get('v_cruise', 0.0),
                 wp_index=debug.get('wp_index', 0),
+                dist_to_wp=debug.get('dist_to_next', 0.0),
+                ref_speed_kn=ref_speed_kn,
             ).model_dump()
         )
 
@@ -690,7 +700,8 @@ class GNCProcess(ServiceProcess):
             zeta=self.gnc_config.zeta,
             wn_d=self.gnc_config.wn_ref,
             zeta_d=self.gnc_config.zeta_ref,
-            delta=self.gnc_config.delta,
+            k_delta=self.gnc_config.k_delta,
+            delta_min=self.gnc_config.delta_min,
             gamma=self.gnc_config.gamma,
             tau_X=_speed_kn_to_tau_x(self.gnc_config.cruise_speed_kn),
         )

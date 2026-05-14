@@ -26,54 +26,16 @@ from loguru import logger
 
 from src.gnc.gnc_utils import Smtrx, Hmtrx, Rzyx, m2c, crossFlowDrag, sat, ssa
 from src.gnc.control import PIDpolePlacement, controlAllocation
-
-
-# ============================================================================
-# SALPA 1 CONFIGURATION PARAMETERS
-# ============================================================================
-
-# Main dimensions
-LENGTH = 2.4          # [m] Overall length
-BEAM = 1.7            # [m] Overall beam
-DRAFT = 0.09          # [m] Draft at design displacement
-
-# Mass properties
-HULL_MASS = 165.0     # [kg] Hull mass (without payload)
-CG_HULL = [-0.063, 0.0, -0.065]     # [m] CG of hull (body frame)
-CG_PAYLOAD = [0.1, 0.0, -0.1]       # [m] CG of payload
-
-# Pontoon geometry
-PONTOON_BEAM = 0.35   # [m] Width of one pontoon
-PONTOON_Y = 0.673     # [m] Distance from centerline to pontoon center
-CW_PONT = 0.75        # [-] Waterline area coefficient
-CB_PONT = 0.871       # [-] Block coefficient
-
-# Radii of gyration coefficients
-R44_COEFF = 0.43      # Roll: R44 = coeff * BEAM
-R55_COEFF = 0.25      # Pitch: R55 = coeff * LENGTH
-R66_COEFF = 0.25      # Yaw: R66 = coeff * LENGTH
-
-# Speed and damping
-MAX_SPEED_KNOTS = 4.0  # [knots]
-T_SWAY = 1.5           # [s] Sway time constant
-T_YAW = 1.5            # [s] Yaw time constant
-
-# Propulsion
-K_POS = 0.00365        # [N/(rad/s)²] Positive thrust coefficient
-K_NEG = 0.00255        # [N/(rad/s)²] Negative thrust coefficient
-MAX_THRUST_KGF = 11.5  # [kgf] Max thrust per motor
-MIN_THRUST_KGF = 8.0   # [kgf] Max reverse thrust per motor
-T_PROP = 0.1           # [s] Propeller time constant
-
-# Autopilot defaults
-WN_AUTOPILOT = 4.0     # [rad/s] PID natural frequency
-ZETA_AUTOPILOT = 0.5   # [-] PID damping ratio
-WN_REF = 1.0           # [rad/s] Reference model natural frequency
-ZETA_REF = 1.0         # [-] Reference model damping
-R_MAX_DEG = 1000.0     # [deg/s] Maximum yaw rate
-
-# Other
-LCF_SALPA1 = -0.001   # [m] Longitudinal center of flotation
+from src.gnc.salpa1_params import (
+    LENGTH, BEAM, DRAFT, PONTOON_BEAM, PONTOON_Y, CW_PONT, CB_PONT,
+    HULL_MASS, CG_HULL, CG_PAYLOAD, R44_COEFF, R55_COEFF, R66_COEFF,
+    K_POS, K_NEG, MAX_THRUST_KGF, MIN_THRUST_KGF, T_PROP,
+    T_SWAY, T_YAW, WN_AUTOPILOT, ZETA_AUTOPILOT, WN_REF, ZETA_REF, R_MAX_DEG,
+    AM_XUDOT, AM_YVDOT, AM_ZWDOT, AM_KPDOT, AM_MQDOT, AM_NRDOT,
+    XU_LIN_FRAC, XU_QUAD_FRAC, YAW_QUAD_FAC, TAU_MAX, UMAX, N_MAX, N_MIN, G,
+)
+from src.gnc.salpa1_params import MAX_SPEED_KN as MAX_SPEED_KNOTS
+from src.gnc.salpa1_params import LCF as LCF_SALPA1
 
 
 class Salpa1Model:
@@ -96,7 +58,7 @@ class Salpa1Model:
             wn_d, zeta_d: Reference model tuning overrides
         """
         D2R = math.pi / 180
-        self.g = 9.81
+        self.g = G
         rho = 1025
 
         self.V_c = V_current
@@ -129,7 +91,6 @@ class Salpa1Model:
         # Time constants
         T_sway = T_SWAY
         T_yaw = T_YAW
-        Umax = MAX_SPEED_KNOTS * 0.5144
 
         # Pontoon
         self.B_pont = PONTOON_BEAM
@@ -151,8 +112,8 @@ class Salpa1Model:
         self.l2 = y_pont
         self.k_pos = K_POS
         self.k_neg = K_NEG
-        self.n_max = math.sqrt((MAX_THRUST_KGF * self.g) / self.k_pos)
-        self.n_min = -math.sqrt((MIN_THRUST_KGF * self.g) / self.k_neg)
+        self.n_max = N_MAX
+        self.n_min = N_MIN
 
         # Mass matrices
         MRB_CG = np.zeros((6, 6))
@@ -161,12 +122,12 @@ class Salpa1Model:
         MRB = self.H_rg.T @ MRB_CG @ self.H_rg
 
         # Added mass
-        Xudot = -0.1 * m
-        Yvdot = -1.5 * m
-        Zwdot = -1.0 * m
-        Kpdot = -0.2 * self.Ig[0, 0]
-        Mqdot = -0.8 * self.Ig[1, 1]
-        Nrdot = -1.7 * self.Ig[2, 2]
+        Xudot = AM_XUDOT * m
+        Yvdot = AM_YVDOT * m
+        Zwdot = AM_ZWDOT * m
+        Kpdot = AM_KPDOT * self.Ig[0, 0]
+        Mqdot = AM_MQDOT * self.Ig[1, 1]
+        Nrdot = AM_NRDOT * self.Ig[2, 2]
         self.MA = -np.diag([Xudot, Yvdot, Zwdot, Kpdot, Mqdot, Nrdot])
 
         self.M = MRB + self.MA
@@ -204,9 +165,8 @@ class Salpa1Model:
         w5 = math.sqrt(G55 / self.M[4, 4])
 
         # Damping
-        total_thrust_max = 2 * MAX_THRUST_KGF * self.g
-        Xu = (-0.2 * total_thrust_max / Umax) * self.drag_scale_factor
-        self.Xu_quad = (-0.8 * total_thrust_max / (Umax ** 2)) * self.drag_scale_factor
+        Xu = (-XU_LIN_FRAC * TAU_MAX / UMAX) * self.drag_scale_factor
+        self.Xu_quad = (-XU_QUAD_FRAC * TAU_MAX / (UMAX ** 2)) * self.drag_scale_factor
 
         Yv = -self.M[1, 1] / T_sway
         Zw = -2 * 0.3 * w3 * self.M[2, 2]
@@ -300,7 +260,7 @@ class Salpa1Model:
         # Damping (linear + quadratic)
         tau_damp = -np.matmul(self.D, nu_r)
         tau_damp[0] += self.Xu_quad * abs(nu_r[0]) * nu_r[0]
-        tau_damp[5] -= 10 * self.D[5, 5] * abs(nu_r[5]) * nu_r[5]
+        tau_damp[5] -= YAW_QUAD_FAC * self.D[5, 5] * abs(nu_r[5]) * nu_r[5]
 
         # Cross-flow drag
         tau_crossflow = crossFlowDrag(self.L, self.B_pont, self.T, nu_r)
