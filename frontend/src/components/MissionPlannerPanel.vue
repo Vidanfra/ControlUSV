@@ -449,7 +449,7 @@ function stop() {
 function saveCsv() {
   const wps = missionWaypoints.value
   if (!wps.length) return
-  const lines = ['# lat,lon,radius,speed', ...wps.map(wp =>
+  const lines = ['# lat,lon,radius(m),speed(kn)', ...wps.map(wp =>
     `${wp.lat.toFixed(7)},${wp.lon.toFixed(7)},${wp.radius},${wp.speed}`)]
   const blob = new Blob([lines.join('\n')], { type: 'text/csv' })
   const url = URL.createObjectURL(blob)

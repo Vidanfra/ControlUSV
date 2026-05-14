@@ -41,6 +41,21 @@
         <h4>Heading Error</h4>
         <div class="value">{{ degrees(telemetry.headingError) }}&deg;</div>
       </div>
+
+      <div class="stat-box">
+        <h4>COG</h4>
+        <div class="value">{{ (telemetry.gnssCog || 0).toFixed(1) }}&deg;</div>
+      </div>
+
+      <div class="stat-box">
+        <h4>SOG</h4>
+        <div class="value">{{ (telemetry.gnssSogKnots || 0).toFixed(2) }} kn</div>
+      </div>
+
+      <div class="stat-box">
+        <h4>Reference Speed</h4>
+        <div class="value">{{ (telemetry.refSpeedKn || 0).toFixed(2) }} kn</div>
+      </div>
       
       <div class="stat-box">
         <h4>Cross Track Error</h4>
@@ -55,6 +70,16 @@
       <div class="stat-box">
         <h4>Motor Starboard</h4>
         <div class="value motor-starboard">{{ telemetry.motorStarboard.toFixed(1) }}%</div>
+      </div>
+
+      <div class="stat-box">
+        <h4>Distance to WP</h4>
+        <div class="value">{{ (telemetry.distToWp || 0).toFixed(1) }} m</div>
+      </div>
+
+      <div class="stat-box">
+        <h4>Target WP</h4>
+        <div class="value">WP {{ (telemetry.currentWpIndex || 0) + 2 }}</div>
       </div>
     </div>
   </div>
@@ -119,30 +144,56 @@ const chartBaseOptions = {
 
 // Setup custom charts options
 const headingChartOptions = {
-  ...chartBaseOptions,
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: false,
+  elements: { point: { radius: 0 } },
+  interaction: { mode: 'index', intersect: false },
+  plugins: { legend: { labels: { color: 'white' } } },
   scales: {
-    ...chartBaseOptions.scales,
+    x: { ticks: { color: '#aaa', maxTicksLimit: 10 }, grid: { color: '#333' } },
     y: {
-      ...chartBaseOptions.scales.y,
-      min: 0,
-      max: 360
+      type: 'linear', position: 'left',
+      min: 0, max: 360,
+      ticks: { color: '#4fc3f7' },
+      grid: { color: '#333' },
+      title: { display: true, text: 'Heading [°]', color: '#4fc3f7' }
+    },
+    y2: {
+      type: 'linear', position: 'right',
+      ticks: { color: '#ef5350' },
+      grid: { drawOnChartArea: false },
+      title: { display: true, text: 'Heading Error [°]', color: '#ef5350' }
     }
   }
 }
 
 const motorChartOptions = {
-  ...chartBaseOptions,
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: false,
+  elements: { point: { radius: 0 } },
+  interaction: { mode: 'index', intersect: false },
+  plugins: { legend: { labels: { color: 'white' } } },
   scales: {
-    ...chartBaseOptions.scales,
+    x: { ticks: { color: '#aaa', maxTicksLimit: 10 }, grid: { color: '#333' } },
     y: {
-      ...chartBaseOptions.scales.y,
-      min: -100,
-      max: 100
+      type: 'linear', position: 'left',
+      min: -100, max: 100,
+      ticks: { color: '#aaa' },
+      grid: { color: '#333' },
+      title: { display: true, text: 'Motor [%]', color: '#aaa' }
+    },
+    y2: {
+      type: 'linear', position: 'right',
+      ticks: { color: '#ce93d8' },
+      grid: { drawOnChartArea: false },
+      title: { display: true, text: 'CTE [m]', color: '#ce93d8' }
     }
   }
 }
 
-// Dual-Y chart: surge/sway speed (left) + surge/sway accel (right)
+// Dual-Y chart: surge/sway speed (left, knots) + surge/sway accel (right)
 const speedChartOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -163,14 +214,7 @@ const speedChartOptions = {
       position: 'left',
       ticks: { color: '#4fc3f7' },
       grid: { color: '#333' },
-      title: { display: true, text: 'Speed [m/s]', color: '#4fc3f7' }
-    },
-    y2: {
-      type: 'linear',
-      position: 'right',
-      ticks: { color: '#ff8a65' },
-      grid: { drawOnChartArea: false },
-      title: { display: true, text: 'Accel [m/s²]', color: '#ff8a65' }
+      title: { display: true, text: 'Speed [kn]', color: '#4fc3f7' }
     }
   }
 }
@@ -190,8 +234,9 @@ const filteredHistory = computed(() => {
 const headingChartData = computed(() => ({
   labels: filteredHistory.value.map(pt => pt.label),
   datasets: [
-    { label: 'Actual Heading' + simSuffix(), borderColor: '#42A5F5', data: filteredHistory.value.map(pt => pt.actualHeading), borderWidth: 2, tension: 0.1 },
-    { label: 'Target Heading' + simSuffix(), borderColor: '#FFA500', data: filteredHistory.value.map(pt => pt.targetHeading), borderWidth: 2, tension: 0.1 }
+    { label: 'Actual Heading' + simSuffix(), borderColor: '#42A5F5', yAxisID: 'y', data: filteredHistory.value.map(pt => pt.actualHeading), borderWidth: 2, tension: 0.1 },
+    { label: 'Target Heading' + simSuffix(), borderColor: '#FFA500', yAxisID: 'y', data: filteredHistory.value.map(pt => pt.targetHeading), borderWidth: 2, tension: 0.1 },
+    { label: 'Heading Error' + simSuffix(), borderColor: '#ef5350', yAxisID: 'y2', data: filteredHistory.value.map(pt => pt.headingError), borderWidth: 1.5, tension: 0.1, borderDash: [4, 2] },
   ]
 }))
 
@@ -203,6 +248,7 @@ const motorChartData = computed(() => {
       {
         label: 'Port' + simSuffix(),
         borderColor: isSim ? '#FF8800' : '#FF4444',
+        yAxisID: 'y',
         data: filteredHistory.value.map(pt => pt.port),
         borderWidth: 2,
         tension: 0.1
@@ -210,58 +256,53 @@ const motorChartData = computed(() => {
       {
         label: 'Starboard' + simSuffix(),
         borderColor: isSim ? '#FFD700' : '#00C851',
+        yAxisID: 'y',
         data: filteredHistory.value.map(pt => pt.starboard),
         borderWidth: 2,
         tension: 0.1
+      },
+      {
+        label: 'CTE [m]' + simSuffix(),
+        borderColor: '#ce93d8',
+        yAxisID: 'y2',
+        data: filteredHistory.value.map(pt => pt.cte || 0),
+        borderWidth: 1.5,
+        tension: 0.1,
+        borderDash: [4, 2]
       }
     ]
   }
 })
 
-// Speed + acceleration chart (dual Y)
+// Speed + acceleration chart (dual Y, speed in knots)
+const MS_TO_KN = 1 / 0.5144
 const speedChartData = computed(() => ({
   labels: filteredHistory.value.map(pt => pt.label),
   datasets: [
     {
-      label: 'Surge u [m/s]' + simSuffix(),
+      label: 'Surge u [kn]' + simSuffix(),
       borderColor: '#4fc3f7',
-      data: filteredHistory.value.map(pt => pt.surgeVel || 0),
+      data: filteredHistory.value.map(pt => (pt.surgeVel || 0) * MS_TO_KN),
       yAxisID: 'y',
       borderWidth: 2,
       tension: 0.1
     },
     {
-      label: 'Sway v [m/s]' + simSuffix(),
+      label: 'Sway v [kn]' + simSuffix(),
       borderColor: '#81c784',
-      data: filteredHistory.value.map(pt => pt.swayVel || 0),
+      data: filteredHistory.value.map(pt => (pt.swayVel || 0) * MS_TO_KN),
       yAxisID: 'y',
       borderWidth: 1.5,
       tension: 0.1
     },
     {
-      label: 'Cruise ref [m/s]',
+      label: 'Ref Speed [kn]',
       borderColor: '#FFA500',
       borderDash: [6, 3],
-      data: filteredHistory.value.map(pt => pt.vCruise || 0),
+      data: filteredHistory.value.map(pt => pt.refSpeedKn || 0),
       yAxisID: 'y',
       borderWidth: 1.5,
       tension: 0
-    },
-    {
-      label: 'Surge accel [m/s²]' + simSuffix(),
-      borderColor: '#ff8a65',
-      data: filteredHistory.value.map(pt => pt.surgeAcc || 0),
-      yAxisID: 'y2',
-      borderWidth: 1.5,
-      tension: 0.1
-    },
-    {
-      label: 'Sway accel [m/s²]' + simSuffix(),
-      borderColor: '#f06292',
-      data: filteredHistory.value.map(pt => pt.swayAcc || 0),
-      yAxisID: 'y2',
-      borderWidth: 1.5,
-      tension: 0.1
     }
   ]
 }))
