@@ -260,12 +260,15 @@ class StationKeeper:
     def __init__(self, station_ned, reaching_radius=3.0, station_radius=10.0,
                  m_yaw=IZZ_TOTAL, B_inv=None, n_max=N_MAX, n_min=N_MIN,
                  wn=WN_AUTOPILOT, zeta=ZETA_AUTOPILOT, wn_d=WN_REF, zeta_d=ZETA_REF,
-                 k_delta=15.0, delta_min=5.0, gamma=0.0, tau_X=150.0):
+                 k_delta=15.0, delta_min=5.0, gamma=0.0, tau_X=150.0,
+                 vel_profiler_enabled=True, accel_ms2=0.3):
         """
         Args:
             station_ned: dict with 'N', 'E' keys — station point in NED
             reaching_radius: inner radius [m] — idle when inside
             station_radius: outer radius [m] — re-engage when outside
+            vel_profiler_enabled: Enable/disable the trapezoidal velocity profiler
+            accel_ms2: Acceleration rate when leaving a waypoint [m/s²]
         """
         self.station_ned = station_ned
         self.reaching_radius = reaching_radius
@@ -277,6 +280,7 @@ class StationKeeper:
             m_yaw=m_yaw, B_inv=B_inv, n_max=n_max, n_min=n_min,
             wn=wn, zeta=zeta, wn_d=wn_d, zeta_d=zeta_d,
             k_delta=k_delta, delta_min=delta_min, gamma=gamma, tau_X=tau_X,
+            vel_profiler_enabled=vel_profiler_enabled, accel_ms2=accel_ms2,
         )
 
     def _load_approach(self, eta):
