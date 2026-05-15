@@ -744,8 +744,11 @@ export const useTelemetryStore = defineStore('telemetry', {
 
       console.log('Attempting to connect to WebSocket...')
       const ws = new WebSocket(
-        // Dynamically determine protocol (ws or wss) and host
-        `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8000/ws`
+        // Use window.location.host (includes port when non-standard) so the
+        // WebSocket connects to the same host:port the page was served from.
+        // This works both on localhost:8000 and through proxies/tunnels like
+        // ngrok that serve on the standard HTTPS port (443).
+        `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`
       )
       this.socket = ws
 

@@ -410,11 +410,30 @@ async def upload_waypoints(file: UploadFile = File(...)):
 frontend_dist_path = os.path.join(os.getcwd(), "frontend", "dist")
 
 if os.path.exists(frontend_dist_path):
+    _index_html_path = os.path.join(frontend_dist_path, "index.html")
+
+    # Serve index.html with no-cache headers so browsers never serve a stale
+    # entry point after a frontend rebuild.  Hashed assets (index-abc123.js)
+    # are safe to cache because their filename changes on every build.
+    # These explicit routes must be registered BEFORE the static mount so they
+    # take priority over Starlette's StaticFiles handler.
+    @app.get("/")
+    @app.get("/index.html")
+    async def serve_index():
+        return FileResponse(
+            _index_html_path,
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0",
+            },
+        )
+
     app.mount("/", StaticFiles(directory=frontend_dist_path, html=True), name="static")
     logger.info(f"Serving static files from {frontend_dist_path}")
 else:
     logger.warning(f"Frontend dist folder not found at {frontend_dist_path}. Did you run 'npm run build'?")
-    
+
     @app.get("/")
     def index():
         return {"message": "Frontend not built or not found. Please run 'npm run build' in frontend/ folder."}

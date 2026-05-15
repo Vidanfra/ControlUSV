@@ -1,13 +1,13 @@
 {
   "gnc_config": {
-    "wn": 2.0,
-    "zeta": 0.7,
-    "wn_ref": 1.5,
-    "zeta_ref": 1.0,
+    "wn": 3.0,
+    "zeta": 2.0,
+    "wn_ref": 3.0,
+    "zeta_ref": 2.0,
     "k_delta": 15.0,
     "delta_min": 5.0,
     "gamma": 0.0,
-    "cruise_speed_kn": 3,
+    "cruise_speed_kn": 3.0,
     "e_x_threshold_deg": 10.0,
     "accel_ms2": 0.3,
     "vel_profiler_enabled": true
