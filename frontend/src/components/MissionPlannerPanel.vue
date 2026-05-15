@@ -275,7 +275,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useTelemetryStore } from '../stores/telemetry'
 import { storeToRefs } from 'pinia'
 import { generateLawnmower } from '../composables/useSurveyGenerator.js'
@@ -286,7 +286,12 @@ const { isConnected, isArmed, rtSimActive, missionWaypoints, wpRouteActive, simM
 // ── Local UI state ────────────────────────────────────────────────────────────
 const direction = ref('forward')
 const completion = ref('stop')
-const cruiseSpeedKn = ref(3.2)
+// Initialise from store (localStorage → first backend heartbeat overwrites it)
+const cruiseSpeedKn = ref(store.gncConfig?.cruise_speed_kn ?? 3.2)
+// Keep slider in sync when the backend broadcasts a new gnc_config (e.g. after restart)
+watch(() => store.gncConfig?.cruise_speed_kn, (val) => {
+  if (!wpRouteActive.value && val !== undefined) cruiseSpeedKn.value = val
+})
 const fileInput = ref(null)
 const startError = ref('')
 const startWarnings = ref([])

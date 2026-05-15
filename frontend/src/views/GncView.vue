@@ -79,7 +79,7 @@
 
       <div class="stat-box">
         <h4>Target WP</h4>
-        <div class="value">WP {{ (telemetry.currentWpIndex || 0) + 2 }}</div>
+        <div class="value">{{ targetWpLabel }}</div>
       </div>
     </div>
   </div>
@@ -224,6 +224,38 @@ const degrees = (rad) => {
   if (rad === undefined || rad === null) return '0.0'
   return (rad * (180 / Math.PI)).toFixed(1)
 }
+
+// Target WP label — mirrors Mission Planner naming
+const targetWpLabel = computed(() => {
+  // Station keeping shows its own label regardless of wp_index
+  if (telemetry.stationActive || telemetry.vehicleMode === 'STATION') return 'STATION WP'
+
+  const total = telemetry.missionWaypoints.length
+  if (total < 2) return '—'
+
+  // PathFollower.wp_index is the FROM-waypoint index in the backend list.
+  // The backend always prepends a bridge WP (current vehicle position), so:
+  //   backend list = [bridge, wp[0], wp[1], ..., wp[total-1]]
+  // The vehicle is heading TO backend[wp_index + 1] = frontend[wp_index].
+  //
+  // In reverse the backend receives the waypoints already reversed:
+  //   backend list = [bridge, ME, WPN, ..., WP1, MS]
+  // So TO-waypoint = frontend[total - 1 - wp_index].
+  const wpIdx = telemetry.currentWpIndex || 0
+  let frontendIdx
+  if (telemetry.wpRouteDirection === 'reverse') {
+    frontendIdx = (total - 1) - wpIdx
+  } else {
+    frontendIdx = wpIdx
+  }
+
+  // Clamp to valid range (handles loop transitions / edge cases)
+  frontendIdx = Math.max(0, Math.min(total - 1, frontendIdx))
+
+  if (frontendIdx === 0)         return 'MISSION START'
+  if (frontendIdx >= total - 1)  return 'MISSION END'
+  return 'WP ' + frontendIdx
+})
 
 // Chart Data (computed from store history — collected globally)
 const filteredHistory = computed(() => {

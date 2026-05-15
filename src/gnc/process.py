@@ -63,6 +63,8 @@ def _make_default_controller(config: GncConfig = None):
         k_delta=config.k_delta, delta_min=config.delta_min, gamma=config.gamma,
         tau_X=_speed_kn_to_tau_x(config.cruise_speed_kn),
         e_x_threshold_deg=config.e_x_threshold_deg,
+        vel_profiler_enabled=config.vel_profiler_enabled,
+        accel_ms2=config.accel_ms2,
     )
 
 
@@ -290,6 +292,20 @@ class GNCProcess(ServiceProcess):
             # Track GNSS fix type from system status
             if 'gnss_fix_type' in data:
                 self.last_gnss_fix_type = data['gnss_fix_type']
+            # Sync gnc_config from Manager heartbeat.
+            # Manager is the persistence authority (loads from manager_settings.json on
+            # startup and saves on every SET_GNC_CONFIG / START_WP_ROUTE / START_STATION).
+            # Without this, GNCProcess would keep GncConfig() defaults after every restart
+            # until the user manually clicks "Update GNC Settings" on the frontend.
+            if 'gnc_config' in data:
+                try:
+                    new_config = GncConfig(**data['gnc_config'])
+                    if new_config.model_dump() != self.gnc_config.model_dump():
+                        self.gnc_config = new_config
+                        self._apply_gnc_config()
+                        logger.debug("GNC: gnc_config synced from system/status heartbeat")
+                except Exception as e:
+                    logger.warning(f"GNC: Failed to apply gnc_config from heartbeat: {e}")
 
     def _handle_command(self, cmd: CommandMessage):
         # Commands published by GNC itself (for Manager sync) must be ignored here
@@ -409,7 +425,9 @@ class GNCProcess(ServiceProcess):
         cfg = self.gnc_config
         tuning = dict(wn=cfg.wn, zeta=cfg.zeta, wn_d=cfg.wn_ref, zeta_d=cfg.zeta_ref,
                       k_delta=cfg.k_delta, delta_min=cfg.delta_min, gamma=cfg.gamma,
-                      tau_X=_speed_kn_to_tau_x(cfg.cruise_speed_kn))
+                      tau_X=_speed_kn_to_tau_x(cfg.cruise_speed_kn),
+                      vel_profiler_enabled=cfg.vel_profiler_enabled,
+                      accel_ms2=cfg.accel_ms2)
 
         # Update main path-following controller
         if self.controller:
@@ -704,6 +722,8 @@ class GNCProcess(ServiceProcess):
             delta_min=self.gnc_config.delta_min,
             gamma=self.gnc_config.gamma,
             tau_X=_speed_kn_to_tau_x(self.gnc_config.cruise_speed_kn),
+            vel_profiler_enabled=self.gnc_config.vel_profiler_enabled,
+            accel_ms2=self.gnc_config.accel_ms2,
         )
 
         # Initialize approach path from current position

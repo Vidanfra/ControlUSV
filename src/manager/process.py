@@ -147,8 +147,9 @@ class ManagerProcess(ServiceProcess):
                 logger.info(f"Station WP set: {self.station_wp}, reaching: {self.station_reaching_radius}m, station: {self.station_radius}m")
 
             elif cmd.type == CommandType.START_STATION:
-                if 'tau_x' in cmd.payload:
-                    self.gnc_config.tau_x = cmd.payload['tau_x']
+                if 'cruise_speed_kn' in cmd.payload:
+                    self.gnc_config.cruise_speed_kn = cmd.payload['cruise_speed_kn']
+                    self._save_settings()
                 self.station_active = True
                 logger.info("Station keeping STARTED")
 
@@ -157,8 +158,9 @@ class ManagerProcess(ServiceProcess):
                 logger.info("Station keeping STOPPED")
 
             elif cmd.type == CommandType.START_WP_ROUTE:
-                if 'tau_x' in cmd.payload:
-                    self.gnc_config.tau_x = cmd.payload['tau_x']
+                if 'cruise_speed_kn' in cmd.payload:
+                    self.gnc_config.cruise_speed_kn = cmd.payload['cruise_speed_kn']
+                    self._save_settings()
                 self.wp_route_active = True
                 logger.info(f"WP Route STARTED: {cmd.payload}")
 

@@ -142,7 +142,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useTelemetryStore } from '../stores/telemetry'
 import { storeToRefs } from 'pinia'
 
@@ -156,8 +156,13 @@ const startError = ref('')
 const startWarnings = ref([])
 
 // Cruise speed slider (knots, 0.1–4.0 kn)
+// Initialise from store (localStorage → first backend heartbeat overwrites it)
 const KN_TO_MS = 0.5144
-const cruiseSpeedKn = ref(3.2)   // default 3.2 kn ≈ 150 N
+const cruiseSpeedKn = ref(store.gncConfig?.cruise_speed_kn ?? 3.2)
+// Keep slider in sync when the backend broadcasts a new gnc_config (e.g. after restart)
+watch(() => store.gncConfig?.cruise_speed_kn, (val) => {
+  if (!wpRouteActive.value && val !== undefined) cruiseSpeedKn.value = val
+})
 const speedMs    = computed(() => cruiseSpeedKn.value * KN_TO_MS)
 const surgeForceN = computed(() => {
   // Drag inversion: tau = Xu_lin*v + Xu_quad*v²  (Salpa 1 coefficients)

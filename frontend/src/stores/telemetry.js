@@ -205,13 +205,17 @@ export const useTelemetryStore = defineStore('telemetry', {
 
     // GNC Configuration state
     gncConfig: JSON.parse(localStorage.getItem('gncConfig')) || {
-      wn: 4.0,
-      zeta: 0.5,
-      wn_ref: 1.0,
-      zeta_ref: 1.0,
-      delta: 5.0,
+      wn: 1.7,
+      zeta: 0.7,
+      wn_ref: 0.7,
+      zeta_ref: 0.9,
+      k_delta: 15.0,
+      delta_min: 5.0,
       gamma: 0.0,
-      cruise_speed_kn: 3.0
+      cruise_speed_kn: 3.2,
+      e_x_threshold_deg: 10.0,
+      accel_ms2: 0.3,
+      vel_profiler_enabled: true,
     },
   }),
 
@@ -624,7 +628,12 @@ export const useTelemetryStore = defineStore('telemetry', {
         reaching_radius: this.stationReachingRadius,
         station_radius: this.stationRadius,
       }
-      if (cruiseSpeedKn !== null) payload.cruise_speed_kn = cruiseSpeedKn
+      if (cruiseSpeedKn !== null) {
+        payload.cruise_speed_kn = cruiseSpeedKn
+        // Keep local store in sync so saveGncConfig reads the current speed
+        this.gncConfig = { ...this.gncConfig, cruise_speed_kn: cruiseSpeedKn }
+        localStorage.setItem('gncConfig', JSON.stringify(this.gncConfig))
+      }
       this.sendCommand('START_STATION', payload)
     },
 
@@ -637,10 +646,14 @@ export const useTelemetryStore = defineStore('telemetry', {
     startWpRoute(config) {
       this.wpRouteActive = true
       // config: { direction, completion, waypoints, cruise_speed_kn }
+      // Persist direction/completion so targetWpLabel can read the current direction
+      this.wpRouteDirection = config.direction || this.wpRouteDirection
+      this.wpRouteCompletion = config.completion || this.wpRouteCompletion
+
       const wps = config.waypoints || this.missionWaypoints
       const payload = {
-        direction: config.direction || this.wpRouteDirection,
-        completion: config.completion || this.wpRouteCompletion,
+        direction: this.wpRouteDirection,
+        completion: this.wpRouteCompletion,
         waypoints: wps.map(wp => ({
           lat: wp.lat,
           lon: wp.lon,
@@ -648,7 +661,12 @@ export const useTelemetryStore = defineStore('telemetry', {
           speed: wp.speed || 1.0,
         })),
       }
-      if (config.cruise_speed_kn !== undefined) payload.cruise_speed_kn = config.cruise_speed_kn
+      if (config.cruise_speed_kn !== undefined) {
+        payload.cruise_speed_kn = config.cruise_speed_kn
+        // Keep local store in sync so saveGncConfig reads the current speed
+        this.gncConfig = { ...this.gncConfig, cruise_speed_kn: config.cruise_speed_kn }
+        localStorage.setItem('gncConfig', JSON.stringify(this.gncConfig))
+      }
       
       this.sendCommand('START_WP_ROUTE', payload)
     },

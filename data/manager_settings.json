@@ -1,14 +1,16 @@
 {
   "gnc_config": {
-    "wn": 1.7,
+    "wn": 2.0,
     "zeta": 0.7,
-    "wn_ref": 0.7,
-    "zeta_ref": 0.9,
+    "wn_ref": 1.5,
+    "zeta_ref": 1.0,
     "k_delta": 15.0,
     "delta_min": 5.0,
     "gamma": 0.0,
-    "cruise_speed_kn": 3.2,
-    "e_x_threshold_deg": 10.0
+    "cruise_speed_kn": 3,
+    "e_x_threshold_deg": 10.0,
+    "accel_ms2": 0.3,
+    "vel_profiler_enabled": true
   },
   "failsafe_config": {
     "min_battery_pct": 25.0,

@@ -77,6 +77,8 @@ class GncConfig(BaseModel):
     gamma: float = Field(0.0, ge=0, description="ALOS Adaptive gain (must be >= 0)")
     cruise_speed_kn: float = Field(3.0, gt=0, le=4.0, description="Cruise speed [knots] (0–4 kn = Salpa 1 Umax)")
     e_x_threshold_deg: float = Field(10.0, gt=0, le=90, description="PID anti-windup threshold [deg] (integrator only active when heading error < this value)")
+    accel_ms2: float = Field(0.3, gt=0, description="Acceleration rate when leaving a waypoint [m/s²]. Used by VelocityProfiler for the kinematic ramp-up from v_wp to v_cruise.")
+    vel_profiler_enabled: bool = Field(True, description="Enable velocity profiler (trapezoidal speed ramp). When False the controller applies cruise surge force directly.")
 
 
 class ManualInputMessage(BaseModel):

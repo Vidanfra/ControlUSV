@@ -381,21 +381,26 @@ class VelocityProfiler:
                  tau_x_cruise: float,
                  Xu_lin: float  = _XU_LIN,
                  Xu_quad: float = _XU_QUAD,
-                 m_surge: float = _M_SURGE):
+                 m_surge: float = _M_SURGE,
+                 accel_ms2: float = 0.3):
         """
         Args:
             tau_x_cruise: Cruise surge force [N]
             Xu_lin:       Linear surge drag coefficient [N·s/m]   (positive)
             Xu_quad:      Quadratic surge drag coefficient [N·s²/m²] (positive)
             m_surge:      Surge virtual mass  m + |Xudot|  [kg]
+            accel_ms2:    Target acceleration when leaving a waypoint [m/s²].
+                          Used for the kinematic ramp-up: d_accel = (v_cruise²−v_wp²)/(2·a).
         """
         self.Xu_lin  = Xu_lin
         self.Xu_quad = Xu_quad
         self.m_surge = m_surge
+        self.accel_ms2 = max(accel_ms2, 0.01)   # guard against division by zero
 
         self._wps        = []   # waypoint dicts passed by GNCController
         self._wp_tau     = []   # tau_X target at each waypoint [N]
-        self._ramp_dist  = []   # ramp distance (decel before / accel after) each WP [m]
+        self._ramp_dist  = []   # deceleration ramp distance (physics-based, per WP) [m]
+        self._accel_dist = []   # acceleration ramp distance (kinematic, per WP) [m]
 
         # Set cruise after drag params are initialised (v_cruise depends on them)
         self.tau_x_cruise = 0.0
@@ -521,10 +526,17 @@ class VelocityProfiler:
         self._wps = waypoints
         self._precompute()
 
+    def update_accel(self, accel_ms2: float) -> None:
+        """Update the acceleration rate and recompute the velocity profile."""
+        self.accel_ms2 = max(accel_ms2, 0.01)
+        if self._wps:
+            self._precompute()
+
     def _precompute(self) -> None:
         """Recompute tau_X and ramp distances for all waypoints."""
         self._wp_tau    = []
         self._ramp_dist = []
+        self._accel_dist = []
 
         for wp in self._wps:
             # speed field is in knots; None/missing → cruise, ≤ 0 → explicit stop
@@ -539,16 +551,30 @@ class VelocityProfiler:
             # tau at WP = equilibrium thrust that maintains v_wp in steady-state
             tau_wp = self.Xu_lin * v_wp + self.Xu_quad * v_wp ** 2
 
-            # Ramp distance: physics-based numerical shooting (no empirical constant)
-            d = self._ramp_distance(self.v_cruise, v_wp)
+            # Deceleration ramp: physics-based numerical shooting (approaching the WP)
+            d_decel = self._ramp_distance(self.v_cruise, v_wp)
+
+            # Acceleration ramp: kinematic formula (leaving the WP)
+            # d = (v_cruise² - v_wp²) / (2 * a)  — constant-acceleration model
+            #
+            # NOTE: this is the ramp distance measured PAST the acceptance circle
+            # (see get_tau_x for how dist_past_wp = max(0, dist_from_prev - radius)
+            # shifts the ramp origin to the circle exit, preventing a cruise spike
+            # at the WP switch instant).
+            if v_wp < self.v_cruise:
+                d_accel = (self.v_cruise ** 2 - v_wp ** 2) / (2.0 * self.accel_ms2)
+            else:
+                d_accel = 0.0
 
             self._wp_tau.append(tau_wp)
-            self._ramp_dist.append(d)
+            self._ramp_dist.append(d_decel)
+            self._accel_dist.append(d_accel)
 
         logger.debug(
             f"[VelocityProfiler] v_cruise={self.v_cruise:.2f} m/s  "
-            f"tau_cruise={self.tau_x_cruise:.1f} N  "
-            f"WPs: {[(round(self._ramp_dist[i], 1), round(self._wp_tau[i], 1)) for i in range(len(self._wps))]}"
+            f"tau_cruise={self.tau_x_cruise:.1f} N  a_accel={self.accel_ms2:.3f} m/s²  "
+            f"WPs decel/accel dists: "
+            f"{[(round(self._ramp_dist[i],1), round(self._accel_dist[i],1)) for i in range(len(self._wps))]}"
         )
 
     # ── Main query ─────────────────────────────────────────────────────────
@@ -588,10 +614,17 @@ class VelocityProfiler:
             tau_x   = min(tau_x, tau_dec)
 
         # ── Acceleration zone: leaving current WP ─────────────────────────
-        d_accel = self._ramp_dist[wp_idx]   # symmetric ramp length
-        if d_accel > 0.0 and dist_from_prev <= d_accel:
-            # alpha: 0.0 right at the WP, 1.0 at end of ramp
-            alpha   = dist_from_prev / d_accel
+        # The ramp starts once the vessel exits the acceptance circle.
+        # dist_past_wp = distance traveled PAST the acceptance boundary.
+        #   - Inside the circle (dist_from_prev ≤ radius):  dist_past_wp = 0
+        #     → alpha = 0 → tau_acc = tau_wp  (no spike at WP switch)
+        #   - Outside the circle:  dist_past_wp > 0, tau ramps toward cruise
+        wp_radius    = float(self._wps[wp_idx].get('radius', 5.0))
+        dist_past_wp = max(0.0, dist_from_prev - wp_radius)
+        d_accel = self._accel_dist[wp_idx]
+        if d_accel > 0.0 and dist_past_wp <= d_accel:
+            # alpha: 0.0 at circle exit, 1.0 at end of ramp
+            alpha   = dist_past_wp / d_accel
             tau_acc = (1.0 - alpha) * self._wp_tau[wp_idx] + alpha * self.tau_x_cruise
             tau_x   = min(tau_x, tau_acc)
 
@@ -610,7 +643,8 @@ class GNCController:
     def __init__(self, m_yaw, B_inv, n_max, n_min,
                  wn=1.5, zeta=0.7, wn_d=0.5, zeta_d=1.0,
                  k_delta=15.0, delta_min=5.0, gamma=0.0,
-                 tau_X=150.0, e_x_threshold_deg=10.0):
+                 tau_X=150.0, e_x_threshold_deg=10.0,
+                 vel_profiler_enabled=True, accel_ms2=0.3):
         """
         Args:
             m_yaw: Yaw moment of inertia [kg·m²]
@@ -624,11 +658,14 @@ class GNCController:
             gamma: ALOS adaptive gain
             tau_X: Cruise surge force [N]
             e_x_threshold_deg: Anti-windup threshold [deg]
+            vel_profiler_enabled: Enable/disable the trapezoidal velocity profiler
+            accel_ms2: Acceleration rate when leaving a waypoint [m/s²]
         """
         self.autopilot    = HeadingAutopilot(m_yaw, wn, zeta, wn_d, zeta_d,
                                              e_x_threshold_deg=e_x_threshold_deg)
         self.path_follower = PathFollower(k_delta, gamma, delta_min)
-        self.vel_profiler  = VelocityProfiler(tau_X)
+        self.vel_profiler  = VelocityProfiler(tau_X, accel_ms2=accel_ms2)
+        self.vel_profiler_enabled = vel_profiler_enabled
         self.B_inv = B_inv
         self.n_max = n_max
         self.n_min = n_min
@@ -672,12 +709,15 @@ class GNCController:
         wps = self.path_follower.waypoints
         tau_x_eff = self.tau_X   # fallback: constant cruise
         dist_to_next = 0.0
-        if len(wps) >= 2 and wp_idx < len(wps) - 1:
+        if self.vel_profiler_enabled and len(wps) >= 2 and wp_idx < len(wps) - 1:
             wp_from = wps[wp_idx]
             wp_to   = wps[min(wp_idx + 1, len(wps) - 1)]
             dist_to_next  = math.hypot(eta[0] - wp_to['N'],   eta[1] - wp_to['E'])
             dist_from_prev = math.hypot(eta[0] - wp_from['N'], eta[1] - wp_from['E'])
             tau_x_eff = self.vel_profiler.get_tau_x(wp_idx, dist_to_next, dist_from_prev)
+        elif not self.vel_profiler_enabled and len(wps) >= 2 and wp_idx < len(wps) - 1:
+            wp_to = wps[min(wp_idx + 1, len(wps) - 1)]
+            dist_to_next = math.hypot(eta[0] - wp_to['N'], eta[1] - wp_to['E'])
 
         # 3. Heading PID control
         psi = eta[5]
@@ -741,3 +781,7 @@ class GNCController:
         if 'tau_X' in kwargs:
             self.tau_X = kwargs['tau_X']
             self.vel_profiler.update_cruise(kwargs['tau_X'])
+        if 'vel_profiler_enabled' in kwargs:
+            self.vel_profiler_enabled = bool(kwargs['vel_profiler_enabled'])
+        if 'accel_ms2' in kwargs:
+            self.vel_profiler.update_accel(kwargs['accel_ms2'])

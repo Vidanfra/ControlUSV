@@ -252,6 +252,26 @@
           <p class="hint">Adaptive integral gain for compensating ocean currents.</p>
         </div>
 
+        <div class="setting-row">
+          <label for="gncAccel">Waypoint Departure Acceleration (accel_ms2)</label>
+          <div class="input-group">
+            <input id="gncAccel" v-model.number="gncForm.accel_ms2" type="number" min="0.01" max="2.0" step="0.01" class="text-input" />
+            <span class="unit">m/s²</span>
+          </div>
+          <p class="hint">Kinematic acceleration when leaving a waypoint. Ramp-up distance = (v_cruise² − v_wp²) / (2 × a). Does not affect the deceleration profile.</p>
+        </div>
+
+        <div class="setting-row">
+          <label>Velocity Profiler</label>
+          <div class="input-group">
+            <label class="toggle-label">
+              <input id="gncVelProfiler" type="checkbox" v-model="gncForm.vel_profiler_enabled" class="toggle-checkbox" />
+              <span class="toggle-text">{{ gncForm.vel_profiler_enabled ? 'Enabled — trapezoidal ramp active' : 'Disabled — constant cruise force' }}</span>
+            </label>
+          </div>
+          <p class="hint">When disabled the cruise surge force from the speed slider is applied directly (no ramp-up / ramp-down near waypoints).</p>
+        </div>
+
         <div v-if="gncError" class="validation-error">
           <span>&#9888; {{ gncError }}</span>
           <button class="close-error" @click="gncError = null">&#x2715;</button>
@@ -370,9 +390,12 @@ const gncForm = ref({
   zeta: 0.5,
   wn_ref: 1.0,
   zeta_ref: 1.0,
-  delta: 5.0,
+  k_delta: 15.0,
+  delta_min: 5.0,
   gamma: 0.0,
-  cruise_speed_kn: 3.0 // Kept in state but hidden in UI, as WP/Station panels control it
+  cruise_speed_kn: 3.0,
+  accel_ms2: 0.3,
+  vel_profiler_enabled: true,
 })
 
 // Mission plan defaults form
@@ -413,6 +436,8 @@ onMounted(() => {
     gncForm.value.gamma = telemetry.gncConfig.gamma
     gncForm.value.tau_x = undefined  // legacy field removed
     gncForm.value.cruise_speed_kn = telemetry.gncConfig.cruise_speed_kn ?? 3.0
+    gncForm.value.accel_ms2 = telemetry.gncConfig.accel_ms2 ?? 0.3
+    gncForm.value.vel_profiler_enabled = telemetry.gncConfig.vel_profiler_enabled ?? true
   }
 
   // Load mission plan defaults from store
@@ -499,12 +524,34 @@ const gncConfigChanged = computed(() => {
     gncForm.value.zeta_ref !== (telemetry.gncConfig.zeta_ref ?? 1.0) ||
     gncForm.value.k_delta !== (telemetry.gncConfig.k_delta ?? 15.0) ||
     gncForm.value.delta_min !== (telemetry.gncConfig.delta_min ?? 5.0) ||
-    gncForm.value.gamma !== telemetry.gncConfig.gamma
+    gncForm.value.gamma !== telemetry.gncConfig.gamma ||
+    gncForm.value.accel_ms2 !== (telemetry.gncConfig.accel_ms2 ?? 0.3) ||
+    gncForm.value.vel_profiler_enabled !== (telemetry.gncConfig.vel_profiler_enabled ?? true)
   )
 })
 
 // Clear GNC error whenever the user edits any field
 watch(gncForm, () => { gncError.value = null }, { deep: true })
+
+// Sync GNC form from backend heartbeat.
+// The system/status handler overwrites telemetry.gncConfig with the authoritative backend
+// value. Without this watch, the form would keep its onMounted snapshot (from localStorage)
+// even after the backend delivers a different value, making gncConfigChanged incorrect and
+// preventing "Update GNC Settings" from being enabled when there actually IS a difference.
+// Guard: don't overwrite while the user has unsaved edits (gncConfigChanged would be true).
+watch(() => telemetry.gncConfig, (cfg) => {
+  if (!cfg || gncConfigChanged.value) return
+  gncForm.value.wn               = cfg.wn
+  gncForm.value.zeta             = cfg.zeta
+  gncForm.value.wn_ref           = cfg.wn_ref           ?? 0.5
+  gncForm.value.zeta_ref         = cfg.zeta_ref         ?? 1.0
+  gncForm.value.k_delta          = cfg.k_delta          ?? 15.0
+  gncForm.value.delta_min        = cfg.delta_min        ?? 5.0
+  gncForm.value.gamma            = cfg.gamma
+  gncForm.value.cruise_speed_kn  = cfg.cruise_speed_kn  ?? 3.0
+  gncForm.value.accel_ms2        = cfg.accel_ms2        ?? 0.3
+  gncForm.value.vel_profiler_enabled = cfg.vel_profiler_enabled ?? true
+}, { deep: true })
 
 function saveGncConfig() {
   const f = gncForm.value
@@ -516,6 +563,7 @@ function saveGncConfig() {
   if (!Number.isFinite(f.k_delta)   || f.k_delta   <= 0) errors.push('k_delta debe ser > 0')
   if (!Number.isFinite(f.delta_min) || f.delta_min <= 0) errors.push('delta_min debe ser > 0')
   if (!Number.isFinite(f.gamma)     || f.gamma     <  0) errors.push('gamma debe ser ≥ 0')
+  if (!Number.isFinite(f.accel_ms2) || f.accel_ms2 <= 0) errors.push('accel_ms2 debe ser > 0')
   if (errors.length > 0) {
     gncError.value = 'Valores no válidos: ' + errors.join('; ') + '.'
     return
@@ -801,5 +849,31 @@ select.text-input {
 
 .close-error:hover {
   color: #ff9999;
+}
+
+.unit {
+  color: #888;
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.toggle-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: #FFA500;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.toggle-text {
+  color: #ccc;
+  font-size: 0.95em;
 }
 </style>
