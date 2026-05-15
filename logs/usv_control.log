@@ -20864,3 +20864,336 @@ ing...
 2026-05-15 14:20:20.363 | INFO     | GNCService | PathFollower: switched to WP 7/38
 2026-05-15 14:20:36.815 | INFO     | GNCService | PathFollower: switched to WP 8/38
 2026-05-15 14:21:32.491 | INFO     | GNCService | PathFollower: switched to WP 9/38
+2026-05-15 14:22:39.385 | INFO     | MAIN | Starting USV Control System
+2026-05-15 14:22:39.386 | INFO     | MAIN | Mode: SIMULATION
+2026-05-15 14:22:39.859 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-05-15 14:22:40.451 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-05-15 14:22:40.457 | INFO     | CommsService | Starting Web Server on port 8000
+2026-05-15 14:22:40.458 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-05-15 14:22:40.445 | INFO     | GNCService | Process GNCService starting...
+2026-05-15 14:22:40.449 | INFO     | HALService | Process HALService starting...
+2026-05-15 14:22:40.459 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-15 14:22:40.460 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-15 14:22:40.450 | INFO     | NavigationService | Process NavigationService starting...
+2026-05-15 14:22:40.450 | INFO     | ManagerService | Process ManagerService starting...
+2026-05-15 14:22:40.461 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-05-15 14:22:40.461 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-05-15 14:22:40.466 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-15 14:22:40.466 | ERROR    | HALService | [GNSS Node] Cannot open /dev/gnss_um982: could not open port '/dev/gnss_um982': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-15 14:22:40.466 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-05-15 14:22:40.466 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-05-15 14:22:40.467 | ERROR    | HALService | [IMU Node] Cannot open /dev/serial0: could not open port '/dev/serial0': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-15 14:22:40.471 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-15 14:22:40.472 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-15 14:22:40.472 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-05-15 14:22:40.472 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-05-15 14:22:40.473 | INFO     | HALService | [ESP32 Node] Starting (with auto-retry)...
+2026-05-15 14:22:40.473 | ERROR    | HALService | [Power Node] Cannot open /dev/power_pzem: could not open port '/dev/power_pzem': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying...
+2026-05-15 14:22:40.473 | ERROR    | HALService | [ESP32 Node] Cannot open /dev/esp32: could not open port '/dev/esp32': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying every 3.0s (this message will not repeat).
+2026-05-15 14:22:40.473 | INFO     | HALService | ESP32 Node started on /dev/esp32
+2026-05-15 14:22:40.474 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-05-15 14:22:40.480 | INFO     | CommsService | Starting Web Server...
+2026-05-15 14:22:40.569 | INFO     | NavigationService | Navigation Process initialized (passthrough mode)
+2026-05-15 14:22:40.569 | INFO     | NavigationService | Process NavigationService entering loop at 20.0 Hz
+2026-05-15 14:22:40.672 | INFO     | ManagerService | Manager: settings loaded from c:\PYTHON\ControlUSV\src\manager\..\..\data\manager_settings.json
+2026-05-15 14:22:40.673 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-05-15 14:22:40.673 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-05-15 14:22:40.692 | INFO     | CommsService | Command publisher connected to ZMQ broker
+2026-05-15 14:22:40.694 | INFO     | CommsService | [Web Server] ZMQ consumer subscribed on tcp://127.0.0.1:5556
+2026-05-15 14:22:40.874 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-15 14:22:41.080 | INFO     | GNCService | GNC Process initialized (waiting for AUTO mode)
+2026-05-15 14:22:41.080 | INFO     | GNCService | Process GNCService entering loop at 20.0 Hz
+2026-05-15 14:22:48.218 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-15 14:22:48.589 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-15 14:22:55.822 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-05-15 14:23:07.319 | INFO     | CommsService | Command received and published: CommandType.ARM
+2026-05-15 14:23:07.347 | INFO     | GNCService | GNC: Armed
+2026-05-15 14:23:07.393 | INFO     | ManagerService | Manager received command: CommandType.ARM
+2026-05-15 14:23:07.393 | WARNING  | ManagerService | >>> VEHICLE ARMED <<<
+2026-05-15 14:23:13.162 | INFO     | CommsService | Command received and published: CommandType.SET_MODE
+2026-05-15 14:23:13.231 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-15 14:23:13.231 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-15 14:23:32.656 | INFO     | CommsService | Command received and published: CommandType.SET_GNC_CONFIG
+2026-05-15 14:23:32.683 | INFO     | GNCService | GNC: Parameters updated: wn=2.1 zeta=0.7 wn_ref=1.5 zeta_ref=1.0 k_delta=15.0 delta_min=5.0 gamma=0.0 cruise_speed_kn=3.0 e_x_threshold_deg=10.0 accel_ms2=0.3 vel_profiler_enabled=True
+2026-05-15 14:23:32.727 | INFO     | ManagerService | Manager received command: CommandType.SET_GNC_CONFIG
+2026-05-15 14:23:32.727 | INFO     | ManagerService | GNC config updated: wn=2.1 zeta=0.7 wn_ref=1.5 zeta_ref=1.0 k_delta=15.0 delta_min=5.0 gamma=0.0 cruise_speed_kn=3.0 e_x_threshold_deg=10.0 accel_ms2=0.3 vel_profiler_enabled=True
+2026-05-15 14:23:39.934 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-05-15 14:23:40.290 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-05-15 14:23:49.283 | INFO     | CommsService | Command received and published: CommandType.SET_GNC_CONFIG
+2026-05-15 14:23:49.313 | INFO     | ManagerService | Manager received command: CommandType.SET_GNC_CONFIG
+2026-05-15 14:23:49.313 | INFO     | ManagerService | GNC config updated: wn=2.0 zeta=0.7 wn_ref=1.5 zeta_ref=1.0 k_delta=15.0 delta_min=5.0 gamma=0.0 cruise_speed_kn=3.0 e_x_threshold_deg=10.0 accel_ms2=0.3 vel_profiler_enabled=True
+2026-05-15 14:23:49.331 | INFO     | GNCService | GNC: Parameters updated: wn=2.0 zeta=0.7 wn_ref=1.5 zeta_ref=1.0 k_delta=15.0 delta_min=5.0 gamma=0.0 cruise_speed_kn=3.0 e_x_threshold_deg=10.0 accel_ms2=0.3 vel_profiler_enabled=True
+2026-05-15 14:23:52.880 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-05-15 14:23:53.265 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-05-15 14:24:04.449 | INFO     | CommsService | Command received and published: CommandType.DISARM
+2026-05-15 14:24:04.450 | INFO     | CommsService | Command received and published: CommandType.START_RT_SIM
+2026-05-15 14:24:04.468 | INFO     | GNCService | GNC: Disarmed — controller reset
+2026-05-15 14:24:04.468 | INFO     | GNCService | GNC: Starting RT simulation (Physics Engine Only)
+2026-05-15 14:24:04.469 | INFO     | GNCService | GNC: RT simulation started
+2026-05-15 14:24:04.479 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
+2026-05-15 14:24:04.487 | INFO     | ManagerService | Manager received command: CommandType.DISARM
+2026-05-15 14:24:04.487 | WARNING  | ManagerService | >>> VEHICLE DISARMED <<<
+2026-05-15 14:24:04.487 | INFO     | ManagerService | Manager received command: CommandType.START_RT_SIM
+2026-05-15 14:24:04.487 | INFO     | ManagerService | Manager: RT Simulation STARTED — vehicle auto-DISARMED
+2026-05-15 14:24:04.487 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-05-15 14:24:05.611 | INFO     | CommsService | Command received and published: CommandType.SET_MODE
+2026-05-15 14:24:05.695 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-15 14:24:05.695 | INFO     | ManagerService | Mode changed to: MANUAL
+2026-05-15 14:24:48.959 | WARNING  | CommsService | Failed to send to client, removing: 
+2026-05-15 14:24:48.959 | INFO     | CommsService | WebSocket client disconnected. Total: 1
+2026-05-15 14:24:55.492 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-15 14:24:55.868 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-15 14:25:04.564 | INFO     | CommsService | Command received and published: CommandType.START_RT_SIM
+2026-05-15 14:25:04.566 | INFO     | GNCService | GNC: Starting RT simulation (Physics Engine Only)
+2026-05-15 14:25:04.567 | INFO     | GNCService | GNC: RT simulation started
+2026-05-15 14:25:04.572 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
+2026-05-15 14:25:04.633 | INFO     | ManagerService | Manager received command: CommandType.START_RT_SIM
+2026-05-15 14:25:04.633 | INFO     | ManagerService | Manager: RT Simulation STARTED — vehicle auto-DISARMED
+2026-05-15 14:25:04.634 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-05-15 14:26:23.481 | INFO     | CommsService | WebSocket client connected. Total: 2
+2026-05-15 14:26:34.385 | INFO     | CommsService | Command received and published: CommandType.SET_MODE
+2026-05-15 14:26:34.400 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-15 14:26:34.400 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-15 14:26:54.208 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE
+2026-05-15 14:26:54.215 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-15 14:26:54.216 | INFO     | ManagerService | WP Route STARTED: {'direction': 'reverse', 'completion': 'loop', 'waypoints': [{'lat': 39.3236076, 'lon': -0.5825507, 'radius': 5, 'speed': 1}, {'lat': 39.3226205, 'lon': -0.5825705, 'radius': 5, 'speed': 1}, {'lat': 39.321625, 'lon': -0.5828297, 'radius': 3, 'speed': 1}, {'lat': 39.321625, 'lon': -0.5828065, 'radius': 3, 'speed': 1}, {'lat': 39.3217149, 'lon': -0.5822773, 'radius': 3, 'speed': 1}, {'lat': 39.3217149, 'lon': -0.5828166, 'radius': 3, 'speed': 1}, {'lat': 39.3218049, 'lon': -0.5828035, 'radius': 3, 'speed': 1}, {'lat': 39.3218049, 'lon': -0.5822678, 'radius': 3, 'speed': 1}, {'lat': 39.3218948, 'lon': -0.5822953, 'radius': 3, 'speed': 1}, {'lat': 39.3218948, 'lon': -0.5827903, 'radius': 3, 'speed': 1}, {'lat': 39.3219847, 'lon': -0.5827772, 'radius': 3, 'speed': 1}, {'lat': 39.3219847, 'lon': -0.5823228, 'radius': 3, 'speed': 1}, {'lat': 39.3220747, 'lon': -0.5823503, 'radius': 3, 'speed': 1}, {'lat': 39.3220747, 'lon': -0.5827641, 'radius': 3, 'speed': 1}, {'lat': 39.3221646, 'lon': -0.582751, 'radius': 3, 'speed': 1}, {'lat': 39.3221646, 'lon': -0.5823706, 'radius': 3, 'speed': 1}, {'lat': 39.3222545, 'lon': -0.582384, 'radius': 3, 'speed': 1}, {'lat': 39.3222545, 'lon': -0.5827378, 'radius': 3, 'speed': 1}, {'lat': 39.3223444, 'lon': -0.5827247, 'radius': 3, 'speed': 1}, {'lat': 39.3223444, 'lon': -0.5823974, 'radius': 3, 'speed': 1}, {'lat': 39.3224344, 'lon': -0.5824109, 'radius': 3, 'speed': 1}, {'lat': 39.3224344, 'lon': -0.5827196, 'radius': 3, 'speed': 1}, {'lat': 39.3225243, 'lon': -0.5827189, 'radius': 3, 'speed': 1}, {'lat': 39.3225243, 'lon': -0.5824243, 'radius': 3, 'speed': 1}, {'lat': 39.3226142, 'lon': -0.5824377, 'radius': 3, 'speed': 1}, {'lat': 39.3226142, 'lon': -0.5827183, 'radius': 3, 'speed': 1}, {'lat': 39.3227042, 'lon': -0.5827177, 'radius': 3, 'speed': 1}, {'lat': 39.3227042, 'lon': -0.5824323, 'radius': 3, 'speed': 1}, {'lat': 39.3227941, 'lon': -0.5824268, 'radius': 3, 'speed': 1}, {'lat': 39.3227941, 'lon': -0.5827171, 'radius': 3, 'speed': 1}, {'lat': 39.322884, 'lon': -0.5827164, 'radius': 3, 'speed': 1}, {'lat': 39.322884, 'lon': -0.5824212, 'radius': 3, 'speed': 1}, {'lat': 39.322974, 'lon': -0.5824156, 'radius': 3, 'speed': 1}, {'lat': 39.322974, 'lon': -0.5827158, 'radius': 3, 'speed': 1}, {'lat': 39.3230639, 'lon': -0.5827152, 'radius': 3, 'speed': 1}, {'lat': 39.3230639, 'lon': -0.5824101, 'radius': 3, 'speed': 1}, {'lat': 39.3233715, 'lon': -0.5825081, 'radius': 5, 'speed': 1}], 'cruise_speed_kn': 3}
+2026-05-15 14:26:54.259 | INFO     | GNCService | PathFollower: loaded 38 waypoints
+2026-05-15 14:26:54.562 | INFO     | GNCService | GNC: WP Route started — 37 WPs, dir=reverse, completion=loop
+2026-05-15 14:27:23.330 | INFO     | CommsService | WebSocket client connected. Total: 3
+2026-05-15 14:27:23.930 | INFO     | GNCService | PathFollower: switched to WP 2/38
+2026-05-15 14:28:17.444 | INFO     | GNCService | PathFollower: switched to WP 3/38
+2026-05-15 14:28:54.505 | INFO     | GNCService | PathFollower: switched to WP 4/38
+2026-05-15 14:29:10.903 | INFO     | GNCService | PathFollower: switched to WP 5/38
+2026-05-15 14:29:47.477 | INFO     | GNCService | PathFollower: switched to WP 6/38
+2026-05-15 14:30:03.835 | INFO     | GNCService | PathFollower: switched to WP 7/38
+2026-05-15 14:30:39.919 | INFO     | GNCService | PathFollower: switched to WP 8/38
+2026-05-15 14:30:56.235 | INFO     | GNCService | PathFollower: switched to WP 9/38
+2026-05-15 14:31:31.920 | INFO     | GNCService | PathFollower: switched to WP 10/38
+2026-05-15 14:31:48.285 | INFO     | GNCService | PathFollower: switched to WP 11/38
+2026-05-15 14:32:23.465 | INFO     | GNCService | PathFollower: switched to WP 12/38
+2026-05-15 14:32:39.836 | INFO     | GNCService | PathFollower: switched to WP 13/38
+2026-05-15 14:33:14.559 | INFO     | GNCService | PathFollower: switched to WP 14/38
+2026-05-15 14:33:30.982 | INFO     | GNCService | PathFollower: switched to WP 15/38
+2026-05-15 14:34:07.077 | INFO     | GNCService | PathFollower: switched to WP 16/38
+2026-05-15 14:34:23.444 | INFO     | GNCService | PathFollower: switched to WP 17/38
+2026-05-15 14:35:00.799 | INFO     | GNCService | PathFollower: switched to WP 18/38
+2026-05-15 14:35:17.210 | INFO     | GNCService | PathFollower: switched to WP 19/38
+2026-05-15 14:35:56.254 | INFO     | GNCService | PathFollower: switched to WP 20/38
+2026-05-15 14:36:12.723 | INFO     | GNCService | PathFollower: switched to WP 21/38
+2026-05-15 14:36:54.102 | INFO     | GNCService | PathFollower: switched to WP 22/38
+2026-05-15 14:37:10.522 | INFO     | GNCService | PathFollower: switched to WP 23/38
+2026-05-15 14:37:54.140 | INFO     | GNCService | PathFollower: switched to WP 24/38
+2026-05-15 14:38:10.554 | INFO     | GNCService | PathFollower: switched to WP 25/38
+2026-05-15 14:38:56.935 | INFO     | GNCService | PathFollower: switched to WP 26/38
+2026-05-15 14:39:13.824 | INFO     | GNCService | PathFollower: switched to WP 27/38
+2026-05-15 14:40:03.399 | INFO     | GNCService | PathFollower: switched to WP 28/38
+2026-05-15 14:40:19.770 | INFO     | GNCService | PathFollower: switched to WP 29/38
+2026-05-15 14:41:12.403 | INFO     | GNCService | PathFollower: switched to WP 30/38
+2026-05-15 14:41:29.275 | INFO     | GNCService | PathFollower: switched to WP 31/38
+2026-05-15 14:42:24.821 | INFO     | GNCService | PathFollower: switched to WP 32/38
+2026-05-15 14:42:41.288 | INFO     | GNCService | PathFollower: switched to WP 33/38
+2026-05-15 14:43:37.083 | INFO     | GNCService | PathFollower: switched to WP 34/38
+2026-05-15 14:44:35.260 | INFO     | GNCService | PathFollower: switched to WP 35/38
+2026-05-15 14:44:38.912 | INFO     | GNCService | PathFollower: switched to WP 36/38
+2026-05-15 14:46:20.005 | INFO     | GNCService | PathFollower: switched to WP 37/38
+2026-05-15 14:48:08.145 | INFO     | GNCService | PathFollower: mission complete!
+2026-05-15 14:48:08.145 | INFO     | GNCService | GNC: WP Route loop #1, restarting
+2026-05-15 14:48:08.145 | INFO     | GNCService | PathFollower: loaded 38 waypoints
+2026-05-15 14:48:48.594 | INFO     | GNCService | PathFollower: switched to WP 2/38
+2026-05-15 14:49:43.615 | INFO     | GNCService | PathFollower: switched to WP 3/38
+2026-05-15 14:50:20.546 | INFO     | GNCService | PathFollower: switched to WP 4/38
+2026-05-15 14:50:36.904 | INFO     | GNCService | PathFollower: switched to WP 5/38
+2026-05-15 14:51:13.525 | INFO     | GNCService | PathFollower: switched to WP 6/38
+2026-05-15 14:51:29.891 | INFO     | GNCService | PathFollower: switched to WP 7/38
+2026-05-15 14:52:05.974 | INFO     | GNCService | PathFollower: switched to WP 8/38
+2026-05-15 14:52:22.351 | INFO     | GNCService | PathFollower: switched to WP 9/38
+2026-05-15 14:52:58.035 | INFO     | GNCService | PathFollower: switched to WP 10/38
+2026-05-15 14:53:14.405 | INFO     | GNCService | PathFollower: switched to WP 11/38
+2026-05-15 14:53:49.569 | INFO     | GNCService | PathFollower: switched to WP 12/38
+2026-05-15 14:54:05.943 | INFO     | GNCService | PathFollower: switched to WP 13/38
+2026-05-15 14:54:40.670 | INFO     | GNCService | PathFollower: switched to WP 14/38
+2026-05-15 14:54:57.086 | INFO     | GNCService | PathFollower: switched to WP 15/38
+2026-05-15 14:55:33.168 | INFO     | GNCService | PathFollower: switched to WP 16/38
+2026-05-15 14:55:49.498 | INFO     | GNCService | PathFollower: switched to WP 17/38
+2026-05-15 14:56:26.854 | INFO     | GNCService | PathFollower: switched to WP 18/38
+2026-05-15 14:56:43.260 | INFO     | GNCService | PathFollower: switched to WP 19/38
+2026-05-15 14:57:22.326 | INFO     | GNCService | PathFollower: switched to WP 20/38
+2026-05-15 14:57:38.800 | INFO     | GNCService | PathFollower: switched to WP 21/38
+2026-05-15 14:58:20.152 | INFO     | GNCService | PathFollower: switched to WP 22/38
+2026-05-15 14:58:36.622 | INFO     | GNCService | PathFollower: switched to WP 23/38
+2026-05-15 14:59:20.266 | INFO     | GNCService | PathFollower: switched to WP 24/38
+2026-05-15 14:59:36.630 | INFO     | GNCService | PathFollower: switched to WP 25/38
+2026-05-15 15:00:23.001 | INFO     | GNCService | PathFollower: switched to WP 26/38
+2026-05-15 15:00:39.878 | INFO     | GNCService | PathFollower: switched to WP 27/38
+2026-05-15 15:01:29.436 | INFO     | GNCService | PathFollower: switched to WP 28/38
+2026-05-15 15:01:45.846 | INFO     | GNCService | PathFollower: switched to WP 29/38
+2026-05-15 15:02:38.461 | INFO     | GNCService | PathFollower: switched to WP 30/38
+2026-05-15 15:02:55.345 | INFO     | GNCService | PathFollower: switched to WP 31/38
+2026-05-15 15:03:50.908 | INFO     | GNCService | PathFollower: switched to WP 32/38
+2026-05-15 15:04:07.388 | INFO     | GNCService | PathFollower: switched to WP 33/38
+2026-05-15 15:05:03.173 | INFO     | GNCService | PathFollower: switched to WP 34/38
+2026-05-15 15:06:01.304 | INFO     | GNCService | PathFollower: switched to WP 35/38
+2026-05-15 15:06:04.957 | INFO     | GNCService | PathFollower: switched to WP 36/38
+2026-05-15 15:07:46.019 | INFO     | GNCService | PathFollower: switched to WP 37/38
+2026-05-15 15:09:34.197 | INFO     | GNCService | PathFollower: mission complete!
+2026-05-15 15:09:34.197 | INFO     | GNCService | GNC: WP Route loop #2, restarting
+2026-05-15 15:09:34.198 | INFO     | GNCService | PathFollower: loaded 38 waypoints
+2026-05-15 15:10:14.694 | INFO     | GNCService | PathFollower: switched to WP 2/38
+2026-05-15 15:11:09.667 | INFO     | GNCService | PathFollower: switched to WP 3/38
+2026-05-15 15:11:46.656 | INFO     | GNCService | PathFollower: switched to WP 4/38
+2026-05-15 15:12:03.038 | INFO     | GNCService | PathFollower: switched to WP 5/38
+2026-05-15 15:12:39.676 | INFO     | GNCService | PathFollower: switched to WP 6/38
+2026-05-15 15:12:56.095 | INFO     | GNCService | PathFollower: switched to WP 7/38
+2026-05-15 15:13:32.178 | INFO     | GNCService | PathFollower: switched to WP 8/38
+2026-05-15 15:13:48.503 | INFO     | GNCService | PathFollower: switched to WP 9/38
+2026-05-15 15:14:24.137 | INFO     | GNCService | PathFollower: switched to WP 10/38
+2026-05-15 15:14:40.503 | INFO     | GNCService | PathFollower: switched to WP 11/38
+2026-05-15 15:15:15.669 | INFO     | GNCService | PathFollower: switched to WP 12/38
+2026-05-15 15:15:32.043 | INFO     | GNCService | PathFollower: switched to WP 13/38
+2026-05-15 15:16:06.808 | INFO     | GNCService | PathFollower: switched to WP 14/38
+2026-05-15 15:16:23.228 | INFO     | GNCService | PathFollower: switched to WP 15/38
+2026-05-15 15:16:59.331 | INFO     | GNCService | PathFollower: switched to WP 16/38
+2026-05-15 15:17:15.692 | INFO     | GNCService | PathFollower: switched to WP 17/38
+2026-05-15 15:17:53.083 | INFO     | GNCService | PathFollower: switched to WP 18/38
+2026-05-15 15:18:09.510 | INFO     | GNCService | PathFollower: switched to WP 19/38
+2026-05-15 15:18:48.580 | INFO     | GNCService | PathFollower: switched to WP 20/38
+2026-05-15 15:19:04.996 | INFO     | GNCService | PathFollower: switched to WP 21/38
+2026-05-15 15:19:46.409 | INFO     | GNCService | PathFollower: switched to WP 22/38
+2026-05-15 15:20:02.814 | INFO     | GNCService | PathFollower: switched to WP 23/38
+2026-05-15 15:20:46.393 | INFO     | GNCService | PathFollower: switched to WP 24/38
+2026-05-15 15:21:02.759 | INFO     | GNCService | PathFollower: switched to WP 25/38
+2026-05-15 15:21:49.069 | INFO     | GNCService | PathFollower: switched to WP 26/38
+2026-05-15 15:22:06.000 | INFO     | GNCService | PathFollower: switched to WP 27/38
+2026-05-15 15:22:55.567 | INFO     | GNCService | PathFollower: switched to WP 28/38
+2026-05-15 15:23:12.000 | INFO     | GNCService | PathFollower: switched to WP 29/38
+2026-05-15 15:24:04.614 | INFO     | GNCService | PathFollower: switched to WP 30/38
+2026-05-15 15:24:21.490 | INFO     | GNCService | PathFollower: switched to WP 31/38
+2026-05-15 15:25:17.121 | INFO     | GNCService | PathFollower: switched to WP 32/38
+2026-05-15 15:25:33.579 | INFO     | GNCService | PathFollower: switched to WP 33/38
+2026-05-15 15:26:29.370 | INFO     | GNCService | PathFollower: switched to WP 34/38
+2026-05-15 15:27:27.564 | INFO     | GNCService | PathFollower: switched to WP 35/38
+2026-05-15 15:27:31.214 | INFO     | GNCService | PathFollower: switched to WP 36/38
+2026-05-15 15:29:12.224 | INFO     | GNCService | PathFollower: switched to WP 37/38
+2026-05-15 15:31:00.438 | INFO     | GNCService | PathFollower: mission complete!
+2026-05-15 15:31:00.438 | INFO     | GNCService | GNC: WP Route loop #3, restarting
+2026-05-15 15:31:00.439 | INFO     | GNCService | PathFollower: loaded 38 waypoints
+2026-05-15 15:31:40.907 | INFO     | GNCService | PathFollower: switched to WP 2/38
+2026-05-15 15:32:35.853 | INFO     | GNCService | PathFollower: switched to WP 3/38
+2026-05-15 15:33:12.846 | INFO     | GNCService | PathFollower: switched to WP 4/38
+2026-05-15 15:33:29.167 | INFO     | GNCService | PathFollower: switched to WP 5/38
+2026-05-15 15:34:05.783 | INFO     | GNCService | PathFollower: switched to WP 6/38
+2026-05-15 15:34:22.149 | INFO     | GNCService | PathFollower: switched to WP 7/38
+2026-05-15 15:34:58.216 | INFO     | GNCService | PathFollower: switched to WP 8/38
+2026-05-15 15:35:14.569 | INFO     | GNCService | PathFollower: switched to WP 9/38
+2026-05-15 15:35:50.252 | INFO     | GNCService | PathFollower: switched to WP 10/38
+2026-05-15 15:36:06.617 | INFO     | GNCService | PathFollower: switched to WP 11/38
+2026-05-15 15:36:41.788 | INFO     | GNCService | PathFollower: switched to WP 12/38
+2026-05-15 15:36:58.157 | INFO     | GNCService | PathFollower: switched to WP 13/38
+2026-05-15 15:37:32.901 | INFO     | GNCService | PathFollower: switched to WP 14/38
+2026-05-15 15:37:49.274 | INFO     | GNCService | PathFollower: switched to WP 15/38
+2026-05-15 15:38:25.302 | INFO     | GNCService | PathFollower: switched to WP 16/38
+2026-05-15 15:38:41.675 | INFO     | GNCService | PathFollower: switched to WP 17/38
+2026-05-15 15:39:19.013 | INFO     | GNCService | PathFollower: switched to WP 18/38
+2026-05-15 15:39:35.425 | INFO     | GNCService | PathFollower: switched to WP 19/38
+2026-05-15 15:40:14.499 | INFO     | GNCService | PathFollower: switched to WP 20/38
+2026-05-15 15:40:30.963 | INFO     | GNCService | PathFollower: switched to WP 21/38
+2026-05-15 15:41:12.319 | INFO     | GNCService | PathFollower: switched to WP 22/38
+2026-05-15 15:41:28.750 | INFO     | GNCService | PathFollower: switched to WP 23/38
+2026-05-15 15:42:12.389 | INFO     | GNCService | PathFollower: switched to WP 24/38
+2026-05-15 15:42:28.768 | INFO     | GNCService | PathFollower: switched to WP 25/38
+2026-05-15 15:43:15.125 | INFO     | GNCService | PathFollower: switched to WP 26/38
+2026-05-15 15:43:32.001 | INFO     | GNCService | PathFollower: switched to WP 27/38
+2026-05-15 15:44:21.543 | INFO     | GNCService | PathFollower: switched to WP 28/38
+2026-05-15 15:44:37.963 | INFO     | GNCService | PathFollower: switched to WP 29/38
+2026-05-15 15:45:30.551 | INFO     | GNCService | PathFollower: switched to WP 30/38
+2026-05-15 15:45:47.380 | INFO     | GNCService | PathFollower: switched to WP 31/38
+2026-05-15 15:46:42.923 | INFO     | GNCService | PathFollower: switched to WP 32/38
+2026-05-15 15:46:59.455 | INFO     | GNCService | PathFollower: switched to WP 33/38
+2026-05-15 15:47:55.301 | INFO     | GNCService | PathFollower: switched to WP 34/38
+2026-05-15 15:48:53.547 | INFO     | GNCService | PathFollower: switched to WP 35/38
+2026-05-15 15:48:57.192 | INFO     | GNCService | PathFollower: switched to WP 36/38
+2026-05-15 15:50:38.222 | INFO     | GNCService | PathFollower: switched to WP 37/38
+2026-05-15 15:52:26.452 | INFO     | GNCService | PathFollower: mission complete!
+2026-05-15 15:52:26.452 | INFO     | GNCService | GNC: WP Route loop #4, restarting
+2026-05-15 15:52:26.453 | INFO     | GNCService | PathFollower: loaded 38 waypoints
+2026-05-15 15:53:06.954 | INFO     | GNCService | PathFollower: switched to WP 2/38
+2026-05-15 15:54:01.898 | INFO     | GNCService | PathFollower: switched to WP 3/38
+2026-05-15 15:54:38.899 | INFO     | GNCService | PathFollower: switched to WP 4/38
+2026-05-15 15:54:55.215 | INFO     | GNCService | PathFollower: switched to WP 5/38
+2026-05-15 15:55:31.842 | INFO     | GNCService | PathFollower: switched to WP 6/38
+2026-05-15 15:55:48.262 | INFO     | GNCService | PathFollower: switched to WP 7/38
+2026-05-15 15:56:24.339 | INFO     | GNCService | PathFollower: switched to WP 8/38
+2026-05-15 15:56:40.658 | INFO     | GNCService | PathFollower: switched to WP 9/38
+2026-05-15 15:57:16.346 | INFO     | GNCService | PathFollower: switched to WP 10/38
+2026-05-15 15:57:32.665 | INFO     | GNCService | PathFollower: switched to WP 11/38
+2026-05-15 15:58:07.831 | INFO     | GNCService | PathFollower: switched to WP 12/38
+2026-05-15 15:58:24.212 | INFO     | GNCService | PathFollower: switched to WP 13/38
+2026-05-15 15:58:58.930 | INFO     | GNCService | PathFollower: switched to WP 14/38
+2026-05-15 15:59:15.332 | INFO     | GNCService | PathFollower: switched to WP 15/38
+2026-05-15 15:59:51.421 | INFO     | GNCService | PathFollower: switched to WP 16/38
+2026-05-15 16:00:07.741 | INFO     | GNCService | PathFollower: switched to WP 17/38
+2026-05-15 16:00:45.112 | INFO     | GNCService | PathFollower: switched to WP 18/38
+2026-05-15 16:01:01.527 | INFO     | GNCService | PathFollower: switched to WP 19/38
+2026-05-15 16:01:40.557 | INFO     | GNCService | PathFollower: switched to WP 20/38
+2026-05-15 16:01:57.020 | INFO     | GNCService | PathFollower: switched to WP 21/38
+2026-05-15 16:02:38.369 | INFO     | GNCService | PathFollower: switched to WP 22/38
+2026-05-15 16:02:54.850 | INFO     | GNCService | PathFollower: switched to WP 23/38
+2026-05-15 16:03:38.479 | INFO     | GNCService | PathFollower: switched to WP 24/38
+2026-05-15 16:03:54.851 | INFO     | GNCService | PathFollower: switched to WP 25/38
+2026-05-15 16:04:41.224 | INFO     | GNCService | PathFollower: switched to WP 26/38
+2026-05-15 16:04:58.099 | INFO     | GNCService | PathFollower: switched to WP 27/38
+2026-05-15 16:05:47.677 | INFO     | GNCService | PathFollower: switched to WP 28/38
+2026-05-15 16:06:04.108 | INFO     | GNCService | PathFollower: switched to WP 29/38
+2026-05-15 16:06:56.681 | INFO     | GNCService | PathFollower: switched to WP 30/38
+2026-05-15 16:07:13.552 | INFO     | GNCService | PathFollower: switched to WP 31/38
+2026-05-15 16:08:09.092 | INFO     | GNCService | PathFollower: switched to WP 32/38
+2026-05-15 16:08:25.561 | INFO     | GNCService | PathFollower: switched to WP 33/38
+2026-05-15 16:09:21.347 | INFO     | GNCService | PathFollower: switched to WP 34/38
+2026-05-15 16:10:19.417 | INFO     | GNCService | PathFollower: switched to WP 35/38
+2026-05-15 16:10:23.171 | INFO     | GNCService | PathFollower: switched to WP 36/38
+2026-05-15 16:12:04.219 | INFO     | GNCService | PathFollower: switched to WP 37/38
+2026-05-15 16:13:52.450 | INFO     | GNCService | PathFollower: mission complete!
+2026-05-15 16:13:52.450 | INFO     | GNCService | GNC: WP Route loop #5, restarting
+2026-05-15 16:13:52.451 | INFO     | GNCService | PathFollower: loaded 38 waypoints
+2026-05-15 16:14:32.945 | INFO     | GNCService | PathFollower: switched to WP 2/38
+2026-05-15 16:15:27.890 | INFO     | GNCService | PathFollower: switched to WP 3/38
+2026-05-15 16:16:05.019 | INFO     | GNCService | PathFollower: switched to WP 4/38
+2026-05-15 16:16:21.374 | INFO     | GNCService | PathFollower: switched to WP 5/38
+2026-05-15 16:16:58.038 | INFO     | GNCService | PathFollower: switched to WP 6/38
+2026-05-15 16:17:14.444 | INFO     | GNCService | PathFollower: switched to WP 7/38
+2026-05-15 16:17:50.552 | INFO     | GNCService | PathFollower: switched to WP 8/38
+2026-05-15 16:18:06.869 | INFO     | GNCService | PathFollower: switched to WP 9/38
+2026-05-15 16:18:42.478 | INFO     | GNCService | PathFollower: switched to WP 10/38
+2026-05-15 16:18:58.845 | INFO     | GNCService | PathFollower: switched to WP 11/38
+2026-05-15 16:19:34.021 | INFO     | GNCService | PathFollower: switched to WP 12/38
+2026-05-15 16:19:50.383 | INFO     | GNCService | PathFollower: switched to WP 13/38
+2026-05-15 16:20:25.170 | INFO     | GNCService | PathFollower: switched to WP 14/38
+2026-05-15 16:20:41.638 | INFO     | GNCService | PathFollower: switched to WP 15/38
+2026-05-15 16:21:17.720 | INFO     | GNCService | PathFollower: switched to WP 16/38
+2026-05-15 16:21:34.041 | INFO     | GNCService | PathFollower: switched to WP 17/38
+2026-05-15 16:22:11.386 | INFO     | GNCService | PathFollower: switched to WP 18/38
+2026-05-15 16:22:27.825 | INFO     | GNCService | PathFollower: switched to WP 19/38
+2026-05-15 16:23:06.891 | INFO     | GNCService | PathFollower: switched to WP 20/38
+2026-05-15 16:23:23.307 | INFO     | GNCService | PathFollower: switched to WP 21/38
+2026-05-15 16:24:04.658 | INFO     | GNCService | PathFollower: switched to WP 22/38
+2026-05-15 16:24:21.131 | INFO     | GNCService | PathFollower: switched to WP 23/38
+2026-05-15 16:25:04.768 | INFO     | GNCService | PathFollower: switched to WP 24/38
+2026-05-15 16:25:21.138 | INFO     | GNCService | PathFollower: switched to WP 25/38
+2026-05-15 16:26:07.459 | INFO     | GNCService | PathFollower: switched to WP 26/38
+2026-05-15 16:26:24.328 | INFO     | GNCService | PathFollower: switched to WP 27/38
+2026-05-15 16:27:13.902 | INFO     | GNCService | PathFollower: switched to WP 28/38
+2026-05-15 16:27:30.327 | INFO     | GNCService | PathFollower: switched to WP 29/38
+2026-05-15 16:28:22.922 | INFO     | GNCService | PathFollower: switched to WP 30/38
+2026-05-15 16:28:39.792 | INFO     | GNCService | PathFollower: switched to WP 31/38
+2026-05-15 16:29:35.381 | INFO     | GNCService | PathFollower: switched to WP 32/38
+2026-05-15 16:29:51.849 | INFO     | GNCService | PathFollower: switched to WP 33/38
+2026-05-15 16:30:47.651 | INFO     | GNCService | PathFollower: switched to WP 34/38
+2026-05-15 16:31:45.741 | INFO     | GNCService | PathFollower: switched to WP 35/38
+2026-05-15 16:31:49.389 | INFO     | GNCService | PathFollower: switched to WP 36/38
+2026-05-15 16:33:30.456 | INFO     | GNCService | PathFollower: switched to WP 37/38
+2026-05-15 16:35:18.656 | INFO     | GNCService | PathFollower: mission complete!
+2026-05-15 16:35:18.656 | INFO     | GNCService | GNC: WP Route loop #6, restarting
+2026-05-15 16:35:18.657 | INFO     | GNCService | PathFollower: loaded 38 waypoints
+2026-05-15 16:35:59.146 | INFO     | GNCService | PathFollower: switched to WP 2/38
+2026-05-15 16:36:54.054 | INFO     | GNCService | PathFollower: switched to WP 3/38
+2026-05-15 16:37:31.062 | INFO     | GNCService | PathFollower: switched to WP 4/38

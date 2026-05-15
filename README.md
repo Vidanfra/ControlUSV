@@ -16,12 +16,13 @@
 1. [Overview](#overview)
 2. [System Architecture](#system-architecture)
 3. [Modules](#modules)
-4. [Features](#features)
-5. [Hardware](#hardware)
-6. [Installation & Setup](#installation--setup)
-7. [Running the System](#running-the-system)
-8. [In Development](#in-development)
-9. [Bugs](#bugs)
+4. [GNC System](#gnc-system)
+5. [Features](#features)
+6. [Hardware](#hardware)
+7. [Installation & Setup](#installation--setup)
+8. [Running the System](#running-the-system)
+9. [In Development](#in-development)
+10. [Bugs](#bugs)
 
 ---
 
@@ -201,6 +202,215 @@ flowchart TB
 | **ThrustIndicator** | SVG compass with actual/desired heading arrows + bipolar port/starboard motor bars |
 | **useSurveyGenerator** | Boustrophedon (lawnmower) survey pattern generator (scanline polygon clipping, configurable angle and spacing) |
 | **useManualControl** | Arcade-style keyboard (WASD) control at ~10 Hz with throttle + steering |
+
+---
+
+## GNC System
+
+This section describes each algorithmic component of the Guidance–Navigation–Control stack,
+the variables that dominate its behaviour, and how to tune them.
+For physical parameter identification (how to measure hull/propulsion/drag constants on the real vessel)
+see **[CALIBRATION.md](CALIBRATION.md)**.
+
+### Data flow at 20 Hz
+
+```
+GNSS / IMU
+   │
+   ▼
+ NavigationProcess ──► ekf_state [N, E, D, φ, θ, ψ, u, v, r, ...]
+                               │
+                 ┌─────────────┼──────────────────┐
+                 ▼             ▼                  ▼
+          PathFollower   StationKeeper      HeadingAutopilot
+         (ALOS guidance)  (dual-radius)      (PID + ref model)
+                 │                                │
+                 └────► psi_d  ──────────────────►│
+                 └────► tau_X  ──► VelocityProfiler
+                                        │
+                                        ▼
+                                 tau_X (profiled)
+                                        │
+                          ┌─────────────┘
+                          ▼
+                   controlAllocation
+               [tau_X, tau_N] → [n₁, n₂]
+                          │
+                    ESP32 / motors
+```
+
+---
+
+### 1. ALOS — Adaptive Line-of-Sight Guidance
+
+**Purpose:** compute a desired heading $\psi_d$ that steers the vessel onto and along the straight-line path between two consecutive waypoints.
+
+**Algorithm (file: `src/gnc/guidance.py`):**
+
+1. Project the current vessel position onto the path segment to get the *along-track* coordinate $s$.
+2. Place a *virtual target point* at $s + \Delta$ along the segment (clamped to segment length).
+3. Compute the LOS angle from the vessel to the virtual target: $\psi_{LOS} = \text{atan2}(E_t - E,\ N_t - N)$.
+4. Subtract a slow-running sideslip estimate $\hat{\beta}_c$ to correct for constant cross-current: 
+   $\psi_d = \psi_{LOS} - \hat{\beta}_c$.
+
+**Look-ahead distance:**
+$$\Delta = \max\bigl(\Delta_{min},\ k_\Delta \cdot U\bigr)$$
+Because $\Delta$ scales with speed $U$, the cross-track error (CTE) convergence time constant is **constant at all speeds**: $\tau_{ye} = \Delta / U = k_\Delta$.
+
+**Key parameters:**
+
+| Parameter | JSON key | Effect of increasing |
+|-----------|----------|---------------------|
+| $k_\Delta$ (s) | `k_delta_s` | Slower, smoother CTE convergence. Reduce for tighter path-following, increase to avoid oscillatory correction. Rule: $k_\Delta \gg 4/(\zeta\,\omega_n) \approx 3.8$ s |
+| $\Delta_{min}$ (m) | `delta_min_m` | Floor on look-ahead at low speed. Must be $\geq$ acceptance radius. Too small → numerical instability near rest |
+| $\gamma$ | `gamma` | Adaptive sideslip gain. 0 = no current compensation. Increase to 0.001–0.01 if the vessel drifts steadily off-track in a cross-current. Too high → slow oscillation |
+
+**Waypoint switching:** the vessel switches to the next waypoint segment when $\|\text{pos} - WP_{next}\| < r_{WP}$. The acceptance radius $r_{WP}$ is set per-waypoint in the mission (default 5 m).
+
+---
+
+### 2. PID Heading Controller with Pole Placement
+
+**Purpose:** compute the yaw torque command $\tau_N$ that drives the actual heading $\psi$ to the desired heading $\psi_d$ produced by ALOS.
+
+**Algorithm (file: `src/gnc/control.py`, `PIDpolePlacement`):**
+
+Gains are derived analytically from the desired closed-loop poles $(\omega_n, \zeta)$:
+
+$$K_p = I_{zz}\,\omega_n^2, \qquad K_d = 2\,I_{zz}\,\zeta\,\omega_n, \qquad K_i = \frac{\omega_n}{10}\,K_p$$
+
+Control law:
+$$\tau_N = -K_p\,e_\psi - K_d\,e_r - K_i\,e_{int}$$
+where $e_\psi = \psi - \psi_d$ (SSA-normalized to ±π) and $e_r = r - r_d$.
+
+**Anti-windup strategy:**
+- Integrator accumulates only when $|e_\psi| < e_{x,threshold}$ (conditional integration).
+- When error is large, integrator decays: $e_{int} \leftarrow 0.95\,e_{int}$.
+- Integrator clamped to $\pm 10$ rad·s.
+
+**Key parameters:**
+
+| Parameter | JSON key | Derivation | Effect of increasing |
+|-----------|----------|-----------|---------------------|
+| $\omega_n$ (rad/s) | `wn` | Design choice | Higher bandwidth. $K_p$ grows as $\omega_n^2$, $K_d$ as $\omega_n$. Too high → oscillation. Typical: 1.0–2.5 |
+| $\zeta$ | `zeta` | Design choice | More damping → less heading overshoot. Butterworth optimal at 0.7. Below 0.5 → oscillatory |
+| $e_{x,th}$ (°) | `e_x_threshold_deg` | Field tuning | Larger zone where integrator is active. Increase if steady-state heading error persists in calm water |
+| $I_{zz}$ (kg·m²) | `izz_total_kgm2` | Physical measurement | Sets absolute gain scale. Measure on the real vessel (trifilar pendulum) — see CALIBRATION.md |
+
+**Approximate metrics:**
+- Bandwidth: $\approx \omega_n / (2\pi)$ Hz
+- Settling time (2% criterion): $\approx 4/(\zeta\,\omega_n)$ s &nbsp;&nbsp;→ at defaults (1.5, 0.7): **3.8 s**
+- Max yaw torque: $\tau_{N,max} = K_p \times \Delta_{sat}$ where $\Delta_{sat}$ is the saturation heading error
+
+---
+
+### 3. Reference Model (3rd-order heading pre-filter)
+
+**Purpose:** smooth the heading command $\psi_{ref}$ before it reaches the PID. Without this, any step change in $\psi_d$ (e.g. at waypoint switch) would immediately demand full torque and saturate the motors.
+
+**Algorithm (file: `src/gnc/guidance.py`, `refModel3`):**
+
+A 3rd-order critically damped filter: $H(s) = \omega_{n,ref}^3 / [(s+\omega_{n,ref})(s^2 + 2\zeta_{ref}\omega_{n,ref}s + \omega_{n,ref}^2)]$.
+
+The filter generates a smooth desired trajectory $(\psi_d,\ r_d,\ \alpha_d)$ that asymptotically follows any reference command. The PID error $e_\psi = \psi - \psi_d$ is measured against this *filtered* setpoint, not the raw ALOS command.
+
+**Key parameters:**
+
+| Parameter | JSON key | Effect of increasing |
+|-----------|----------|---------------------|
+| $\omega_{n,ref}$ (rad/s) | `wn_ref` | Faster heading ramp → more aggressive turns. **Must always be $< \omega_n$** or stability is compromised. At 0.5 rad/s a 90° heading change ramps over ~8 s |
+| $\zeta_{ref}$ | `zeta_ref` | At 1.0 (critically damped) the commanded heading ramps with no overshoot. Reduce only if turns are excessively slow (rare) |
+
+---
+
+### 4. Velocity Profiler — Trapezoidal Surge Force
+
+**Purpose:** modulate the surge thrust command $\tau_X$ to decelerate smoothly before a waypoint (avoiding overshoot) and accelerate smoothly after (no abrupt force step).
+
+**Algorithm (file: `src/gnc/autopilot.py`, `VelocityProfiler`):**
+
+For each segment the profiler precomputes two ramp distances:
+
+**Deceleration ramp** (approaching the WP): physics-based. The ramp starts at $d_{decel}$ metres before the waypoint and linearly reduces $\tau_X$ from $\tau_{cruise}$ to $\tau_{WP}$ (the thrust that sustains the per-WP speed). $d_{decel}$ is found by RK4 integration of the drag ODE: the minimum distance over which a linear thrust taper from $\tau_{cruise}$ to $\tau_{WP}$ actually brings the vessel to within 5 cm/s of $v_{WP}$.
+
+**Acceleration ramp** (leaving the WP): kinematic formula using target acceleration $a$:
+$$d_{accel} = \frac{v_{cruise}^2 - v_{WP}^2}{2\,a}$$
+The ramp starts once the vessel exits the acceptance circle ($d_{past} = \max(0,\ d_{from\_prev} - r_{WP})$), so $\alpha = 0$ (thrust = $\tau_{WP}$) at the exact WP switch — no thrust spike.
+
+**Cruise equilibrium:** $F_{drag}(v_{cruise}) = \tau_{cruise}$, solved analytically:
+$$v_{cruise} = \frac{-X_{u,lin} + \sqrt{X_{u,lin}^2 + 4\,X_{u,quad}\,\tau_{cruise}}}{2\,X_{u,quad}}$$
+
+**Key parameters:**
+
+| Parameter | Setting location | Effect |
+|-----------|-----------------|-------|
+| Cruise speed (kn) | Speed slider in UI | Determines $\tau_{cruise}$ and $v_{cruise}$. Scales all ramp distances quadratically |
+| `accel_ms2` | SettingsView → GNC | Target acceleration leaving a WP. Higher → shorter accel ramp, more abrupt surge. Typical: 0.1–0.5 m/s² |
+| Per-WP `speed` (kn) | Waypoint editor | Override speed at one waypoint. ≤ 0 = full stop at WP. Absent = cruise. Affects decel ramp only for that segment |
+| `xu_lin_frac` / `xu_quad_frac` | JSON only | Change shape of decel ramp. Calibrate from coasting test (see CALIBRATION.md §5) |
+| `M_SURGE` | Derived from JSON | Affects decel ramp shape. Calibrate from coasting test |
+
+**Ramp distances at defaults** (cruise 150 N ≈ 3 kn, $a=0.3$ m/s², stop WP):
+- Decel: ≈ 6.9 m (just fits within a 7 m approach with 5 m acceptance radius)
+- Accel: ≈ 7.1 m past the acceptance circle exit
+
+---
+
+### 5. Thrust Allocation
+
+**Purpose:** convert the commanded force–moment pair $(\tau_X, \tau_N)$ into individual motor RPM commands $(n_1, n_2)$ sent to the ESP32.
+
+**Model:**
+$$\boldsymbol{\tau} = \mathbf{B}\,\mathbf{u}, \qquad \mathbf{B} = k_+ \begin{bmatrix}1 & 1 \\ -l_1 & -l_2\end{bmatrix}, \quad l_i = \mp y_{pont}$$
+
+$$\mathbf{u} = \mathbf{B}^{-1}\boldsymbol{\tau}, \qquad n_i = \text{sign}(u_i)\sqrt{|u_i|}$$
+
+For **differential steering** with symmetric lever arms ($l_1 = -l_2 = y_{pont}$):
+$$n_{port}^2 = \frac{\tau_X / k_+ - \tau_N / (k_+ \cdot 2 y_{pont})}{1}, \qquad
+n_{stbd}^2 = \frac{\tau_X / k_+ + \tau_N / (k_+ \cdot 2 y_{pont})}{1}$$
+
+**Key parameters:**
+
+| Parameter | JSON key | Effect of error |
+|-----------|----------|-----------------|
+| $y_{pont}$ (m) | `pontoon_y_m` | Lever arm. 5 mm error → 0.7% wrong yaw torque per differential count. **Measure to ±2 mm** |
+| $k_+$ | `k_pos` | Forward thrust coefficient. Error scales all computed RPM commands. **Measure on thrust stand** |
+
+Motor speeds are clamped to $[n_{min},\ n_{max}]$ computed from `max_thrust_per_motor_kgf` and `k_pos`.
+
+---
+
+### 6. Tuning — Step-by-Step Field Procedure
+
+Perform in calm water, zero wind, with RTK GNSS active.
+
+**Step 1 — Verify thrust allocation (pontoon_y_m)**
+Arm in MANUAL mode. Apply a small differential command (left stick only). Vessel should yaw in place. If it also surges, the allocation is skewed → re-measure `pontoon_y_m`.
+
+**Step 2 — Set `izz_total_kgm2` (or verify `r66_coeff` + `nrdot_frac`)**
+Apply a yaw step in MANUAL mode; measure the initial angular acceleration $\alpha = \tau_{applied} / I_{zz}$. If the measured $I_{zz}$ differs significantly from the JSON value, update `izz_total_kgm2` — this rescales all PID gains.
+
+**Step 3 — Tune PID inner loop (`wn`, `zeta`)**
+- Set `wn_ref` to a low value (0.3 rad/s) to isolate the inner loop.
+- Issue heading step commands of ±30° and ±90°.
+- Increase `wn` until a small overshoot appears. Back off 20%.
+- Adjust `zeta` to eliminate overshoot without excessive sluggishness.
+- Typical final values: `wn` ∈ [1.2, 2.0], `zeta` = 0.7.
+
+**Step 4 — Tune reference model (`wn_ref`)**
+- Restore `wn_ref`. Issue 180° step commands.
+- Increase `wn_ref` until the turn rate is acceptable without motor saturation.
+- Verify `wn_ref` < `wn` by at least 30%.
+
+**Step 5 — Tune ALOS look-ahead (`k_delta_s`)**
+- Run a two-waypoint mission with a deliberate lateral offset at the start (approach the first segment from a 20 m CTE).
+- Observe convergence. If the vessel oscillates back and forth around the path, increase `k_delta_s`. If convergence is too slow, decrease.
+- Re-test with the nominal approach (no initial offset).
+
+**Step 6 — Tune velocity profiler (`accel_ms2`, per-WP speeds)**
+- Run a multi-waypoint mission. Observe vessel speed at WP transitions on the GNC chart.
+- If the vessel overshoots the acceptance radius, the decel ramp is too short → check `xu_quad_frac` calibration or reduce cruise speed.
+- Adjust `accel_ms2` to taste: higher = snappier acceleration out of slow WPs.
 
 ---
 
