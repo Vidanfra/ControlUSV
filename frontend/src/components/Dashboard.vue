@@ -24,15 +24,21 @@
         <span>{{ store.bestHeading.toFixed(1) }}° <small class="src-tag">{{ store.headingSource }}</small></span>
       </div>
       <div class="data-item">
-        <label>Des Heading</label>
+        <label>Desired Heading</label>
         <span>{{ (((store.targetHeading * 180 / Math.PI) % 360 + 360) % 360).toFixed(1) }}°</span>
       </div>
       <div class="data-item">
-        <label :class="{ 'sim-label': store.dataSource === 'sim' }">Speed</label>
+        <label :class="{ 'sim-label': store.dataSource === 'sim' }">SOG</label>
         <span>{{ store.gnssSogKnots.toFixed(1) }} kn</span>
       </div>
       <div class="data-item">
-        <label>Battery</label>
+        <label>Dist to WP</label>
+        <span>{{ store.wpRouteActive || store.stationActive
+          ? store.distToWp.toFixed(1) + ' m'
+          : '—' }}</span>
+      </div>
+      <div class="data-item">
+        <label>Battery Voltage</label>
         <span>{{ store.batteryVoltage.toFixed(1) }} V</span>
       </div>
     </div>
