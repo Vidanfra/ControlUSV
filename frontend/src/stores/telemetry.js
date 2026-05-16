@@ -838,8 +838,12 @@ export const useTelemetryStore = defineStore('telemetry', {
             this.rtSimConfig = data || null
             if (data.running) {
               this.dataSource = 'sim'
+              // Belt-and-suspenders: keep toggle in sync even if system/status
+              // hasn't arrived yet (sim/status runs at 20 Hz vs 10 Hz).
+              this.simMode = 'SIMULATION'
             } else {
               this.dataSource = 'sensor'
+              this.simMode = 'REAL'
             }
           }
           else if (topic === 'system/status') {
@@ -852,7 +856,9 @@ export const useTelemetryStore = defineStore('telemetry', {
              this.isArmed = data.is_armed
              this.mode = data.mode
              if (data.mode) this.vehicleMode = data.mode
-             // simMode is frontend-only — do NOT overwrite from backend
+             // simMode is authoritative on the backend (Manager tracks START/STOP_RT_SIM).
+             // Always sync so the REAL/SIM toggle stays correct after a page reload.
+             if (data.sim_mode !== undefined) this.simMode = data.sim_mode
              if (data.station_active !== undefined) this.stationActive = data.station_active
              if (data.station_wp) this.stationWaypoint = data.station_wp
              if (data.station_reaching_radius !== undefined && this.stationActive) this.stationReachingRadius = data.station_reaching_radius
