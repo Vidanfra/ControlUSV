@@ -62,7 +62,6 @@
           max="4.0" 
           step="0.1" 
           class="surge-slider"
-          :disabled="stationActive"
         />
         <span class="surge-val">{{ cruiseSpeedKn.toFixed(1) }} kn</span>
       </div>
@@ -115,6 +114,15 @@ const cruiseSpeedKn = ref(store.gncConfig?.cruise_speed_kn ?? 3.2)
 // Keep slider in sync when the backend broadcasts a new gnc_config (e.g. after restart)
 watch(() => store.gncConfig?.cruise_speed_kn, (val) => {
   if (!stationActive.value && val !== undefined) cruiseSpeedKn.value = val
+})
+// Push live speed changes to backend while station keeping is active (debounced 300 ms)
+let _cruiseSpeedTimer = null
+watch(cruiseSpeedKn, (val) => {
+  if (!stationActive.value) return
+  clearTimeout(_cruiseSpeedTimer)
+  _cruiseSpeedTimer = setTimeout(() => {
+    store.setGncConfig({ cruise_speed_kn: val })
+  }, 300)
 })
 const speedMs    = computed(() => cruiseSpeedKn.value * KN_TO_MS)
 const surgeForceN = computed(() => {

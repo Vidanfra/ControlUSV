@@ -240,7 +240,7 @@
       <label>Cruise Speed</label>
       <div class="surge-slider-container">
         <input type="range" v-model.number="cruiseSpeedKn" min="0.1" max="4.0" step="0.1"
-          class="surge-slider" :disabled="wpRouteActive" />
+          class="surge-slider" />
         <span class="surge-val">{{ cruiseSpeedKn.toFixed(1) }} kn</span>
       </div>
       <div class="surge-metrics">
@@ -291,6 +291,15 @@ const cruiseSpeedKn = ref(store.gncConfig?.cruise_speed_kn ?? 3.2)
 // Keep slider in sync when the backend broadcasts a new gnc_config (e.g. after restart)
 watch(() => store.gncConfig?.cruise_speed_kn, (val) => {
   if (!wpRouteActive.value && val !== undefined) cruiseSpeedKn.value = val
+})
+// Push live speed changes to backend while route is active (debounced 300 ms)
+let _cruiseSpeedTimer = null
+watch(cruiseSpeedKn, (val) => {
+  if (!wpRouteActive.value) return
+  clearTimeout(_cruiseSpeedTimer)
+  _cruiseSpeedTimer = setTimeout(() => {
+    store.setGncConfig({ cruise_speed_kn: val })
+  }, 300)
 })
 const fileInput = ref(null)
 const startError = ref('')

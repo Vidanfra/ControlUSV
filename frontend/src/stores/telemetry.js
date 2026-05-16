@@ -487,7 +487,9 @@ export const useTelemetryStore = defineStore('telemetry', {
     setGncConfig(config) {
       this.gncConfig = { ...this.gncConfig, ...config }
       localStorage.setItem('gncConfig', JSON.stringify(this.gncConfig))
-      this.sendCommand('SET_GNC_CONFIG', config)
+      // Always send the full merged config so the backend never resets
+      // unrelated parameters (wn, zeta, k_delta, …) to their defaults.
+      this.sendCommand('SET_GNC_CONFIG', this.gncConfig)
     },
     
     setSimStartWp(lat, lon) {

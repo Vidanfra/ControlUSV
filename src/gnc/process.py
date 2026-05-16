@@ -414,7 +414,10 @@ class GNCProcess(ServiceProcess):
 
         elif cmd.type == CommandType.SET_GNC_CONFIG:
             try:
-                self.gnc_config = GncConfig(**cmd.payload)
+                # Merge into existing config so partial payloads (e.g. only
+                # cruise_speed_kn) don't reset unrelated fields to defaults.
+                merged = {**self.gnc_config.model_dump(), **cmd.payload}
+                self.gnc_config = GncConfig(**merged)
                 self._apply_gnc_config()
                 logger.info(f"GNC: Parameters updated: {self.gnc_config}")
             except Exception as e:
