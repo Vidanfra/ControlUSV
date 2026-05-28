@@ -13,9 +13,10 @@ _SETTINGS_FILE = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'ma
 
 class ManagerProcess(ServiceProcess):
     def setup(self):
-        # 1. Subscribe to User Commands + GNSS for fix type
+        # 1. Subscribe to User Commands + GNSS for fix type + GNC internal sync
         self.cmd_sub = Subscriber([Topics.COMMAND_USER])
         self.gnss_sub = Subscriber([Topics.SENSOR_GNSS])
+        self.sync_sub = Subscriber([Topics.GNC_SYNC])
         
         # 2. Publishers
         self.status_pub = Publisher(Topics.SYSTEM_STATUS)
@@ -40,8 +41,6 @@ class ManagerProcess(ServiceProcess):
         self.failsafe_config = FailsafeConfig()
         self.gnc_config = GncConfig()
         self.gnss_fix_type = 0
-        self.battery_level_pct = 0.0
-        self.last_command_time = time.time()
 
         # Load previously saved user settings (overrides defaults above)
         self._load_settings()
@@ -49,8 +48,9 @@ class ManagerProcess(ServiceProcess):
         logger.info("Manager Process Initialized. Waiting for commands...")
 
     def loop(self):
-        # 1. Process Incoming Commands
-        while True:
+        # 1. Process Incoming Commands (bounded drain so one bursty reconnect
+        # cannot starve the GNSS subscriber for a whole loop tick)
+        for _ in range(50):
             msg = self.cmd_sub.receive(timeout_ms=0)
             if msg is None:
                 break
@@ -58,17 +58,24 @@ class ManagerProcess(ServiceProcess):
             topic, payload = msg
             if topic == Topics.COMMAND_USER.value:
                 self.handle_command(payload)
-                self.last_command_time = time.time()
 
         # 2. Consume GNSS for fix type tracking
-        while True:
+        for _ in range(50):
             msg = self.gnss_sub.receive(timeout_ms=0)
             if msg is None:
                 break
             _, data = msg
             self.gnss_fix_type = data.get('fix_type', self.gnss_fix_type)
 
-        # 3. Publish System Status Heartbeat
+        # 3. Consume GNC internal sync (failsafe-driven state updates)
+        for _ in range(50):
+            msg = self.sync_sub.receive(timeout_ms=0)
+            if msg is None:
+                break
+            _, data = msg
+            self._handle_gnc_sync(data)
+
+        # 4. Publish System Status Heartbeat
         status_payload = {
             "timestamp": time.time(),
             "is_armed": self.is_armed,
@@ -80,11 +87,9 @@ class ManagerProcess(ServiceProcess):
             "station_radius": self.station_radius,
             "wp_route_active": self.wp_route_active,
             "gnss_fix_type": self.gnss_fix_type,
-            "battery_level_pct": self.battery_level_pct,
             "home_wp": self.home_wp,
             "failsafe_config": self.failsafe_config.model_dump(),
             "gnc_config": self.gnc_config.model_dump(),
-            "battery_voltage": 12.6,
             "system_status": "ACTIVE"
         }
         self.status_pub.publish(status_payload)
@@ -206,6 +211,38 @@ class ManagerProcess(ServiceProcess):
 
         except Exception as e:
             logger.error(f"Failed to handle command: {e}")
+
+    # ----------------------------------------------------------------
+    #  GNC internal sync (failsafe-driven state updates)
+    # ----------------------------------------------------------------
+
+    def _handle_gnc_sync(self, data: dict):
+        """Apply state updates published by GNC on Topics.GNC_SYNC.
+
+        These reflect failsafe transitions GNC has ALREADY executed locally
+        (motors zeroed, mode swapped). Manager only mirrors the resulting
+        bookkeeping so the frontend heartbeat tells the truth.
+        """
+        op = data.get('op')
+        if op == 'emergency_stop':
+            self.is_armed = False
+            self.station_active = False
+            self.wp_route_active = False
+            logger.warning("Manager: GNC reports EMERGENCY_STOP \u2014 mirroring state")
+        elif op == 'failsafe_station':
+            self.wp_route_active = False
+            wp = data.get('station_wp') or {}
+            self.station_wp = {"lat": wp.get('lat'), "lon": wp.get('lon')}
+            self.station_reaching_radius = data.get('reaching_radius', self.station_reaching_radius)
+            self.station_radius = data.get('station_radius', self.station_radius)
+            self.station_active = True
+            logger.warning(f"Manager: GNC reports FAILSAFE_STATION at {self.station_wp}")
+        elif op == 'failsafe_return_home':
+            self.station_active = False
+            self.wp_route_active = True
+            logger.warning("Manager: GNC reports FAILSAFE_RETURN_HOME \u2014 WP route active")
+        else:
+            logger.warning(f"Manager: unknown GNC sync op '{op}'")
 
     # ----------------------------------------------------------------
     #  Settings persistence

@@ -7,7 +7,7 @@
     "k_delta": 15.0,
     "delta_min": 5.0,
     "gamma": 0.0,
-    "cruise_speed_kn": 0.5,
+    "cruise_speed_kn": 1.5,
     "e_x_threshold_deg": 10.0,
     "accel_ms2": 0.3,
     "vel_profiler_enabled": true

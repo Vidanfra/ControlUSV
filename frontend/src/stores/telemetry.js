@@ -40,6 +40,11 @@ export const useTelemetryStore = defineStore('telemetry', {
     isArmed: false,
     mode: 'MANUAL',
 
+    // Command sequence + ACK + link liveness (B-21/B-16)
+    _cmdSeq: 0,
+    lastAckSeq: 0,
+    linkAlive: false,
+
     // Mission plan defaults (persisted to localStorage)
     missionDefaultWpRadius:     JSON.parse(localStorage.getItem('missionPlanDefaults'))?.wpRadius     ?? 5,
     missionDefaultWpSpeed:      JSON.parse(localStorage.getItem('missionPlanDefaults'))?.wpSpeed      ?? 1.0,
@@ -419,15 +424,19 @@ export const useTelemetryStore = defineStore('telemetry', {
         console.warn(`Cannot send command '${type}': WebSocket not open (readyState=${this.socket?.readyState})`)
         return
       }
-      
+
+      // Per-session monotonic sequence number. Backend dedups by (connection,
+      // seq) so a TCP-buffered retransmit after a reconnect is dropped.
+      this._cmdSeq = (this._cmdSeq || 0) + 1
       const message = {
         type: type,
         timestamp: Date.now() / 1000.0, // Unix timestamp in seconds
-        payload: payload
+        payload: payload,
+        seq: this._cmdSeq,
       }
-      
+
       this.socket.send(JSON.stringify(message))
-      console.log("Sent Command:", message)
+      if (type !== 'MANUAL_INPUT') console.log("Sent Command:", message)
     },
 
     resetEnergy() {
@@ -757,6 +766,11 @@ export const useTelemetryStore = defineStore('telemetry', {
       ws.onopen = () => {
         if (this.socket !== ws) return   // superseded by a newer socket
         this.isConnected = true
+        // Reset per-session command sequence. Backend's last_seq is also per
+        // connection, so the first new command (seq=1) is always accepted.
+        this._cmdSeq = 0
+        this.lastAckSeq = 0
+        this.linkAlive = true   // optimistic; updated by comms/link broadcasts
         console.log('WebSocket Connected — waiting for system/status to sync config from backend')
         // Do NOT push localStorage values to the backend here.
         // The backend is authoritative: it persists config to manager_settings.json and
@@ -784,6 +798,25 @@ export const useTelemetryStore = defineStore('telemetry', {
 
         // Expose updater so onmessage can reset the timer
         ws._updateLastMsgTime = () => { _lastMsgTime = Date.now() }
+
+        // ── Frontend keep-alive PING (1 Hz) ───────────────────────────────────
+        // The backend uses these PINGs to populate the `comms/link` topic which
+        // gates GNC's comm-loss failsafe. Without this stream, a real 4G or
+        // commander disconnect would never trip the failsafe.
+        let _pingSeq = 0
+        const _pingTimer = setInterval(() => {
+          if (this.socket !== ws || ws.readyState !== WebSocket.OPEN) {
+            clearInterval(_pingTimer)
+            return
+          }
+          _pingSeq += 1
+          try {
+            ws.send(JSON.stringify({ type: 'PING', seq: _pingSeq, ts: Date.now() / 1000.0 }))
+          } catch (e) {
+            clearInterval(_pingTimer)
+          }
+        }, 1000)
+        ws._pingTimer = _pingTimer
       }
 
       ws.onmessage = (event) => {
@@ -793,6 +826,20 @@ export const useTelemetryStore = defineStore('telemetry', {
           const payload = JSON.parse(event.data)
           // Payload structure: { topic: "...", data: { ... } }
           const { topic, data } = payload
+
+          // Backend ACKs and PONGs are not telemetry — handle and return early.
+          if (topic === 'comms/ack') {
+            if (typeof data?.seq === 'number') this.lastAckSeq = data.seq
+            if (data?.duplicate) console.warn('[WS] backend reports duplicate command', data)
+            return
+          }
+          if (topic === 'comms/pong') {
+            return
+          }
+          if (topic === 'comms/link') {
+            this.linkAlive = !!data?.ws_alive
+            return
+          }
 
           let newLat = null
           let newLon = null
@@ -1038,6 +1085,7 @@ export const useTelemetryStore = defineStore('telemetry', {
       ws.onclose = () => {
         if (this.socket !== ws) return   // orphaned socket — ignore
         this.isConnected = false
+        if (ws._pingTimer) { clearInterval(ws._pingTimer); ws._pingTimer = null }
         console.warn('WebSocket Disconnected. Reconnecting in 3s...')
         setTimeout(() => {
           this.connectWebSocket()

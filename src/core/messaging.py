@@ -22,6 +22,20 @@ class Topics(str, Enum):
     SYSTEM_STATUS = "system/status"
     COMMAND_USER = "command/user"
     SIM_STATUS = "sim/status"
+    COMMS_LINK = "comms/link"          # frontend↔backend WS liveness (web_server → GNC)
+    GNC_SYNC = "gnc/internal_sync"     # GNC → Manager state-sync (failsafe-driven)
+
+
+# Per-topic high-water-marks. Defaults to 200 (~10 s at 20 Hz). Heartbeats use a
+# small HWM so a slow consumer never holds 100 stale status frames.
+_TOPIC_HWM = {
+    "system/status": 10,
+    "comms/link":    10,
+    "gnc/internal_sync": 50,
+}
+
+def _hwm_for(topic_value: str) -> int:
+    return _TOPIC_HWM.get(topic_value, 200)
 
 class PubSubBroker:
     """
@@ -57,6 +71,10 @@ class Publisher:
         self.topic = topic
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.PUB)
+        # Bounded send queue: drop on overflow rather than buffer indefinitely.
+        # LINGER=0 so close() returns immediately on shutdown.
+        self.socket.setsockopt(zmq.SNDHWM, _hwm_for(topic.value))
+        self.socket.setsockopt(zmq.LINGER, 0)
         # Connect to the Broker's XSUB port
         self.socket.connect(f"tcp://127.0.0.1:{settings.ZMQ_PORT}")
         time.sleep(0.1) # Allow connection establishment
@@ -76,6 +94,13 @@ class Subscriber:
     def __init__(self, topics: List[Topics]):
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.SUB)
+        # Bounded receive queue: under sustained back-pressure, drop the oldest
+        # rather than grow unbounded. LINGER=0 for fast shutdown.
+        # Use the smallest HWM among subscribed topics so heartbeat-like topics
+        # cannot starve sensor topics with stale frames.
+        rcv_hwm = min((_hwm_for(t.value) for t in topics), default=200)
+        self.socket.setsockopt(zmq.RCVHWM, rcv_hwm)
+        self.socket.setsockopt(zmq.LINGER, 0)
         # Connect to the Broker's XPUB port (ZMQ_PORT + 1)
         self.socket.connect(f"tcp://127.0.0.1:{settings.ZMQ_PORT + 1}")
         

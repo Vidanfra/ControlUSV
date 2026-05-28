@@ -95,6 +95,7 @@ class CommandMessage(BaseModel):
     timestamp: float = Field(..., description="Unix timestamp of command creation")
     type: CommandType
     payload: Dict[str, Any] = Field(default_factory=dict)
+    seq: Optional[int] = Field(None, description="Monotonic per-WS-session sequence number; backend dedups by (connection, seq)")
 
 class GNSSData(BaseModel):
     """

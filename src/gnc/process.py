@@ -90,6 +90,7 @@ class GNCProcess(ServiceProcess):
         self.nav_sub = Subscriber([Topics.STATE_ESTIMATION])
         self.cmd_sub = Subscriber([Topics.COMMAND_USER])
         self.status_sub = Subscriber([Topics.SYSTEM_STATUS])
+        self.link_sub = Subscriber([Topics.COMMS_LINK])
 
         # Publishers
         self.control_debug_pub = Publisher(Topics.CONTROL_DEBUG)
@@ -100,7 +101,13 @@ class GNCProcess(ServiceProcess):
         self.sim_imu_pub = Publisher(Topics.SENSOR_IMU)
         self.sim_status_pub = Publisher(Topics.SIM_STATUS)
 
-        # Command publisher (for MUTE/UNMUTE)
+        # Internal state-sync to Manager (failsafe-driven). Uses a dedicated
+        # topic that GNC does NOT subscribe to, eliminating the self-loop
+        # that previously sent synthesized commands back on COMMAND_USER.
+        self.sync_pub = Publisher(Topics.GNC_SYNC)
+
+        # Command publisher (RT-sim only: MUTE/UNMUTE sensors and the
+        # auto-DISARM that happens when entering simulation).
         self.cmd_pub = Publisher(Topics.COMMAND_USER)
 
         # GNC Config
@@ -150,9 +157,15 @@ class GNCProcess(ServiceProcess):
         # Fail-safe state
         self.failsafe_config = FailsafeConfig()
         self.last_gnss_fix_type = 0
-        self.gnss_lost_since = None        # timestamp when GNSS fix was lost (None = OK)
+        # Interval timers use monotonic clock so an NTP step (e.g. on 4G
+        # reconnect) does not break failsafe thresholds.
+        self.gnss_lost_since = None        # monotonic ts when fix lost (None = OK)
         self.gnss_failsafe_active = False  # latched True after failsafe fires; clears on GNSS restore
-        self.last_heartbeat_time = time.time()
+        # last_heartbeat_time is None until the FIRST comms/link event arrives.
+        # _check_failsafes skips the comm branch while this is None so a freshly
+        # booted vehicle (no frontend yet) does not immediately trip the failsafe.
+        self.last_heartbeat_time = None    # monotonic ts of last ws_alive=True
+        self.ws_alive = False              # last-known frontend link state
         self.home_wp = None           # {'lat': ..., 'lon': ...}
 
         # Timing
@@ -182,10 +195,12 @@ class GNCProcess(ServiceProcess):
     def loop(self):
         """Main loop — runs at 20 Hz."""
         now = time.time()
+        mono = time.monotonic()
 
-        # 1. Consume commands and system status
+        # 1. Consume commands, system status, and frontend link liveness
         self._consume_commands()
         self._consume_status()
+        self._consume_link(mono)
 
         # 2. If RT sim is active, run the simulation drifting/physics step
         #    Notice we do not return! The physics runs, sensors are spoofed,
@@ -196,9 +211,10 @@ class GNCProcess(ServiceProcess):
         # 3. Consume navigation state (normal mode relies on sensor spoof/real)
         self._consume_nav()
 
-        # 4. Fail-safe checks (only in REAL mode when armed in auto modes)
+        # 4. Fail-safe checks (only in REAL mode when armed in auto modes).
+        # Uses monotonic clock for interval thresholds.
         if self.is_armed and not self.rt_sim_active and (self.wp_route_active or self.station_active):
-            self._check_failsafes(now)
+            self._check_failsafes(mono)
 
         # Execution gate: REAL mode requires ARM; SIM mode uses rt_sim_active instead.
         # This ensures real motors NEVER move unless the user explicitly ARMed in REAL mode.
@@ -244,7 +260,7 @@ class GNCProcess(ServiceProcess):
 
     def _consume_nav(self):
         """Consume gnc/ekf_state from NavigationProcess."""
-        while True:
+        for _ in range(50):
             msg = self.nav_sub.receive(timeout_ms=0)
             if msg is None:
                 break
@@ -261,7 +277,7 @@ class GNCProcess(ServiceProcess):
                 self.last_gnss_fix_type = data['fix_type']
 
     def _consume_commands(self):
-        while True:
+        for _ in range(50):
             msg = self.cmd_sub.receive(timeout_ms=0)
             if msg is None:
                 break
@@ -273,12 +289,15 @@ class GNCProcess(ServiceProcess):
                 logger.error(f"GNC: failed to parse command: {e}")
 
     def _consume_status(self):
-        while True:
+        for _ in range(50):
             msg = self.status_sub.receive(timeout_ms=0)
             if msg is None:
                 break
             _, data = msg
-            self.last_heartbeat_time = time.time()
+            # NOTE: last_heartbeat_time is updated only in _consume_link based on
+            # actual frontend liveness — NOT here. Manager keeps publishing
+            # SYSTEM_STATUS regardless of WS link state, so using it as the
+            # comm-failsafe heartbeat masked real 4G/commander drops.
             # Always sync armed/mode from manager (the authority)
             self.is_armed = data.get('is_armed', self.is_armed)
             new_mode = data.get('mode', self.mode)
@@ -307,11 +326,24 @@ class GNCProcess(ServiceProcess):
                 except Exception as e:
                     logger.warning(f"GNC: Failed to apply gnc_config from heartbeat: {e}")
 
+    def _consume_link(self, mono_now: float):
+        """Consume comms/link from web_server. Only ws_alive=True bumps the
+        comm-failsafe heartbeat; ws_alive=False is the trigger we want to fire.
+        """
+        for _ in range(50):
+            msg = self.link_sub.receive(timeout_ms=0)
+            if msg is None:
+                break
+            _, data = msg
+            self.ws_alive = bool(data.get('ws_alive', False))
+            if self.ws_alive:
+                self.last_heartbeat_time = mono_now
+
     def _handle_command(self, cmd: CommandMessage):
-        # Commands published by GNC itself (for Manager sync) must be ignored here
-        # to avoid re-processing internal state changes that are already applied.
-        if cmd.payload.get('_source') == 'gnc_internal':
-            return
+        # NOTE: GNC no longer publishes synthesized commands on COMMAND_USER for
+        # Manager sync — that path went through Topics.GNC_SYNC instead. The old
+        # `_source == 'gnc_internal'` self-loop filter is therefore no longer
+        # needed.
 
         if cmd.type == CommandType.UPLOAD_MISSION:
             try:
@@ -582,10 +614,13 @@ class GNCProcess(ServiceProcess):
         self.controller.reset(psi_init=psi0)
 
         self.wp_route_active = True
-        # Reset failsafe timers
+        # Reset failsafe timers (monotonic). Only refresh comm heartbeat if the
+        # WS is currently alive — otherwise leave it stale so an already-lost
+        # link is detected on the next _check_failsafes tick.
         self.gnss_lost_since = None
         self.gnss_failsafe_active = False
-        self.last_heartbeat_time = time.time()
+        if self.ws_alive:
+            self.last_heartbeat_time = time.monotonic()
 
         logger.info(f"GNC: WP Route started — {len(waypoints)} WPs, "
                      f"dir={direction}, completion={completion}")
@@ -737,7 +772,8 @@ class GNCProcess(ServiceProcess):
         self.station_active = True
         self.gnss_lost_since = None
         self.gnss_failsafe_active = False
-        self.last_heartbeat_time = time.time()
+        if self.ws_alive:
+            self.last_heartbeat_time = time.monotonic()
 
         logger.info(f"GNC: Station keeping started at ({lat_s:.6f}, {lon_s:.6f}), "
                      f"reaching={reaching_radius}m, station={station_radius}m")
@@ -785,7 +821,7 @@ class GNCProcess(ServiceProcess):
     # ================================================================
 
     def _check_failsafes(self, now):
-        """Check GNSS loss and comm loss failsafes."""
+        """Check GNSS loss and comm loss failsafes. `now` is monotonic time."""
         fs = self.failsafe_config
 
         # --- GNSS loss check ---
@@ -804,6 +840,10 @@ class GNCProcess(ServiceProcess):
             self.gnss_failsafe_active = False
 
         # --- Comm loss check ---
+        # Skip until the FIRST link-alive event arrives (cold-start guard:
+        # frontend may not have connected yet).
+        if self.last_heartbeat_time is None:
+            return
         if now - self.last_heartbeat_time > fs.comm_timeout:
             logger.warning(f"GNC FAILSAFE: Comm lost for {fs.comm_timeout}s — {fs.comm_action}")
             if fs.comm_action == 'return_home' and self.home_wp:
@@ -828,22 +868,13 @@ class GNCProcess(ServiceProcess):
             'n1_rads': 0.0,
             'n2_rads': 0.0,
             'source': 'gnc',
-        })        # Sync Manager state: publish DISARM so it updates its is_armed flag
-        self.cmd_pub.publish(CommandMessage(
-            timestamp=time.time(),
-            type=CommandType.STOP_WP_ROUTE,
-            payload={'_source': 'gnc_internal'},
-        ).model_dump())
-        self.cmd_pub.publish(CommandMessage(
-            timestamp=time.time(),
-            type=CommandType.STOP_STATION,
-            payload={'_source': 'gnc_internal'},
-        ).model_dump())
-        self.cmd_pub.publish(CommandMessage(
-            timestamp=time.time(),
-            type=CommandType.DISARM,
-            payload={'_source': 'gnc_internal'},
-        ).model_dump())
+        })
+        # Sync Manager state via the dedicated GNC_SYNC topic (no self-loop).
+        self.sync_pub.publish({
+            'timestamp': time.time(),
+            'op': 'emergency_stop',
+        })
+
     def _failsafe_station_keeping(self):
         """Switch to station keeping at current position."""
         logger.warning("GNC FAILSAFE: Switching to station keeping at current position")
@@ -855,22 +886,14 @@ class GNCProcess(ServiceProcess):
             'station_radius': 10.0,
         }
         self._start_station(station_payload)
-        # Sync Manager: stop WP route, update station WP, mark station active
-        self.cmd_pub.publish(CommandMessage(
-            timestamp=time.time(),
-            type=CommandType.STOP_WP_ROUTE,
-            payload={'_source': 'gnc_internal'},
-        ).model_dump())
-        self.cmd_pub.publish(CommandMessage(
-            timestamp=time.time(),
-            type=CommandType.SET_STATION,
-            payload={**station_payload, '_source': 'gnc_internal'},
-        ).model_dump())
-        self.cmd_pub.publish(CommandMessage(
-            timestamp=time.time(),
-            type=CommandType.START_STATION,
-            payload={**station_payload, '_source': 'gnc_internal'},
-        ).model_dump())
+        # Sync Manager via dedicated topic.
+        self.sync_pub.publish({
+            'timestamp': time.time(),
+            'op': 'failsafe_station',
+            'station_wp': {'lat': self.lat, 'lon': self.lon},
+            'reaching_radius': station_payload['reaching_radius'],
+            'station_radius': station_payload['station_radius'],
+        })
 
     def _failsafe_return_home(self):
         """Navigate back to the Home waypoint."""
@@ -891,22 +914,13 @@ class GNCProcess(ServiceProcess):
             'completion': 'stop',
         }
         self._start_wp_route(home_route_payload)
-        # Sync Manager: stop any active modes, then mark WP route active
-        self.cmd_pub.publish(CommandMessage(
-            timestamp=time.time(),
-            type=CommandType.STOP_STATION,
-            payload={'_source': 'gnc_internal'},
-        ).model_dump())
-        self.cmd_pub.publish(CommandMessage(
-            timestamp=time.time(),
-            type=CommandType.STOP_WP_ROUTE,
-            payload={'_source': 'gnc_internal'},
-        ).model_dump())
-        self.cmd_pub.publish(CommandMessage(
-            timestamp=time.time(),
-            type=CommandType.START_WP_ROUTE,
-            payload={**home_route_payload, '_source': 'gnc_internal'},
-        ).model_dump())
+        # Sync Manager via dedicated topic.
+        self.sync_pub.publish({
+            'timestamp': time.time(),
+            'op': 'failsafe_return_home',
+            'home_wp': dict(self.home_wp),
+            'current_wp': {'lat': self.lat, 'lon': self.lon},
+        })
 
     # ================================================================
     #  REAL-TIME SIMULATION

@@ -2,6 +2,8 @@ import asyncio
 import json
 import math
 import os
+import time
+import traceback
 from typing import List
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.staticfiles import StaticFiles
@@ -19,12 +21,22 @@ if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 # --- Connection Manager ---
+# Per-connection state is attached as plain attributes on the WebSocket object:
+#   ws._last_ping_ts  : float (monotonic) — last PING received from this client
+#   ws._last_seq      : int — highest CommandMessage.seq accepted from this client
+# Both are initialized in ConnectionManager.connect.
+_PING_ALIVE_WINDOW_S = 2.0   # client is "alive" if it pinged within this window
+
 class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
+        # Treat a fresh connection as "alive" for the first window so the
+        # comm-failsafe doesn't trip in the gap before the first client PING.
+        websocket._last_ping_ts = time.monotonic()
+        websocket._last_seq = -1
         self.active_connections.append(websocket)
         logger.info(f"WebSocket client connected. Total: {len(self.active_connections)}")
 
@@ -32,6 +44,20 @@ class ConnectionManager:
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
             logger.info(f"WebSocket client disconnected. Total: {len(self.active_connections)}")
+
+    def link_status(self) -> dict:
+        """Aggregate frontend-link liveness across all connections."""
+        now = time.monotonic()
+        n = len(self.active_connections)
+        if n == 0:
+            return {"ws_alive": False, "n_clients": 0, "last_ping_age_s": None}
+        ages = [now - getattr(ws, "_last_ping_ts", 0.0) for ws in self.active_connections]
+        youngest = min(ages)
+        return {
+            "ws_alive": youngest <= _PING_ALIVE_WINDOW_S,
+            "n_clients": n,
+            "last_ping_age_s": youngest,
+        }
 
     async def broadcast(self, message: str):
         # Iterate over a copy to avoid modification issues during iteration (though asyncio is single threaded here)
@@ -65,6 +91,7 @@ _ZMQ_TOPICS = [
     Topics.CONTROL_DEBUG,
     Topics.CONTROL_CMD,
     Topics.SIM_STATUS,
+    Topics.COMMS_LINK,
 ]
 
 async def consume_zmq():
@@ -121,7 +148,7 @@ async def consume_zmq():
 
 @app.on_event("startup")
 async def startup_event():
-    global cmd_pub, cmd_ctx
+    global cmd_pub, cmd_ctx, link_pub
     logger.info("Starting Web Server...")
 
     # Create ZMQ command publisher HERE (post-fork, inside the child process).
@@ -130,11 +157,38 @@ async def startup_event():
     cmd_ctx = zmq.Context()
     cmd_pub = cmd_ctx.socket(zmq.PUB)
     cmd_pub.connect(f"tcp://127.0.0.1:{settings.ZMQ_PORT}")
+
+    # Dedicated publisher for the comms/link liveness topic. Tiny HWM so a slow
+    # GNC consumer never holds stale liveness frames.
+    link_pub = cmd_ctx.socket(zmq.PUB)
+    link_pub.setsockopt(zmq.SNDHWM, 10)
+    link_pub.setsockopt(zmq.LINGER, 0)
+    link_pub.connect(f"tcp://127.0.0.1:{settings.ZMQ_PORT}")
+
     await asyncio.sleep(0.2)   # allow ZMQ connection establishment (async — does not block event loop)
     logger.info("Command publisher connected to ZMQ broker")
 
     # Run the ZMQ consumer in the background
     asyncio.create_task(consume_zmq())
+    asyncio.create_task(publish_link_status())
+
+
+async def publish_link_status():
+    """Publish frontend-link liveness on `comms/link` at 1 Hz.
+
+    GNCProcess subscribes to this topic and uses `ws_alive` to gate the
+    comm-loss failsafe. Without this, the failsafe is bound to the local
+    Manager heartbeat and never trips on a real 4G/commander drop.
+    """
+    topic = Topics.COMMS_LINK.value
+    while True:
+        try:
+            payload = manager.link_status()
+            payload["ts"] = time.time()
+            link_pub.send_string(f"{topic} {json.dumps(payload)}")
+        except Exception:
+            logger.exception("[Web Server] Failed to publish comms/link")
+        await asyncio.sleep(1.0)
 
 from src.core.models import CommandMessage, CommandType
 from src.core.models import SimulationRequest, SimulationResult, SimulationConfig, Waypoint
@@ -144,26 +198,80 @@ from src.core.config import settings
 # Initialized in startup_event() to avoid pre-fork socket issues.
 cmd_ctx = None
 cmd_pub = None
+link_pub = None  # publisher for Topics.COMMS_LINK
 
-async def process_incoming_command(data_str: str):
-    """Parses and publishes commands from the UI."""
+async def process_incoming_command(data_str: str, websocket: WebSocket):
+    """Parses and publishes commands from the UI.
+
+    Special-cases:
+      - PING frames are intercepted before Pydantic validation and only update
+        the per-connection liveness timestamp (no ZMQ publish).
+      - CommandMessage with a `seq` <= last accepted seq for this connection
+        is dropped as a duplicate (idempotency on retransmits / TCP buffers).
+    Accepted commands echo an ACK frame back to the same client.
+    """
     try:
         data = json.loads(data_str)
-        # Validate against model
+    except json.JSONDecodeError:
+        logger.warning(f"Invalid JSON received from websocket: {data_str}")
+        return
+
+    # PING: keep-alive from the frontend, not a real command.
+    if isinstance(data, dict) and data.get("type") == "PING":
+        websocket._last_ping_ts = time.monotonic()
+        # Echo PONG with seq so the client can measure RTT later if desired.
+        try:
+            await websocket.send_text(json.dumps({
+                "topic": "comms/pong",
+                "data": {"seq": data.get("seq"), "ts": time.time()},
+            }))
+        except Exception:
+            pass
+        return
+
+    try:
         cmd = CommandMessage(**data)
-        
-        # Publish to ZMQ
+    except Exception:
+        logger.exception(f"Invalid CommandMessage payload: {data_str[:200]}")
+        return
+
+    # Duplicate-suppression by per-connection sequence number.
+    if cmd.seq is not None:
+        if cmd.seq <= websocket._last_seq:
+            logger.warning(
+                f"Duplicate command dropped (seq={cmd.seq} <= last={websocket._last_seq}, type={cmd.type})"
+            )
+            # Re-ACK so the frontend stops retrying.
+            try:
+                await websocket.send_text(json.dumps({
+                    "topic": "comms/ack",
+                    "data": {"seq": cmd.seq, "duplicate": True, "ts": time.time()},
+                }))
+            except Exception:
+                pass
+            return
+        websocket._last_seq = cmd.seq
+
+    try:
         topic = Topics.COMMAND_USER.value
         msg = f"{topic} {cmd.model_dump_json()}"
         cmd_pub.send_string(msg)
-        
-        if cmd.type != CommandType.MANUAL_INPUT:
-            logger.info(f"Command received and published: {cmd.type}")
-        
-    except json.JSONDecodeError:
-        logger.warning(f"Invalid JSON received from websocket: {data_str}")
-    except Exception as e:
-        logger.error(f"Error processing command: {e}")
+    except Exception:
+        logger.exception(f"Failed to publish command {cmd.type} to ZMQ")
+        return
+
+    if cmd.type != CommandType.MANUAL_INPUT:
+        logger.info(f"Command received and published: {cmd.type} (seq={cmd.seq})")
+
+    # ACK the accepted command so the frontend can clear its retry/echo state.
+    if cmd.seq is not None:
+        try:
+            await websocket.send_text(json.dumps({
+                "topic": "comms/ack",
+                "data": {"seq": cmd.seq, "duplicate": False, "ts": time.time()},
+            }))
+        except Exception:
+            pass
 
 # --- Routes ---
 @app.websocket("/ws")
@@ -174,12 +282,12 @@ async def websocket_endpoint(websocket: WebSocket):
             # Receive text from client
             data = await websocket.receive_text()
             # Process command
-            await process_incoming_command(data)
+            await process_incoming_command(data, websocket)
             
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-    except Exception as e:
-        logger.error(f"WebSocket error: {e}")
+    except Exception:
+        logger.exception("WebSocket handler error")
         manager.disconnect(websocket)
 
 
