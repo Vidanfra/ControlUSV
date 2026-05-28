@@ -39,7 +39,7 @@
       @click="setCurrentPosition"
       :disabled="!isConnected || stationActive || lat === 0"
     >
-      SET CURRENT POSITION
+      ⊕ SET CURRENT POSITION
     </button>
 
     <button
@@ -48,7 +48,7 @@
       @click="pickFromMap"
       :disabled="stationActive"
     >
-      {{ store.stationPickMode ? 'PICKING...' : 'PICK ON MAP' }}
+      {{ store.stationPickMode ? '📍 PICKING...' : '📍 PICK ON MAP' }}
     </button>
 
     <!-- Cruise Speed Slider -->
@@ -249,18 +249,25 @@ h3 {
 }
 
 .set-btn {
-  background: #33b5e5;
-  color: white;
+  background: #0d3a5c;
+  color: #81d4fa;
+  border: 1px solid #1565c0;
+}
+.set-btn:hover:not(:disabled) {
+  background: #1565c0;
+  color: #fff;
 }
 
 .pick-btn {
-  background: #8855cc;
-  color: white;
+  background: #1b5e20;
+  color: #a5d6a7;
+  border: 1px solid #2e7d32;
 }
 
 .pick-btn.active {
-  background: #FFA500;
-  color: #000;
+  background: #388e3c;
+  color: #fff;
+  border-color: #43a047;
   animation: pulse-pick 1s infinite;
 }
 
@@ -274,28 +281,35 @@ h3 {
   color: white;
 }
 
+.start-btn:hover:not(:disabled) {
+  background: #00a543;
+}
+
 .stop-btn {
-  background: #ff4444;
+  background: #e53935;
   color: white;
 }
 
+.stop-btn:hover:not(:disabled) {
+  background: #c62828;
+}
+
 .alert {
-  padding: 6px 10px;
+  padding: 6px 8px;
   border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: bold;
+  font-size: 0.78rem;
 }
 
 .alert-error {
-  background: #5a1a1a;
-  color: #ff4444;
-  border: 1px solid #ff4444;
+  background: rgba(180,0,0,0.2);
+  color: #ff6b6b;
+  border: 1px solid #9a0000;
 }
 
 .alert-warning {
-  background: #4a3a1a;
-  color: #ffaa00;
-  border: 1px solid #ffaa00;
+  background: rgba(160,100,0,0.2);
+  color: #ffcc66;
+  border: 1px solid #805000;
 }
 
 /* Surge slider */

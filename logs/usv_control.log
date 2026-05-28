@@ -25016,3 +25016,382 @@ ing...
 2026-05-28 20:02:18.860 | INFO     | GNCService | GNC: WP Route started — 2 WPs, dir=forward, completion=stop
 2026-05-28 20:02:18.864 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
 2026-05-28 20:02:18.865 | INFO     | ManagerService | WP Route STARTED: 2 waypoints, dir=forward
+2026-05-28 20:05:12.394 | INFO     | CommsService | Command received and published: CommandType.STOP_RT_SIM (seq=9)
+2026-05-28 20:05:12.398 | INFO     | GNCService | GNC: RT simulation stopped after 209.2s
+2026-05-28 20:05:12.407 | INFO     | ManagerService | Manager received command: CommandType.STOP_RT_SIM
+2026-05-28 20:05:12.407 | INFO     | ManagerService | Manager: RT Simulation STOPPED — back to REAL mode
+2026-05-28 20:05:12.408 | INFO     | ManagerService | Manager received command: CommandType.UNMUTE_SENSORS
+2026-05-28 20:05:12.418 | INFO     | HALService | HAL: Sensors UNMUTED
+2026-05-28 20:09:36.784 | INFO     | GNCService | Process GNCService received signal 2. Stopping...
+2026-05-28 20:09:36.784 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-05-28 20:09:36.784 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-05-28 20:09:36.784 | INFO     | NavigationService | Process NavigationService received signal 2. Stopping...
+2026-05-28 20:09:36.784 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-05-28 20:09:36.802 | INFO     | HALService | Process HALService stopped.
+2026-05-28 20:09:36.820 | INFO     | NavigationService | Process NavigationService stopped.
+2026-05-28 20:09:36.821 | INFO     | GNCService | Process GNCService stopped.
+2026-05-28 20:09:36.844 | INFO     | ManagerService | Process ManagerService stopped.
+2026-05-28 20:09:36.850 | ERROR    | CommsService | WebSocket handler error
+Traceback (most recent call last):
+
+  File "<string>", line 1, in <module>
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\multiprocessing\spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+               │     │   └ 372
+               │     └ 3
+               └ <function _main at 0x00000279A16BEF20>
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\multiprocessing\spawn.py", line 135, in _main
+    return self._bootstrap(parent_sentinel)
+           │    │          └ 372
+           │    └ <function BaseProcess._bootstrap at 0x00000279A15BF600>
+           └ <CommsProcess name='CommsService' parent=26800 started>
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\multiprocessing\process.py", line 314, in _bootstrap
+    self.run()
+    │    └ <function CommsProcess.run at 0x00000279D40FEAC0>
+    └ <CommsProcess name='CommsService' parent=26800 started>
+
+  File "c:\PYTHON\ControlUSV\src\comms\manager.py", line 28, in run
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_config=None)
+    │       │   └ <fastapi.applications.FastAPI object at 0x00000279A5D2FD40>
+    │       └ <function run at 0x00000279A56D3EC0>
+    └ <module 'uvicorn' from 'C:\\WPy64-31241\\python-3.12.4.amd64\\Lib\\site-packages\\uvicorn\\__init__.py'>
+
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\site-packages\uvicorn\main.py", line 575, in run
+    server.run()
+    │      └ <function Server.run at 0x00000279A5718360>
+    └ <uvicorn.server.Server object at 0x00000279A383D2E0>
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\site-packages\uvicorn\server.py", line 65, in run
+    return asyncio.run(self.serve(sockets=sockets))
+           │       │   │    │             └ None
+           │       │   │    └ <function Server.serve at 0x00000279A5718400>
+           │       │   └ <uvicorn.server.Server object at 0x00000279A383D2E0>
+           │       └ <function run at 0x00000279A0FB0680>
+           └ <module 'asyncio' from 'C:\\WPy64-31241\\python-3.12.4.amd64\\Lib\\asyncio\\__init__.py'>
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+           │      │   └ <coroutine object Server.serve at 0x00000279D427D000>
+           │      └ <function Runner.run at 0x00000279A1F534C0>
+           └ <asyncio.runners.Runner object at 0x00000279D3EACB90>
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           │    │     │                  └ <Task pending name='Task-1' coro=<Server.serve() running at C:\WPy64-31241\python-3.12.4.amd64\Lib\site-packages\uvicorn\serv...
+           │    │     └ <function BaseEventLoop.run_until_complete at 0x00000279A1F51120>
+           │    └ <_WindowsSelectorEventLoop running=True closed=False debug=False>
+           └ <asyncio.runners.Runner object at 0x00000279D3EACB90>
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\asyncio\base_events.py", line 674, in run_until_complete
+    self.run_forever()
+    │    └ <function BaseEventLoop.run_forever at 0x00000279A1F51080>
+    └ <_WindowsSelectorEventLoop running=True closed=False debug=False>
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\asyncio\base_events.py", line 641, in run_forever
+    self._run_once()
+    │    └ <function BaseEventLoop._run_once at 0x00000279A1F52E80>
+    └ <_WindowsSelectorEventLoop running=True closed=False debug=False>
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\asyncio\base_events.py", line 1987, in _run_once
+    handle._run()
+    │      └ <function Handle._run at 0x00000279A1EDB4C0>
+    └ <Handle Task.task_wakeup(<Future finished result=None>)>
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+    │    │            │    │           │    └ <member '_args' of 'Handle' objects>
+    │    │            │    │           └ <Handle Task.task_wakeup(<Future finished result=None>)>
+    │    │            │    └ <member '_callback' of 'Handle' objects>
+    │    │            └ <Handle Task.task_wakeup(<Future finished result=None>)>
+    │    └ <member '_context' of 'Handle' objects>
+    └ <Handle Task.task_wakeup(<Future finished result=None>)>
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\site-packages\uvicorn\protocols\websockets\websockets_impl.py", line 240, in run_asgi
+    result = await self.app(self.scope, self.asgi_receive, self.asgi_send)
+                   │    │   │    │      │    │             │    └ <function WebSocketProtocol.asgi_send at 0x00000279D468F060>
+                   │    │   │    │      │    │             └ <uvicorn.protocols.websockets.websockets_impl.WebSocketProtocol object at 0x00000279D46CE630>
+                   │    │   │    │      │    └ <function WebSocketProtocol.asgi_receive at 0x00000279D468F100>
+                   │    │   │    │      └ <uvicorn.protocols.websockets.websockets_impl.WebSocketProtocol object at 0x00000279D46CE630>
+                   │    │   │    └ {'type': 'websocket', 'asgi': {'version': '3.0', 'spec_version': '2.4'}, 'http_version': '1.1', 'scheme': 'ws', 'server': ('1...
+                   │    │   └ <uvicorn.protocols.websockets.websockets_impl.WebSocketProtocol object at 0x00000279D46CE630>
+                   │    └ <uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware object at 0x00000279D3FF3EC0>
+                   └ <uvicorn.protocols.websockets.websockets_impl.WebSocketProtocol object at 0x00000279D46CE630>
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 69, in __call__
+    return await self.app(scope, receive, send)
+                 │    │   │      │        └ <bound method WebSocketProtocol.asgi_send of <uvicorn.protocols.websockets.websockets_impl.WebSocketProtocol object at 0x0000...
+                 │    │   │      └ <bound method WebSocketProtocol.asgi_receive of <uvicorn.protocols.websockets.websockets_impl.WebSocketProtocol object at 0x0...
+                 │    │   └ {'type': 'websocket', 'asgi': {'version': '3.0', 'spec_version': '2.4'}, 'http_version': '1.1', 'scheme': 'ws', 'server': ('1...
+                 │    └ <fastapi.applications.FastAPI object at 0x00000279A5D2FD40>
+                 └ <uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware object at 0x00000279D3FF3EC0>
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\site-packages\fastapi\applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+                           │      │        └ <bound method WebSocketProtocol.asgi_send of <uvicorn.protocols.websockets.websockets_impl.WebSocketProtocol object at 0x0000...
+                           │      └ <bound method WebSocketProtocol.asgi_receive of <uvicorn.protocols.websockets.websockets_impl.WebSocketProtocol object at 0x0...
+                           └ {'type': 'websocket', 'asgi': {'version': '3.0', 'spec_version': '2.4'}, 'http_version': '1.1', 'scheme': 'ws', 'server': ('1...
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\site-packages\starlette\applications.py", line 123, in __call__
+    await self.middleware_stack(scope, receive, send)
+          │    │                │      │        └ <bound method WebSocketProtocol.asgi_send of <uvicorn.protocols.websockets.websockets_impl.WebSocketProtocol object at 0x0000...
+          │    │                │      └ <bound method WebSocketProtocol.asgi_receive of <uvicorn.protocols.websockets.websockets_impl.WebSocketProtocol object at 0x0...
+          │    │                └ {'type': 'websocket', 'asgi': {'version': '3.0', 'spec_version': '2.4'}, 'http_version': '1.1', 'scheme': 'ws', 'server': ('1...
+          │    └ <starlette.middleware.errors.ServerErrorMiddleware object at 0x00000279D4689370>
+          └ <fastapi.applications.FastAPI object at 0x00000279A5D2FD40>
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\site-packages\starlette\middleware\errors.py", line 151, in __call__
+    await self.app(scope, receive, send)
+          │    │   │      │        └ <bound method WebSocketProtocol.asgi_send of <uvicorn.protocols.websockets.websockets_impl.WebSocketProtocol object at 0x0000...
+          │    │   │      └ <bound method WebSocketProtocol.asgi_receive of <uvicorn.protocols.websockets.websockets_impl.WebSocketProtocol object at 0x0...
+          │    │   └ {'type': 'websocket', 'asgi': {'version': '3.0', 'spec_version': '2.4'}, 'http_version': '1.1', 'scheme': 'ws', 'server': ('1...
+          │    └ <starlette.middleware.exceptions.ExceptionMiddleware object at 0x00000279D4689340>
+          └ <starlette.middleware.errors.ServerErrorMiddleware object at 0x00000279D4689370>
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\site-packages\starlette\middleware\exceptions.py", line 65, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+          │                            │    │    │     │      │        └ <bound method WebSocketProtocol.asgi_send of <uvicorn.protocols.websockets.websockets_impl.WebSocketProtocol object at 0x0000...
+          │                            │    │    │     │      └ <bound method WebSocketProtocol.asgi_receive of <uvicorn.protocols.websockets.websockets_impl.WebSocketProtocol object at 0x0...
+          │                            │    │    │     └ {'type': 'websocket', 'asgi': {'version': '3.0', 'spec_version': '2.4'}, 'http_version': '1.1', 'scheme': 'ws', 'server': ('1...
+          │                            │    │    └ <starlette.websockets.WebSocket object at 0x00000279D46CEFC0>
+          │                            │    └ <fastapi.routing.APIRouter object at 0x00000279A5D3DF70>
+          │                            └ <starlette.middleware.exceptions.ExceptionMiddleware object at 0x00000279D4689340>
+          └ <function wrap_app_handling_exceptions at 0x00000279A5C8A020>
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+          │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x00000279D46A8040>
+          │   │      └ <bound method WebSocketProtocol.asgi_receive of <uvicorn.protocols.websockets.websockets_impl.WebSocketProtocol object at 0x0...
+          │   └ {'type': 'websocket', 'asgi': {'version': '3.0', 'spec_version': '2.4'}, 'http_version': '1.1', 'scheme': 'ws', 'server': ('1...
+          └ <fastapi.routing.APIRouter object at 0x00000279A5D3DF70>
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\site-packages\starlette\routing.py", line 756, in __call__
+    await self.middleware_stack(scope, receive, send)
+          │    │                │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x00000279D46A8040>
+          │    │                │      └ <bound method WebSocketProtocol.asgi_receive of <uvicorn.protocols.websockets.websockets_impl.WebSocketProtocol object at 0x0...
+          │    │                └ {'type': 'websocket', 'asgi': {'version': '3.0', 'spec_version': '2.4'}, 'http_version': '1.1', 'scheme': 'ws', 'server': ('1...
+          │    └ <bound method Router.app of <fastapi.routing.APIRouter object at 0x00000279A5D3DF70>>
+          └ <fastapi.routing.APIRouter object at 0x00000279A5D3DF70>
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\site-packages\starlette\routing.py", line 776, in app
+    await route.handle(scope, receive, send)
+          │     │      │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x00000279D46A8040>
+          │     │      │      └ <bound method WebSocketProtocol.asgi_receive of <uvicorn.protocols.websockets.websockets_impl.WebSocketProtocol object at 0x0...
+          │     │      └ {'type': 'websocket', 'asgi': {'version': '3.0', 'spec_version': '2.4'}, 'http_version': '1.1', 'scheme': 'ws', 'server': ('1...
+          │     └ <function WebSocketRoute.handle at 0x00000279A5C8B4C0>
+          └ APIWebSocketRoute(path='/ws', name='websocket_endpoint')
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\site-packages\starlette\routing.py", line 373, in handle
+    await self.app(scope, receive, send)
+          │    │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x00000279D46A8040>
+          │    │   │      └ <bound method WebSocketProtocol.asgi_receive of <uvicorn.protocols.websockets.websockets_impl.WebSocketProtocol object at 0x0...
+          │    │   └ {'type': 'websocket', 'asgi': {'version': '3.0', 'spec_version': '2.4'}, 'http_version': '1.1', 'scheme': 'ws', 'server': ('1...
+          │    └ <function websocket_session.<locals>.app at 0x00000279D40FD1C0>
+          └ APIWebSocketRoute(path='/ws', name='websocket_endpoint')
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\site-packages\starlette\routing.py", line 96, in app
+    await wrap_app_handling_exceptions(app, session)(scope, receive, send)
+          │                            │    │        │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x00000279D46A8040>
+          │                            │    │        │      └ <bound method WebSocketProtocol.asgi_receive of <uvicorn.protocols.websockets.websockets_impl.WebSocketProtocol object at 0x0...
+          │                            │    │        └ {'type': 'websocket', 'asgi': {'version': '3.0', 'spec_version': '2.4'}, 'http_version': '1.1', 'scheme': 'ws', 'server': ('1...
+          │                            │    └ <starlette.websockets.WebSocket object at 0x00000279D46CF170>
+          │                            └ <function websocket_session.<locals>.app.<locals>.app at 0x00000279D46A80E0>
+          └ <function wrap_app_handling_exceptions at 0x00000279A5C8A020>
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+          │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x00000279D46ED260>
+          │   │      └ <bound method WebSocketProtocol.asgi_receive of <uvicorn.protocols.websockets.websockets_impl.WebSocketProtocol object at 0x0...
+          │   └ {'type': 'websocket', 'asgi': {'version': '3.0', 'spec_version': '2.4'}, 'http_version': '1.1', 'scheme': 'ws', 'server': ('1...
+          └ <function websocket_session.<locals>.app.<locals>.app at 0x00000279D46A80E0>
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\site-packages\starlette\routing.py", line 94, in app
+    await func(session)
+          │    └ <starlette.websockets.WebSocket object at 0x00000279D46CF170>
+          └ <function get_websocket_app.<locals>.app at 0x00000279D40FD260>
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\site-packages\fastapi\routing.py", line 348, in app
+    await dependant.call(**values)
+          │         │      └ {'websocket': <starlette.websockets.WebSocket object at 0x00000279D46CF170>}
+          │         └ <function websocket_endpoint at 0x00000279D40FD120>
+          └ <fastapi.dependencies.models.Dependant object at 0x00000279D40F19A0>
+
+> File "c:\PYTHON\ControlUSV\src\comms\web_server.py", line 283, in websocket_endpoint
+    data = await websocket.receive_text()
+                 │         └ <function WebSocket.receive_text at 0x00000279A5C52840>
+                 └ <starlette.websockets.WebSocket object at 0x00000279D46CF170>
+
+  File "C:\WPy64-31241\python-3.12.4.amd64\Lib\site-packages\starlette\websockets.py", line 134, in receive_text
+    raise RuntimeError(
+
+RuntimeError: WebSocket is not connected. Need to call "accept" first.
+2026-05-28 20:09:36.859 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 20:09:36.950 | INFO     | CommsService | [Web Server] ZMQ consumer task cancelled
+2026-05-28 20:09:36.951 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-05-28 20:09:36.965 | INFO     | CommsService | MAVLink bridge stopped.
+2026-05-28 20:09:37.030 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-05-28 20:09:39.362 | INFO     | MAIN | Starting USV Control System
+2026-05-28 20:09:39.362 | INFO     | MAIN | Mode: SIMULATION
+2026-05-28 20:09:39.838 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-05-28 20:09:40.398 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-05-28 20:09:40.404 | INFO     | CommsService | Starting Web Server on port 8000
+2026-05-28 20:09:40.405 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-05-28 20:09:40.395 | INFO     | ManagerService | Process ManagerService starting...
+2026-05-28 20:09:40.398 | INFO     | HALService | Process HALService starting...
+2026-05-28 20:09:40.398 | INFO     | NavigationService | Process NavigationService starting...
+2026-05-28 20:09:40.412 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 20:09:40.414 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 20:09:40.414 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-05-28 20:09:40.398 | INFO     | GNCService | Process GNCService starting...
+2026-05-28 20:09:40.414 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-05-28 20:09:40.418 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 20:09:40.418 | ERROR    | HALService | [GNSS Node] Cannot open /dev/gnss_um982: could not open port '/dev/gnss_um982': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 20:09:40.418 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-05-28 20:09:40.419 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-05-28 20:09:40.422 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 20:09:40.422 | ERROR    | HALService | [IMU Node] Cannot open /dev/serial0: could not open port '/dev/serial0': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 20:09:40.423 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 20:09:40.424 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-05-28 20:09:40.424 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-05-28 20:09:40.424 | INFO     | HALService | [ESP32 Node] Starting (with auto-retry)...
+2026-05-28 20:09:40.424 | ERROR    | HALService | [Power Node] Cannot open /dev/power_pzem: could not open port '/dev/power_pzem': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying...
+2026-05-28 20:09:40.424 | INFO     | HALService | ESP32 Node started on /dev/esp32
+2026-05-28 20:09:40.425 | ERROR    | HALService | [ESP32 Node] Cannot open /dev/esp32: could not open port '/dev/esp32': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying every 3.0s (this message will not repeat).
+2026-05-28 20:09:40.425 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-05-28 20:09:40.426 | INFO     | CommsService | Starting Web Server...
+2026-05-28 20:09:40.516 | INFO     | NavigationService | Navigation Process initialized (passthrough mode)
+2026-05-28 20:09:40.516 | INFO     | NavigationService | Process NavigationService entering loop at 20.0 Hz
+2026-05-28 20:09:40.617 | INFO     | ManagerService | Manager: settings loaded from c:\PYTHON\ControlUSV\src\manager\..\..\data\manager_settings.json
+2026-05-28 20:09:40.617 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-05-28 20:09:40.617 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-05-28 20:09:40.631 | INFO     | CommsService | Command publisher connected to ZMQ broker
+2026-05-28 20:09:40.633 | INFO     | CommsService | [Web Server] ZMQ consumer subscribed on tcp://127.0.0.1:5556
+2026-05-28 20:09:40.662 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 20:09:41.138 | INFO     | GNCService | GNC Process initialized (waiting for AUTO mode)
+2026-05-28 20:09:41.138 | INFO     | GNCService | Process GNCService entering loop at 20.0 Hz
+2026-05-28 20:09:48.099 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 20:09:48.473 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 20:09:53.043 | INFO     | CommsService | Command received and published: CommandType.START_RT_SIM (seq=1)
+2026-05-28 20:09:53.075 | INFO     | ManagerService | Manager received command: CommandType.START_RT_SIM
+2026-05-28 20:09:53.075 | INFO     | ManagerService | Manager: RT Simulation STARTED — vehicle auto-DISARMED
+2026-05-28 20:09:53.088 | INFO     | GNCService | GNC: Starting RT simulation (Physics Engine Only)
+2026-05-28 20:09:53.089 | INFO     | GNCService | GNC: RT simulation started
+2026-05-28 20:09:53.093 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
+2026-05-28 20:09:53.176 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-05-28 20:09:55.083 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=22)
+2026-05-28 20:09:55.086 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 20:09:55.086 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 20:10:49.511 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=23)
+2026-05-28 20:10:49.528 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 20:10:49.528 | INFO     | ManagerService | Mode changed to: STATION
+2026-05-28 20:10:55.739 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=24)
+2026-05-28 20:10:55.768 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 20:10:55.768 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 20:11:06.680 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=25)
+2026-05-28 20:11:06.731 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 20:11:06.731 | INFO     | ManagerService | Mode changed to: STATION
+2026-05-28 20:11:16.453 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=26)
+2026-05-28 20:11:16.483 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 20:11:16.483 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 20:12:06.756 | INFO     | CommsService | Command received and published: CommandType.SET_HOME_WP (seq=27)
+2026-05-28 20:12:06.771 | INFO     | ManagerService | Manager received command: CommandType.SET_HOME_WP
+2026-05-28 20:12:06.771 | INFO     | ManagerService | Home WP set: {'lat': 39.32369256566997, 'lon': -0.5816701083955138}
+2026-05-28 20:12:06.775 | INFO     | GNCService | GNC: Home WP set: {'lat': 39.32369256566997, 'lon': -0.5816701083955138}
+2026-05-28 20:12:09.974 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=28)
+2026-05-28 20:12:09.991 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 20:12:09.992 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 20:12:56.189 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=29)
+2026-05-28 20:12:56.265 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 20:12:56.265 | INFO     | ManagerService | Mode changed to: STATION
+2026-05-28 20:13:03.141 | INFO     | CommsService | Command received and published: CommandType.SET_STATION (seq=30)
+2026-05-28 20:13:03.210 | INFO     | ManagerService | Manager received command: CommandType.SET_STATION
+2026-05-28 20:13:03.211 | INFO     | ManagerService | Station WP set: {'lat': 39.32440869630864, 'lon': -0.5815891691542561}, reaching: 3m, station: 10m
+2026-05-28 20:13:06.141 | INFO     | CommsService | Command received and published: CommandType.SET_STATION (seq=31)
+2026-05-28 20:13:06.230 | INFO     | ManagerService | Manager received command: CommandType.SET_STATION
+2026-05-28 20:13:06.232 | INFO     | ManagerService | Station WP set: {'lat': 39.32435391061682, 'lon': -0.5829853710705208}, reaching: 3m, station: 10m
+2026-05-28 20:13:08.010 | INFO     | CommsService | Command received and published: CommandType.SET_STATION (seq=32)
+2026-05-28 20:13:08.043 | INFO     | ManagerService | Manager received command: CommandType.SET_STATION
+2026-05-28 20:13:08.043 | INFO     | ManagerService | Station WP set: {'lat': 39.32344636220139, 'lon': -0.5826300688282091}, reaching: 3m, station: 10m
+2026-05-28 20:13:17.565 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=33)
+2026-05-28 20:13:17.596 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 20:13:17.596 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 20:14:08.010 | INFO     | CommsService | Command received and published: CommandType.STOP_RT_SIM (seq=34)
+2026-05-28 20:14:08.017 | INFO     | GNCService | GNC: RT simulation stopped after 251.2s
+2026-05-28 20:14:08.036 | INFO     | HALService | HAL: Sensors UNMUTED
+2026-05-28 20:14:08.083 | INFO     | ManagerService | Manager received command: CommandType.STOP_RT_SIM
+2026-05-28 20:14:08.084 | INFO     | ManagerService | Manager: RT Simulation STOPPED — back to REAL mode
+2026-05-28 20:14:08.084 | INFO     | ManagerService | Manager received command: CommandType.UNMUTE_SENSORS
+2026-05-28 20:28:25.304 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-05-28 20:28:25.305 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-05-28 20:28:25.305 | INFO     | GNCService | Process GNCService received signal 2. Stopping...
+2026-05-28 20:28:25.306 | INFO     | NavigationService | Process NavigationService received signal 2. Stopping...
+2026-05-28 20:28:25.306 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-05-28 20:28:25.322 | INFO     | HALService | Process HALService stopped.
+2026-05-28 20:28:25.327 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 20:28:25.335 | INFO     | GNCService | Process GNCService stopped.
+2026-05-28 20:28:25.337 | INFO     | NavigationService | Process NavigationService stopped.
+2026-05-28 20:28:25.356 | INFO     | ManagerService | Process ManagerService stopped.
+2026-05-28 20:28:25.434 | INFO     | CommsService | [Web Server] ZMQ consumer task cancelled
+2026-05-28 20:28:25.434 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-05-28 20:28:25.449 | INFO     | CommsService | MAVLink bridge stopped.
+2026-05-28 20:28:25.526 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-05-28 20:28:27.872 | INFO     | MAIN | Starting USV Control System
+2026-05-28 20:28:27.872 | INFO     | MAIN | Mode: SIMULATION
+2026-05-28 20:28:28.424 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-05-28 20:28:28.966 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-05-28 20:28:28.971 | INFO     | CommsService | Starting Web Server on port 8000
+2026-05-28 20:28:28.972 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-05-28 20:28:28.968 | INFO     | ManagerService | Process ManagerService starting...
+2026-05-28 20:28:28.965 | INFO     | GNCService | Process GNCService starting...
+2026-05-28 20:28:28.990 | INFO     | CommsService | Starting Web Server...
+2026-05-28 20:28:28.976 | INFO     | HALService | Process HALService starting...
+2026-05-28 20:28:28.972 | INFO     | NavigationService | Process NavigationService starting...
+2026-05-28 20:28:28.996 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 20:28:28.998 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 20:28:28.998 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-05-28 20:28:28.998 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-05-28 20:28:29.001 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 20:28:29.001 | ERROR    | HALService | [GNSS Node] Cannot open /dev/gnss_um982: could not open port '/dev/gnss_um982': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 20:28:29.001 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-05-28 20:28:29.001 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-05-28 20:28:29.005 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 20:28:29.006 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 20:28:29.006 | ERROR    | HALService | [IMU Node] Cannot open /dev/serial0: could not open port '/dev/serial0': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 20:28:29.006 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-05-28 20:28:29.007 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-05-28 20:28:29.007 | ERROR    | HALService | [Power Node] Cannot open /dev/power_pzem: could not open port '/dev/power_pzem': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying...
+2026-05-28 20:28:29.007 | INFO     | HALService | [ESP32 Node] Starting (with auto-retry)...
+2026-05-28 20:28:29.008 | INFO     | HALService | ESP32 Node started on /dev/esp32
+2026-05-28 20:28:29.008 | ERROR    | HALService | [ESP32 Node] Cannot open /dev/esp32: could not open port '/dev/esp32': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying every 3.0s (this message will not repeat).
+2026-05-28 20:28:29.008 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-05-28 20:28:29.098 | INFO     | NavigationService | Navigation Process initialized (passthrough mode)
+2026-05-28 20:28:29.098 | INFO     | NavigationService | Process NavigationService entering loop at 20.0 Hz
+2026-05-28 20:28:29.192 | INFO     | ManagerService | Manager: settings loaded from c:\PYTHON\ControlUSV\src\manager\..\..\data\manager_settings.json
+2026-05-28 20:28:29.192 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-05-28 20:28:29.192 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-05-28 20:28:29.203 | INFO     | CommsService | Command publisher connected to ZMQ broker
+2026-05-28 20:28:29.206 | INFO     | CommsService | [Web Server] ZMQ consumer subscribed on tcp://127.0.0.1:5556
+2026-05-28 20:28:29.645 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 20:28:29.709 | INFO     | GNCService | GNC Process initialized (waiting for AUTO mode)
+2026-05-28 20:28:29.709 | INFO     | GNCService | Process GNCService entering loop at 20.0 Hz
+2026-05-28 20:28:38.471 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 20:28:38.854 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 20:29:16.340 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=1)
+2026-05-28 20:29:16.345 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 20:29:16.345 | INFO     | ManagerService | Mode changed to: STATION
+2026-05-28 20:29:28.197 | INFO     | CommsService | Command received and published: CommandType.START_RT_SIM (seq=2)
+2026-05-28 20:29:28.201 | INFO     | ManagerService | Manager received command: CommandType.START_RT_SIM
+2026-05-28 20:29:28.201 | INFO     | ManagerService | Manager: RT Simulation STARTED — vehicle auto-DISARMED
+2026-05-28 20:29:28.233 | INFO     | GNCService | GNC: Starting RT simulation (Physics Engine Only)
+2026-05-28 20:29:28.234 | INFO     | GNCService | GNC: RT simulation started
+2026-05-28 20:29:28.247 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
+2026-05-28 20:29:28.301 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-05-28 20:29:54.140 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=3)
+2026-05-28 20:29:54.235 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 20:29:54.235 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 20:30:02.959 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=4)
+2026-05-28 20:30:02.981 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 20:30:02.981 | INFO     | ManagerService | Mode changed to: STATION
+2026-05-28 20:30:05.278 | INFO     | CommsService | Command received and published: CommandType.SET_STATION (seq=5)
+2026-05-28 20:30:05.293 | INFO     | ManagerService | Manager received command: CommandType.SET_STATION
+2026-05-28 20:30:05.294 | INFO     | ManagerService | Station WP set: {'lat': 39.32318724693042, 'lon': -0.5787856378809977}, reaching: 3m, station: 10m
+2026-05-28 20:30:09.890 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=6)
+2026-05-28 20:30:09.917 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 20:30:09.917 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 20:30:11.810 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=7)
+2026-05-28 20:30:11.826 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-28 20:30:11.828 | INFO     | ManagerService | WP Route STARTED: 2 waypoints, dir=forward
+2026-05-28 20:30:11.850 | INFO     | GNCService | PathFollower: loaded 3 waypoints
+2026-05-28 20:30:11.870 | INFO     | GNCService | GNC: WP Route started — 2 WPs, dir=forward, completion=stop
+2026-05-28 20:32:03.130 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-05-28 20:32:03.130 | INFO     | GNCService | Process GNCService received signal 2. Stopping...
+2026-05-28 20:32:03.130 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-05-28 20:32:03.130 | INFO     | NavigationService | Process NavigationService received signal 2. Stopping...
+2026-05-28 20:32:03.130 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-05-28 20:32:03.134 | INFO     | GNCService | Process GNCService stopped.
+2026-05-28 20:32:03.135 | INFO     | HALService | Process HALService stopped.
+2026-05-28 20:32:03.145 | INFO     | NavigationService | Process NavigationService stopped.
+2026-05-28 20:32:03.195 | INFO     | ManagerService | Process ManagerService stopped.
+2026-05-28 20:32:03.207 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 20:32:03.299 | INFO     | CommsService | [Web Server] ZMQ consumer task cancelled
+2026-05-28 20:32:03.301 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-05-28 20:32:03.314 | INFO     | CommsService | MAVLink bridge stopped.
+2026-05-28 20:32:03.386 | SUCCESS  | MAIN | All services stopped. Exiting.

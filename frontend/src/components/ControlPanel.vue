@@ -118,11 +118,19 @@ const changeMode = (mode) => {
   min-width: 70px;
 }
 
+.arm-btn:hover:not(:disabled) {
+  background-color: #00a543;
+}
+
 .disarm-btn {
-  background-color: #ff4444;
+  background-color: #e53935;
   color: white;
   min-width: 70px;
   animation: pulse-red 1.5s infinite;
+}
+
+.disarm-btn:hover:not(:disabled) {
+  background-color: #c62828;
 }
 
 @keyframes pulse-red {
@@ -133,7 +141,8 @@ const changeMode = (mode) => {
 .mode-selector {
   display: flex;
   gap: 2px;
-  background: #333;
+  background: #1e1e1e;
+  border: 1px solid #555;
   border-radius: 4px;
   padding: 2px;
 }
@@ -143,11 +152,13 @@ const changeMode = (mode) => {
   color: #aaa;
   padding: 7px 12px;
   border-radius: 3px;
+  border: none;
 }
 
 .mode-btn.active {
   background: #FFA500;
   color: #000;
+  font-weight: bold;
 }
 
 .mode-btn:not(.active):hover:not(:disabled) {
@@ -158,7 +169,8 @@ const changeMode = (mode) => {
 .sim-toggle-group {
   display: flex;
   gap: 2px;
-  background: #333;
+  background: #1e1e1e;
+  border: 1px solid #555;
   border-radius: 4px;
   padding: 2px;
 }
@@ -169,16 +181,19 @@ const changeMode = (mode) => {
   padding: 7px 12px;
   border-radius: 3px;
   min-width: 45px;
+  border: none;
 }
 
 .sim-opt-btn.active {
-  background: #2a5a2a;
-  color: #00cc00;
+  background: #1b5e20;
+  color: #a5d6a7;
+  font-weight: bold;
 }
 
 .sim-opt-btn.sim.active {
-  background: #5a2a2a;
-  color: #ff8800;
+  background: #5a3e00;
+  color: #FFA500;
+  font-weight: bold;
 }
 
 .sim-opt-btn:not(.active):hover:not(:disabled) {

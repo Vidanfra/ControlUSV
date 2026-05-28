@@ -22,8 +22,8 @@
           </div>
         </div>
         <div class="item-actions">
-          <button class="act-btn" title="Use current vehicle position" @click="useCurrentPosition" :disabled="wpRouteActive">⊕</button>
-          <button class="act-btn" :class="{ active: store.activeMissionWpId === missionStart?.id }"
+          <button class="act-btn act-pos" title="Use current vehicle position" @click="useCurrentPosition" :disabled="wpRouteActive">⊕</button>
+          <button class="act-btn act-map" :class="{ active: store.activeMissionWpId === missionStart?.id }"
             title="Pick on map" @click="pickMissionStart" :disabled="wpRouteActive">📍</button>
         </div>
       </div>
@@ -58,7 +58,7 @@
             </div>
           </div>
           <div class="item-actions">
-            <button class="act-btn" :class="{ active: store.activeMissionWpId === item.id }"
+            <button class="act-btn act-map" :class="{ active: store.activeMissionWpId === item.id }"
               title="Pick on map" @click="pickWaypoint(item.id)" :disabled="wpRouteActive">📍</button>
             <button class="act-btn act-del" title="Remove" @click="store.removeMissionItem(item.id)" :disabled="wpRouteActive">✕</button>
           </div>
@@ -189,8 +189,8 @@
           </div>
         </div>
         <div class="item-actions">
-          <button class="act-btn" title="Use current vehicle position" @click="useCurrentPositionEnd" :disabled="wpRouteActive">⊕</button>
-          <button class="act-btn" :class="{ active: store.activeMissionWpId === missionEnd?.id }"
+          <button class="act-btn act-pos" title="Use current vehicle position" @click="useCurrentPositionEnd" :disabled="wpRouteActive">⊕</button>
+          <button class="act-btn act-map" :class="{ active: store.activeMissionWpId === missionEnd?.id }"
             title="Pick on map" @click="pickMissionEnd" :disabled="wpRouteActive">📍</button>
         </div>
       </div>
@@ -560,7 +560,7 @@ h3 {
 .item-fixed  { background: #222; }
 .item-survey.item-active-survey { border-color: #22bb66; }
 .item-picking { border-color: #FFA500 !important; }
-.drag-over    { border-color: #33b5e5 !important; }
+.drag-over    { border-color: #FFA500 !important; }
 
 /* ─── Badges ─────────────────────────────────────────────────────────────── */
 .item-badge {
@@ -575,7 +575,7 @@ h3 {
   flex-shrink: 0;
   margin-top: 1px;
 }
-.badge-start  { background: #1976d2; color: #fff; }
+.badge-start  { background: #2e7d32; color: #fff; }
 .badge-end    { background: #c62828; color: #fff; }
 .badge-wp     { background: #0288d1; color: #fff; font-size: 0.65rem; }
 .badge-survey { background: #2e7d32; color: #fff; }
@@ -618,6 +618,13 @@ h3 {
 }
 .act-btn:hover { background: #444; color: #fff; }
 .act-btn.active { background: #FFA500; color: #000; border-color: #FFA500; }
+/* Semantic tint: ⊕ = use GPS/current position (blue) */
+.act-pos { background: #0d3a5c; color: #81d4fa; border-color: #1565c0; }
+.act-pos:hover { background: #1565c0; color: #fff; }
+/* Semantic tint: 📍 = pick on map (dark green) */
+.act-map { background: #1b5e20; color: #a5d6a7; border-color: #2e7d32; }
+.act-map:hover { background: #2e7d32; color: #fff; }
+.act-map.active { background: #FFA500; color: #000; border-color: #FFA500; }
 .act-del:hover  { background: #c62828; color: #fff; border-color: #c62828; }
 .act-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -723,9 +730,9 @@ h3 {
 .coord { font-size: 0.78rem; font-family: monospace; color: #aaa; flex: 1; }
 .coord.dim { color: #555; font-style: italic; }
 .home-btn {
-  background: #5c2d91;
-  color: #ce93d8;
-  border: none;
+  background: #1b5e20;
+  color: #a5d6a7;
+  border: 1px solid #2e7d32;
   border-radius: 4px;
   padding: 5px 10px;
   font-size: 0.75rem;
@@ -733,7 +740,8 @@ h3 {
   cursor: pointer;
   white-space: nowrap;
 }
-.home-btn.active { background: #7b1fa2; color: #fff; }
+.home-btn:hover:not(:disabled) { background: #2e7d32; }
+.home-btn.active { background: #FFA500; color: #000; animation: pulse-pick 1s infinite; }
 .home-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ─── Toggle group ───────────────────────────────────────────────────────── */
@@ -782,8 +790,8 @@ h3 {
 }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.start-btn { background: #33b5e5; color: #fff; }
-.start-btn:hover:not(:disabled) { background: #4fc3f7; }
+.start-btn { background: #00C851; color: #fff; }
+.start-btn:hover:not(:disabled) { background: #00a543; }
 .stop-btn  { background: #c62828; color: #fff; }
 .stop-btn:hover:not(:disabled) { background: #e53935; }
 

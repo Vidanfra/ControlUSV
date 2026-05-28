@@ -64,9 +64,9 @@ const sensors = [
 
 // Tabs Configuration
 const tabs = [
-  { id: 'map', name: 'Map & Pilot', component: MapView },
+  { id: 'map', name: 'Map', component: MapView },
   { id: 'gnss', name: 'GNSS', component: GnssView },
-  { id: 'gnc', name: 'GNC', component: GncView },
+  { id: 'gnc', name: 'Control', component: GncView },
   { id: 'power', name: 'Power', component: PowerView },
   { id: 'imu', name: 'IMU', component: ImuView },
   { id: 'sim', name: 'Simulation', component: SimView },
@@ -157,11 +157,11 @@ body, html {
 
 .nav-status {
   font-weight: bold;
-  color: #ff4444;
+  color: #e53935;
 }
 
 .nav-status.connected {
-  color: #00cc00;
+  color: #00C851;
 }
 
 /* Sensor status bar */
@@ -184,17 +184,17 @@ body, html {
 }
 
 .sensor-dot.status-ok {
-  background-color: #00cc00;
+  background-color: #00C851;
   color: #000;
 }
 
 .sensor-dot.status-disconnected {
-  background-color: #666;
-  color: #ccc;
+  background-color: #555;
+  color: #aaa;
 }
 
 .sensor-dot.status-error {
-  background-color: #ff4444;
+  background-color: #e53935;
   color: #fff;
 }
 

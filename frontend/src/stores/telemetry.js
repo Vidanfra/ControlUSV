@@ -286,11 +286,11 @@ export const useTelemetryStore = defineStore('telemetry', {
     // yellow for DGPS (2), orange for GPS only (1), red for no fix (0)
     fixColor(state) {
       const f = state.gnssFixType
-      if (f >= 4) return '#00cc00'   // RTK Fixed
+      if (f >= 4) return '#00C851'   // RTK Fixed
       if (f === 3) return '#88cc00'  // PPS
       if (f === 2) return '#aacc00'  // DGPS
       if (f === 1) return '#FFA500'  // GPS
-      return '#ff4444'               // No fix
+      return '#e53935'               // No fix
     },
     canStartAutoMode(state) {
       return state.gnssFixType >= state.failsafeMinGnssFix

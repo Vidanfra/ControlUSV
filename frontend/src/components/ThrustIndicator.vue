@@ -50,7 +50,7 @@
 
       <!-- SIM mode badge — shown above compass when dataSource is 'sim' -->
       <rect v-if="isSim" :x="CX - 22" :y="CY - CR - 24" width="44" height="16"
-            rx="3" fill="#FF8800" opacity="0.9" />
+            rx="3" fill="#FFA500" opacity="0.9" />
       <text v-if="isSim" :x="CX" :y="CY - CR - 13" text-anchor="middle"
             fill="#000" font-size="9" font-weight="700" font-family="sans-serif">SIM</text>
 
@@ -58,11 +58,11 @@
       <!-- Outer ring -->
       <circle :cx="CX" :cy="CY" :r="CR" fill="rgba(8,8,8,0.55)" stroke="#555" stroke-width="1.2" />
 
-      <!-- Cardinal tick marks & labels — all cyan -->
+      <!-- Cardinal tick marks & labels — grey -->
       <template v-for="c in cardinalPositions" :key="c.label">
-        <line :x1="c.tx1" :y1="c.ty1" :x2="c.tx2" :y2="c.ty2" stroke="#00E5FF" stroke-width="1.2" />
+        <line :x1="c.tx1" :y1="c.ty1" :x2="c.tx2" :y2="c.ty2" stroke="#aaa" stroke-width="1.2" />
         <text :x="c.lx" :y="c.ly" text-anchor="middle" dominant-baseline="central"
-              fill="#00E5FF" :font-size="c.label === 'N' ? 12 : 10"
+              fill="#aaa" :font-size="c.label === 'N' ? 12 : 10"
               font-weight="600" font-family="sans-serif">{{ c.label }}</text>
       </template>
 
@@ -75,10 +75,10 @@
             stroke="#FFA500" stroke-width="2" stroke-dasharray="4,3" stroke-linecap="round" />
       <polygon :points="desiredArrowHead" fill="#FFA500" />
 
-      <!-- Actual heading arrow (solid cyan) -->
+      <!-- Actual heading arrow (solid green) -->
       <line :x1="CX" :y1="CY" :x2="actualLineEnd.x" :y2="actualLineEnd.y"
-            stroke="#00E5FF" stroke-width="2.5" stroke-linecap="round" />
-      <polygon :points="actualArrowHead" fill="#00E5FF" />
+            stroke="#00C851" stroke-width="2.5" stroke-linecap="round" />
+      <polygon :points="actualArrowHead" fill="#00C851" />
 
       <!-- Center crosshairs -->
       <line :x1="CX - 5" :y1="CY" :x2="CX + 5" :y2="CY" stroke="#333" stroke-width="0.5" />
@@ -135,16 +135,16 @@ const desiredHeadingDeg = computed(() => {
 const portFillH = computed(() => Math.abs(portPct.value) / 100 * BAR_HALF)
 const portFillY = computed(() => portPct.value >= 0 ? BAR_MID - portFillH.value : BAR_MID)
 const portColor = computed(() => {
-  if (portPct.value >= 0) return isSim.value ? '#FF8800' : '#00E5FF'
-  return '#e74c3c'
+  if (portPct.value >= 0) return isSim.value ? '#FFA500' : '#00C851'
+  return '#e53935'
 })
 
 // ── Stbd bar fill ──
 const stbdFillH = computed(() => Math.abs(stbdPct.value) / 100 * BAR_HALF)
 const stbdFillY = computed(() => stbdPct.value >= 0 ? BAR_MID - stbdFillH.value : BAR_MID)
 const stbdColor = computed(() => {
-  if (stbdPct.value >= 0) return isSim.value ? '#FF8800' : '#00E5FF'
-  return '#e74c3c'
+  if (stbdPct.value >= 0) return isSim.value ? '#FFA500' : '#00C851'
+  return '#e53935'
 })
 
 // ── Bar scale ticks (25%, 50%, 75%, 100%) ──

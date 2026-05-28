@@ -218,14 +218,14 @@ const updateCharts = () => {
   currentChartData.value = {
     labels,
     datasets: [
-      { label: 'Current', borderColor: '#33b5e5', data: visible.map(pt => pt.current), borderWidth: 2, tension: 0.2, fill: false }
+      { label: 'Current', borderColor: '#00C851', data: visible.map(pt => pt.current), borderWidth: 2, tension: 0.2, fill: false }
     ]
   }
 
   powerChartData.value = {
     labels,
     datasets: [
-      { label: 'Power', borderColor: '#ff4444', data: visible.map(pt => pt.power), borderWidth: 2, tension: 0.2, fill: false }
+      { label: 'Power', borderColor: '#e53935', data: visible.map(pt => pt.power), borderWidth: 2, tension: 0.2, fill: false }
     ]
   }
 }
@@ -327,8 +327,8 @@ watch(timeWindow, () => {
 }
 
 .stat-box.alarm {
-  background-color: #3a1a1a;
-  border: 1px solid #ff4444;
+  background-color: rgba(180, 0, 0, 0.15);
+  border: 1px solid #e53935;
 }
 
 .stat-box h4 {
@@ -353,7 +353,7 @@ watch(timeWindow, () => {
 }
 
 .value.level-ok {
-  color: #00cc00;
+  color: #00C851;
 }
 
 .value.level-low {
@@ -361,10 +361,10 @@ watch(timeWindow, () => {
 }
 
 .value.level-critical {
-  color: #ff4444;
+  color: #e53935;
 }
 
 .value.alarm-text {
-  color: #ff4444;
+  color: #e53935;
 }
 </style>

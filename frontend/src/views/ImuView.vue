@@ -197,27 +197,27 @@ const filteredHistory = computed(() => {
 const orientationChartData = computed(() => ({
   labels: filteredHistory.value.map(pt => pt.label),
   datasets: [
-    ...(showRoll.value  ? [{ label: 'Roll'  + simSuffix(), borderColor: '#ff4444', data: filteredHistory.value.map(pt => pt.roll),  borderWidth: 2, tension: 0.1 }] : []),
+    ...(showRoll.value  ? [{ label: 'Roll'  + simSuffix(), borderColor: '#e53935', data: filteredHistory.value.map(pt => pt.roll),  borderWidth: 2, tension: 0.1 }] : []),
     ...(showPitch.value ? [{ label: 'Pitch' + simSuffix(), borderColor: '#00C851', data: filteredHistory.value.map(pt => pt.pitch), borderWidth: 2, tension: 0.1 }] : []),
-    ...(showYaw.value   ? [{ label: 'Yaw'   + simSuffix(), borderColor: '#33b5e5', data: filteredHistory.value.map(pt => pt.yaw),   borderWidth: 2, tension: 0.1 }] : []),
+    ...(showYaw.value   ? [{ label: 'Yaw'   + simSuffix(), borderColor: '#FFA500', data: filteredHistory.value.map(pt => pt.yaw),   borderWidth: 2, tension: 0.1 }] : []),
   ]
 }))
 
 const accelChartData = computed(() => ({
   labels: filteredHistory.value.map(pt => pt.label),
   datasets: [
-    ...(showAx.value ? [{ label: 'Ax' + simSuffix(), borderColor: '#ff4444', data: filteredHistory.value.map(pt => pt.ax), borderWidth: 2, tension: 0.1 }] : []),
+    ...(showAx.value ? [{ label: 'Ax' + simSuffix(), borderColor: '#e53935', data: filteredHistory.value.map(pt => pt.ax), borderWidth: 2, tension: 0.1 }] : []),
     ...(showAy.value ? [{ label: 'Ay' + simSuffix(), borderColor: '#00C851', data: filteredHistory.value.map(pt => pt.ay), borderWidth: 2, tension: 0.1 }] : []),
-    ...(showAz.value ? [{ label: 'Az' + simSuffix(), borderColor: '#33b5e5', data: filteredHistory.value.map(pt => pt.az), borderWidth: 2, tension: 0.1 }] : []),
+    ...(showAz.value ? [{ label: 'Az' + simSuffix(), borderColor: '#FFA500', data: filteredHistory.value.map(pt => pt.az), borderWidth: 2, tension: 0.1 }] : []),
   ]
 }))
 
 const gyroChartData = computed(() => ({
   labels: filteredHistory.value.map(pt => pt.label),
   datasets: [
-    ...(showP.value ? [{ label: 'P (Roll Rate)'  + simSuffix(), borderColor: '#ff4444', data: filteredHistory.value.map(pt => pt.p), borderWidth: 2, tension: 0.1 }] : []),
+    ...(showP.value ? [{ label: 'P (Roll Rate)'  + simSuffix(), borderColor: '#e53935', data: filteredHistory.value.map(pt => pt.p), borderWidth: 2, tension: 0.1 }] : []),
     ...(showQ.value ? [{ label: 'Q (Pitch Rate)' + simSuffix(), borderColor: '#00C851', data: filteredHistory.value.map(pt => pt.q), borderWidth: 2, tension: 0.1 }] : []),
-    ...(showR.value ? [{ label: 'R (Yaw Rate)'   + simSuffix(), borderColor: '#33b5e5', data: filteredHistory.value.map(pt => pt.r), borderWidth: 2, tension: 0.1 }] : []),
+    ...(showR.value ? [{ label: 'R (Yaw Rate)'   + simSuffix(), borderColor: '#FFA500', data: filteredHistory.value.map(pt => pt.r), borderWidth: 2, tension: 0.1 }] : []),
   ]
 }))
 
@@ -331,8 +331,8 @@ const gyroChartData = computed(() => ({
   white-space: nowrap;
 }
 
-/* Highlight sidebar values cyan when displaying simulation data */
-.sim-mode .value { color: #00e5ff; }
+/* Highlight sidebar values orange when displaying simulation data */
+.sim-mode .value { color: #FFA500; }
 
 .var-check {
   margin-right: 6px;

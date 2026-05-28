@@ -317,7 +317,8 @@ h3 {
 .toggle-group {
   display: flex;
   gap: 2px;
-  background: #333;
+  background: #1e1e1e;
+  border: 1px solid #555;
   border-radius: 4px;
   padding: 2px;
 }
@@ -326,14 +327,23 @@ h3 {
   flex: 1;
   background: transparent;
   color: #aaa;
+  border: none;
   padding: 6px 10px;
   border-radius: 3px;
   font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
 }
 
 .toggle-btn.active {
   background: #FFA500;
   color: #000;
+  font-weight: bold;
+}
+
+.toggle-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 select {
@@ -343,10 +353,12 @@ select {
   padding: 6px 8px;
   border-radius: 4px;
   font-size: 0.85rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 select:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 .btn {
@@ -383,12 +395,17 @@ select:disabled {
 }
 
 .plan-btn {
-  background: #33b5e5;
-  color: white;
+  background: #0d3a5c;
+  color: #81d4fa;
+  border: 1px solid #1565c0;
+}
+
+.plan-btn:hover:not(:disabled) {
+  background: #1565c0;
 }
 
 .plan-btn.active {
-  background: #ff8800;
+  background: #FFA500;
   color: #000;
 }
 
@@ -397,9 +414,17 @@ select:disabled {
   color: white;
 }
 
+.start-btn:hover:not(:disabled) {
+  background: #00a543;
+}
+
 .stop-btn {
-  background: #ff4444;
+  background: #e53935;
   color: white;
+}
+
+.stop-btn:hover:not(:disabled) {
+  background: #c62828;
 }
 
 .home-row {
@@ -419,11 +444,14 @@ select:disabled {
 }
 
 .home-btn {
-  background: #8855cc;
-  color: white;
+  background: #1b5e20;
+  color: #a5d6a7;
+  border: 1px solid #2e7d32;
   padding: 6px 10px !important;
   font-size: 0.75rem !important;
 }
+
+.home-btn:hover:not(:disabled) { background: #2e7d32; }
 
 .home-btn.active {
   background: #FFA500;
@@ -444,9 +472,9 @@ select:disabled {
 }
 
 .alert-error {
-  background: #5a1a1a;
-  color: #ff4444;
-  border: 1px solid #ff4444;
+  background: rgba(180, 0, 0, 0.2);
+  color: #ff6b6b;
+  border: 1px solid #9a0000;
 }
 
 .alert-warning {

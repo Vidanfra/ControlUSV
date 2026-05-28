@@ -145,7 +145,7 @@ const strStyle = computed(() => {
 }
 
 .hud-fill.str {
-  background: #33b5e5;
+  background: #FFA500;
 }
 
 .hud-val {
@@ -199,13 +199,15 @@ const strStyle = computed(() => {
 }
 
 .alert-error {
-  background: rgba(200, 30, 30, 0.92);
+  background: rgba(180, 30, 30, 0.92);
   color: #fff;
+  border: 1px solid #e53935;
 }
 
 .alert-warning {
-  background: rgba(200, 150, 0, 0.92);
+  background: rgba(140, 80, 0, 0.92);
   color: #fff;
+  border: 1px solid #FFA500;
 }
 
 .alert-text {

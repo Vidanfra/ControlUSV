@@ -186,9 +186,9 @@ const motorChartOptions = {
     },
     y2: {
       type: 'linear', position: 'right',
-      ticks: { color: '#ce93d8' },
+      ticks: { color: '#aaa' },
       grid: { drawOnChartArea: false },
-      title: { display: true, text: 'CTE [m]', color: '#ce93d8' }
+      title: { display: true, text: 'CTE [m]', color: '#aaa' }
     }
   }
 }
@@ -279,7 +279,7 @@ const motorChartData = computed(() => {
     datasets: [
       {
         label: 'Port' + simSuffix(),
-        borderColor: isSim ? '#FF8800' : '#FF4444',
+        borderColor: isSim ? '#FFA500' : '#e53935',
         yAxisID: 'y',
         data: filteredHistory.value.map(pt => pt.port),
         borderWidth: 2,
@@ -295,7 +295,7 @@ const motorChartData = computed(() => {
       },
       {
         label: 'CTE [m]' + simSuffix(),
-        borderColor: '#ce93d8',
+        borderColor: '#aaa',
         yAxisID: 'y2',
         data: filteredHistory.value.map(pt => pt.cte || 0),
         borderWidth: 1.5,
@@ -434,16 +434,16 @@ const speedChartData = computed(() => ({
 }
 
 .motor-port {
-  color: #ff4444;
+  color: #e53935;
 }
 
 .motor-starboard {
   color: #00C851;
 }
 
-/* Highlight sidebar values cyan when displaying simulation data */
-.sim-mode .value { color: #00e5ff; }
+/* Highlight sidebar values orange when displaying simulation data */
+.sim-mode .value { color: #FFA500; }
 /* Preserve motor indicator colors in sim mode */
-.sim-mode .motor-port { color: #ff4444; }
+.sim-mode .motor-port { color: #e53935; }
 .sim-mode .motor-starboard { color: #00C851; }
 </style>

@@ -55,31 +55,33 @@ const { lat, lon, isConnected } = storeToRefs(store)
 
 <style scoped>
 .dashboard {
-  background: rgba(30, 30, 30, 0.9);
+  background: rgba(30, 30, 30, 0.95);
   color: #fff;
-  padding: 15px;
+  padding: 16px;
   border-radius: 8px;
   min-width: 200px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  font-size: 0.85rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 
 h3 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  font-size: 1.1rem;
-  border-bottom: 1px solid #555;
+  margin: 0 0 10px;
+  font-size: 1rem;
+  color: #FFA500;
+  text-align: center;
+  border-bottom: 1px solid #444;
   padding-bottom: 8px;
 }
 
 .status-indicator {
   font-size: 0.8rem;
   font-weight: bold;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   padding: 4px;
   border-radius: 4px;
   text-align: center;
-  background: #ff4444;
+  background: #e53935;
+  color: #fff;
 }
 
 .status-indicator.connected {
@@ -89,24 +91,26 @@ h3 {
 .data-grid {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px;
 }
 
 .data-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .data-item label {
   color: #aaa;
-  margin-right: 10px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
 }
 
 .data-item span {
   font-family: monospace;
   font-weight: bold;
+  color: #fff;
 }
 
 .src-tag {
@@ -116,24 +120,26 @@ h3 {
   margin-left: 3px;
 }
 
+/* sim-label: same grey as normal labels — no cyan flash */
+.sim-label {
+  color: #aaa !important;
+}
+
 .sim-banner {
-  background: #00838f;
-  color: #fff;
+  background: #5a3e00;
+  border: 1px solid #FFA500;
+  color: #FFA500;
   text-align: center;
   font-weight: bold;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   padding: 4px 8px;
   border-radius: 4px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   animation: pulse-sim 1.5s ease-in-out infinite;
 }
 
 @keyframes pulse-sim {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-
-.sim-label {
-  color: #00e5ff !important;
+  50% { opacity: 0.65; }
 }
 </style>

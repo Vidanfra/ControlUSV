@@ -142,11 +142,11 @@ const fixLabel = computed(() => {
 
 const fixColor = computed(() => {
   const fix = telemetry.gnssFixType
-  if (fix === 4) return '#00cc00'       // RTK Fix → green
+  if (fix === 4) return '#00C851'       // RTK Fix → green
   if (fix === 5) return '#FFA500'       // RTK Float → orange
   if (fix === 2) return '#ffdd00'       // DGPS → yellow
   if (fix === 1) return '#ffdd00'       // GPS → yellow
-  return '#ff4444'                      // No fix → red
+  return '#e53935'                      // No fix → red
 })
 
 const fixClass = computed(() => {
@@ -211,7 +211,7 @@ const filteredHistory = computed(() => {
 const latChartData = computed(() => ({
   labels: filteredHistory.value.map(pt => pt.label),
   datasets: [
-    { label: 'Latitude' + simSuffix(), borderColor: '#33b5e5', data: filteredHistory.value.map(pt => pt.lat), borderWidth: 2, tension: 0.2, fill: false }
+    { label: 'Latitude' + simSuffix(), borderColor: '#00C851', data: filteredHistory.value.map(pt => pt.lat), borderWidth: 2, tension: 0.2, fill: false }
   ]
 }))
 
@@ -328,8 +328,8 @@ const altChartData = computed(() => ({
 }
 
 .fix-rtk .fix-dot {
-  background-color: #00cc00;
-  box-shadow: 0 0 8px #00cc00;
+  background-color: #00C851;
+  box-shadow: 0 0 8px #00C851;
 }
 
 .fix-float .fix-dot {
@@ -343,8 +343,8 @@ const altChartData = computed(() => ({
 }
 
 .fix-none .fix-dot {
-  background-color: #ff4444;
-  box-shadow: 0 0 8px #ff4444;
+  background-color: #e53935;
+  box-shadow: 0 0 8px #e53935;
   animation: pulse-fast 0.7s ease-in-out infinite;
 }
 
@@ -353,10 +353,10 @@ const altChartData = computed(() => ({
   font-size: 0.9em;
 }
 
-.fix-rtk .fix-label { color: #00cc00; }
+.fix-rtk .fix-label { color: #00C851; }
 .fix-float .fix-label { color: #FFA500; }
 .fix-gps .fix-label { color: #ffdd00; }
-.fix-none .fix-label { color: #ff4444; }
+.fix-none .fix-label { color: #e53935; }
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }
@@ -405,6 +405,6 @@ const altChartData = computed(() => ({
   font-size: 0.85em;
 }
 
-/* Highlight sidebar values cyan when displaying simulation data */
-.sim-mode .value { color: #00e5ff; }
+/* Highlight sidebar values orange when displaying simulation data */
+.sim-mode .value { color: #FFA500; }
 </style>

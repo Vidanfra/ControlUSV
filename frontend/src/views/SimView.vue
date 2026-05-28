@@ -517,8 +517,8 @@ h3 {
 }
 .btn-sm:hover { background: #444; }
 
-.btn-danger { background: #c0392b; color: white; border-color: #c0392b; }
-.btn-danger:hover { background: #e74c3c; }
+.btn-danger { background: #c62828; color: white; border-color: #c62828; }
+.btn-danger:hover { background: #e53935; }
 
 .file-label {
   display: inline-block;
@@ -629,12 +629,12 @@ h3 {
 }
 
 .error-msg {
-  color: #e74c3c;
+  color: #e53935;
   font-size: 0.85rem;
   margin-top: 8px;
   padding: 6px 10px;
-  background: #2c1a1a;
-  border: 1px solid #5a2a2a;
+  background: rgba(180, 0, 0, 0.12);
+  border: 1px solid #9a0000;
   border-radius: 4px;
 }
 
@@ -663,23 +663,24 @@ h3 {
 
 /* RT Simulation Section */
 .rt-section {
-  border-top: 2px solid #00838f;
+  border-top: 2px solid #FFA500;
   margin-top: 18px;
   padding-top: 12px;
 }
 
 .rt-title {
-  color: #00e5ff !important;
+  color: #FFA500 !important;
   margin: 0 0 10px 0;
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 .rt-status-banner {
-  background: #00838f;
-  color: #fff;
+  background: #5a3e00;
+  border: 1px solid #FFA500;
+  color: #FFA500;
   text-align: center;
   font-weight: bold;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   padding: 4px 8px;
   border-radius: 4px;
   margin-bottom: 10px;
@@ -692,9 +693,9 @@ h3 {
 }
 
 .btn-rt-start {
-  background: #00838f;
+  background: #00C851;
 }
-.btn-rt-start:hover:not(:disabled) { background: #00acc1; }
+.btn-rt-start:hover:not(:disabled) { background: #00a543; }
 
 .rt-hint {
   font-size: 0.75rem;

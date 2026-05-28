@@ -78,7 +78,7 @@ const darkDefaults = {
     },
     title: {
       display: true,
-      color: '#00E5FF',
+      color: '#FFA500',
       font: { size: 13, weight: 'bold' },
     },
   },
@@ -134,8 +134,8 @@ function plotAll(results, waypoints) {
         x: (wp.lon - origin.lon) * Math.PI / 180 * R * Math.cos(origin.lat * Math.PI / 180),
         y: (wp.lat - origin.lat) * Math.PI / 180 * R,
       })),
-      borderColor: '#00E5FF',
-      backgroundColor: '#00E5FF',
+      borderColor: '#FFA500',
+      backgroundColor: '#FFA500',
       showLine: true,
       borderDash: [6, 4],
       borderWidth: 1,
@@ -333,7 +333,7 @@ onUnmounted(() => {
 }
 
 .sim-results h3 {
-  color: #00E5FF;
+  color: #FFA500;
   margin: 0 0 10px 0;
   font-size: 1rem;
 }
