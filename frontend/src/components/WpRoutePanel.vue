@@ -64,7 +64,7 @@
           class="btn toggle-btn"
           :class="{ active: direction === 'reverse' }"
           @click="direction = 'reverse'"
-          :disabled="wpRouteActive"
+          :disabled="wpRouteActive || missionWaypoints.length <= 1"
         >REV</button>
       </div>
     </div>
@@ -72,10 +72,10 @@
     <!-- Completion -->
     <div class="field">
       <label>On Finish</label>
-      <select v-model="completion" :disabled="wpRouteActive">
+      <select v-model="completion" :disabled="wpRouteActive || missionWaypoints.length <= 1">
         <option value="stop">Stop</option>
-        <option value="loop">Loop</option>
-        <option value="loop_reverse">Loop &amp; Reverse</option>
+        <option value="loop" :disabled="missionWaypoints.length <= 1">Loop</option>
+        <option value="loop_reverse" :disabled="missionWaypoints.length <= 1">Loop &amp; Reverse</option>
       </select>
     </div>
 
@@ -146,10 +146,15 @@ import { useTelemetryStore } from '../stores/telemetry'
 import { storeToRefs } from 'pinia'
 
 const store = useTelemetryStore()
-const { lat, lon, isConnected, isArmed, rtSimActive, missionWaypoints, wpRouteActive, homeWaypoint, simMode } = storeToRefs(store)
+const { lat, lon, isConnected, isArmed, rtSimActive, missionWaypoints, wpRouteActive, homeWaypoint, simMode, wpRouteDirection, wpRouteCompletion } = storeToRefs(store)
 
-const direction = ref('forward')
-const completion = ref('stop')
+const direction = ref(store.wpRouteDirection)
+const completion = ref(store.wpRouteCompletion)
+
+// Keep local refs in sync when the backend heartbeat restores persisted
+// mission parameters after a page refresh (only when route is not active).
+watch(wpRouteDirection,  (val) => { if (!wpRouteActive.value) direction.value  = val })
+watch(wpRouteCompletion, (val) => { if (!wpRouteActive.value) completion.value = val })
 const fileInput = ref(null)
 const startError = ref('')
 const startWarnings = ref([])
@@ -235,7 +240,7 @@ const start = () => {
   store.startWpRoute({
     waypoints: wps,
     direction: direction.value,
-    completion: completion.value,
+    completion: wps.length <= 1 ? 'stop' : completion.value,
     cruise_speed_kn: cruiseSpeedKn.value
   })
 }

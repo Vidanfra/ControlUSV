@@ -564,8 +564,8 @@ class GNCProcess(ServiceProcess):
             logger.warning("GNC: Cannot start WP Route — vehicle not armed (ARM first in REAL mode)")
             return
         waypoints_raw = payload.get('waypoints', [])
-        if len(waypoints_raw) < 2:
-            logger.error("GNC: WP Route needs at least 2 waypoints")
+        if len(waypoints_raw) < 1:
+            logger.error("GNC: WP Route needs at least 1 waypoint")
             return
 
         # Override cruise speed if provided

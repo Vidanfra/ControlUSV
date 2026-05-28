@@ -223,15 +223,15 @@
       <label>Direction</label>
       <div class="toggle-group">
         <button class="tog-btn" :class="{ active: direction === 'forward' }" @click="direction = 'forward'" :disabled="wpRouteActive">FWD</button>
-        <button class="tog-btn" :class="{ active: direction === 'reverse' }" @click="direction = 'reverse'" :disabled="wpRouteActive">REV</button>
+        <button class="tog-btn" :class="{ active: direction === 'reverse' }" @click="direction = 'reverse'" :disabled="wpRouteActive || missionWaypoints.length <= 1">REV</button>
       </div>
     </div>
     <div class="field">
       <label>On Finish</label>
-      <select v-model="completion" :disabled="wpRouteActive">
+      <select v-model="completion" :disabled="wpRouteActive || missionWaypoints.length <= 1">
         <option value="stop">Stop</option>
-        <option value="loop">Loop</option>
-        <option value="loop_reverse">Loop &amp; Reverse</option>
+        <option value="loop" :disabled="missionWaypoints.length <= 1">Loop</option>
+        <option value="loop_reverse" :disabled="missionWaypoints.length <= 1">Loop &amp; Reverse</option>
       </select>
     </div>
 
@@ -281,7 +281,7 @@ import { storeToRefs } from 'pinia'
 import { generateLawnmower } from '../composables/useSurveyGenerator.js'
 
 const store = useTelemetryStore()
-const { isConnected, isArmed, rtSimActive, missionWaypoints, wpRouteActive, simMode } = storeToRefs(store)
+const { isConnected, isArmed, rtSimActive, missionWaypoints, wpRouteActive, simMode, homeWaypoint } = storeToRefs(store)
 
 // ── Local UI state ────────────────────────────────────────────────────────────
 const direction = ref('forward')
@@ -447,9 +447,12 @@ function start() {
     }
     startWarnings.value = store.autoModeWarnings
   }
+  // Single-WP mission: vehicle navigates to the one point and stops.
+  // Loop/reverse modes make no sense with a single target.
+  const effectiveCompletion = missionWaypoints.value.length <= 1 ? 'stop' : completion.value
   store.startWpRoute({
     direction: direction.value,
-    completion: completion.value,
+    completion: effectiveCompletion,
     cruise_speed_kn: cruiseSpeedKn.value,
   })
 }

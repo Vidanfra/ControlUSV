@@ -45,6 +45,11 @@ export const useTelemetryStore = defineStore('telemetry', {
     lastAckSeq: 0,
     linkAlive: false,
 
+    // Set to true after the first system/status heartbeat restores mission
+    // state from the backend.  Prevents subsequent heartbeats from overwriting
+    // waypoints the operator drew between the first sync and route start.
+    _missionSynced: false,
+
     // Mission plan defaults (persisted to localStorage)
     missionDefaultWpRadius:     JSON.parse(localStorage.getItem('missionPlanDefaults'))?.wpRadius     ?? 5,
     missionDefaultWpSpeed:      JSON.parse(localStorage.getItem('missionPlanDefaults'))?.wpSpeed      ?? 1.0,
@@ -310,6 +315,11 @@ export const useTelemetryStore = defineStore('telemetry', {
 
     clearMission() {
       this._legacyWaypoints = []
+      // Also reset mission_start position so the getter's hasContent check
+      // returns false and missionWaypoints.length stays 0.
+      const start = this.missionItems.find(i => i.type === 'mission_start')
+      if (start) { start.lat = 0; start.lon = 0 }
+      this.sendCommand('CLEAR_WP_ROUTE', {})
     },
 
     // ── Mission-item actions ──────────────────────────────────────────────
@@ -373,13 +383,18 @@ export const useTelemetryStore = defineStore('telemetry', {
     },
 
     clearMissionItems() {
+      // Reset mission_start to lat=0/lon=0 (not current vehicle position).
+      // If mission_start kept the vehicle coords, the getter's hasContent check
+      // would see lat !== 0 and return a 1-WP list, keeping START enabled.
       this.missionItems = [
-        makeMissionStartItem(this.lat, this.lon, this.missionDefaultWpRadius, this.missionDefaultWpSpeed),
+        makeMissionStartItem(0, 0, this.missionDefaultWpRadius, this.missionDefaultWpSpeed),
         makeMissionEndItem(this.missionDefaultWpRadius, this.missionDefaultWpSpeed),
       ]
+      this._legacyWaypoints = []
       this.activeSurveyId = null
       this.surveyDrawMode = false
       this.activeMissionWpId = null
+      this.sendCommand('CLEAR_WP_ROUTE', {})
     },
 
     setMissionStartPosition(lat, lon) {
@@ -771,6 +786,9 @@ export const useTelemetryStore = defineStore('telemetry', {
         this._cmdSeq = 0
         this.lastAckSeq = 0
         this.linkAlive = true   // optimistic; updated by comms/link broadcasts
+        // Allow the first system/status heartbeat after reconnect to restore
+        // any persisted mission state from the backend.
+        this._missionSynced = false
         console.log('WebSocket Connected — waiting for system/status to sync config from backend')
         // Do NOT push localStorage values to the backend here.
         // The backend is authoritative: it persists config to manager_settings.json and
@@ -907,12 +925,39 @@ export const useTelemetryStore = defineStore('telemetry', {
              if (data.mode) this.vehicleMode = data.mode
              // simMode is authoritative on the backend (Manager tracks START/STOP_RT_SIM).
              // Always sync so the REAL/SIM toggle stays correct after a page reload.
-             if (data.sim_mode !== undefined) this.simMode = data.sim_mode
+             // If the Manager says REAL (which it always does on a fresh start) also
+             // clear rtSimActive so the "SIM RUNNING" banner disappears even when the
+             // backend was killed mid-simulation and never sent a final sim/status
+             // { running: false }.
+             if (data.sim_mode !== undefined) {
+               this.simMode = data.sim_mode
+               if (data.sim_mode === 'REAL') {
+                 this.rtSimActive = false
+                 this.rtSimElapsed = 0
+               }
+             }
              if (data.station_active !== undefined) this.stationActive = data.station_active
              if (data.station_wp) this.stationWaypoint = data.station_wp
              if (data.station_reaching_radius !== undefined && this.stationActive) this.stationReachingRadius = data.station_reaching_radius
              if (data.station_radius !== undefined && this.stationActive) this.stationRadius = data.station_radius
              if (data.wp_route_active !== undefined) this.wpRouteActive = data.wp_route_active
+             // Always keep direction/completion in sync (backend is authoritative).
+             if (data.wp_route_direction  !== undefined) this.wpRouteDirection  = data.wp_route_direction
+             if (data.wp_route_completion !== undefined) this.wpRouteCompletion = data.wp_route_completion
+             // Restore mission waypoints from the backend on the first heartbeat
+             // after a page refresh.  This makes the route visible even when the
+             // operator reconnects mid-survey.  The flag prevents subsequent
+             // heartbeats from overwriting waypoints drawn by the operator.
+             if (!this._missionSynced &&
+                 Array.isArray(data.wp_route_waypoints) &&
+                 data.wp_route_waypoints.length > 0) {
+               this._legacyWaypoints = data.wp_route_waypoints
+               this._missionSynced = true
+             } else if (!this._missionSynced && data.wp_route_waypoints !== undefined) {
+               // No persisted waypoints on backend → mark synced so we don't
+               // overwrite new operator-drawn items on subsequent heartbeats.
+               this._missionSynced = true
+             }
              if (data.home_wp) {
                // Backend is authoritative. Always accept home_wp and update localStorage
                // so the next reload starts with the current backend value (fixes B-09).

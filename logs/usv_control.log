@@ -23720,3 +23720,1299 @@ ice stopped.
 2026-05-28 19:11:52.105 | INFO     | ManagerService | Manager received command: CommandType.SET_GNC_CONFIG
 2026-05-28 19:11:52.105 | INFO     | ManagerService | GNC config updated: wn=2.0 zeta=0.7 wn_ref=0.5 zeta_ref=0.8 k_delta=15.0 delta_min=5.0 gamma=0.0 cruise_speed_kn=1.5 e_x_threshold_deg=10.0 accel_ms2=0.3 vel_profiler_enabled=True
 2026-05-28 19:11:52.130 | INFO     | GNCService | GNC: Parameters updated: wn=2.0 zeta=0.7 wn_ref=0.5 zeta_ref=0.8 k_delta=15.0 delta_min=5.0 gamma=0.0 cruise_speed_kn=1.5 e_x_threshold_deg=10.0 accel_ms2=0.3 vel_profiler_enabled=True
+2026-05-28 19:22:20.081 | INFO     | GNCService | PathFollower: switched to WP 2/3
+2026-05-28 19:22:29.848 | INFO     | GNCService | Process GNCService received signal 2. Stopping...
+ing...
+2026-05-28 19:22:29.848 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-05-28 19:22:29.848 | INFO     | NavigationService | Process NavigationService received signal 2. Stopping...
+2026-05-28 19:22:29.848 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-05-28 19:22:29.864 | INFO     | GNCService | Process GNCService stopped.
+2026-05-28 19:22:29.867 | INFO     | HALService | Process HALService stopped.
+2026-05-28 19:22:29.872 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:22:29.880 | INFO     | ManagerService | Process ManagerService stopped.
+2026-05-28 19:22:29.889 | INFO     | NavigationService | Process NavigationService stopped.
+2026-05-28 19:22:29.979 | INFO     | CommsService | [Web Server] ZMQ consumer task cancelled
+2026-05-28 19:22:29.980 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-05-28 19:22:29.995 | INFO     | CommsService | MAVLink bridge stopped.
+2026-05-28 19:22:30.059 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-05-28 19:22:48.197 | INFO     | MAIN | Starting USV Control System
+2026-05-28 19:22:48.197 | INFO     | MAIN | Mode: SIMULATION
+2026-05-28 19:22:48.644 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-05-28 19:22:49.235 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-05-28 19:22:49.243 | INFO     | CommsService | Starting Web Server on port 8000
+2026-05-28 19:22:49.244 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-05-28 19:22:49.235 | INFO     | HALService | Process HALService starting...
+2026-05-28 19:22:49.246 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:22:49.246 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:22:49.248 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-05-28 19:22:49.248 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-05-28 19:22:49.248 | ERROR    | HALService | [GNSS Node] Cannot open /dev/gnss_um982: could not open port '/dev/gnss_um982': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:22:49.236 | INFO     | NavigationService | Process NavigationService starting...
+2026-05-28 19:22:49.236 | INFO     | ManagerService | Process ManagerService starting...
+2026-05-28 19:22:49.252 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:22:49.235 | INFO     | GNCService | Process GNCService starting...
+2026-05-28 19:22:49.252 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-05-28 19:22:49.252 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-05-28 19:22:49.258 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:22:49.259 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:22:49.259 | ERROR    | HALService | [IMU Node] Cannot open /dev/serial0: could not open port '/dev/serial0': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:22:49.259 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-05-28 19:22:49.259 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-05-28 19:22:49.260 | ERROR    | HALService | [Power Node] Cannot open /dev/power_pzem: could not open port '/dev/power_pzem': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying...
+2026-05-28 19:22:49.260 | INFO     | HALService | [ESP32 Node] Starting (with auto-retry)...
+2026-05-28 19:22:49.260 | INFO     | HALService | ESP32 Node started on /dev/esp32
+2026-05-28 19:22:49.260 | ERROR    | HALService | [ESP32 Node] Cannot open /dev/esp32: could not open port '/dev/esp32': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying every 3.0s (this message will not repeat).
+2026-05-28 19:22:49.261 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-05-28 19:22:49.264 | INFO     | CommsService | Starting Web Server...
+2026-05-28 19:22:49.355 | INFO     | NavigationService | Navigation Process initialized (passthrough mode)
+2026-05-28 19:22:49.355 | INFO     | NavigationService | Process NavigationService entering loop at 20.0 Hz
+2026-05-28 19:22:49.460 | INFO     | ManagerService | Manager: settings loaded from c:\PYTHON\ControlUSV\src\manager\..\..\data\manager_settings.json
+2026-05-28 19:22:49.460 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-05-28 19:22:49.460 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-05-28 19:22:49.471 | INFO     | CommsService | Command publisher connected to ZMQ broker
+2026-05-28 19:22:49.474 | INFO     | CommsService | [Web Server] ZMQ consumer subscribed on tcp://127.0.0.1:5556
+2026-05-28 19:22:49.980 | INFO     | GNCService | GNC Process initialized (waiting for AUTO mode)
+2026-05-28 19:22:49.980 | INFO     | GNCService | Process GNCService entering loop at 20.0 Hz
+2026-05-28 19:22:52.027 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:23:21.685 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:23:22.067 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:23:26.676 | INFO     | CommsService | Command received and published: CommandType.START_RT_SIM (seq=1)
+2026-05-28 19:23:26.695 | INFO     | GNCService | GNC: Starting RT simulation (Physics Engine Only)
+2026-05-28 19:23:26.695 | INFO     | GNCService | GNC: RT simulation started
+2026-05-28 19:23:26.704 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
+2026-05-28 19:23:26.743 | INFO     | ManagerService | Manager received command: CommandType.START_RT_SIM
+2026-05-28 19:23:26.743 | INFO     | ManagerService | Manager: RT Simulation STARTED — vehicle auto-DISARMED
+2026-05-28 19:23:26.743 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-05-28 19:23:33.605 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=71)
+2026-05-28 19:23:33.680 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:23:33.680 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 19:23:41.019 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:23:41.403 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:23:50.242 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=1)
+2026-05-28 19:23:50.266 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-28 19:23:50.267 | INFO     | ManagerService | WP Route STARTED: 2 waypoints, dir=forward
+2026-05-28 19:23:50.286 | INFO     | GNCService | PathFollower: loaded 3 waypoints
+2026-05-28 19:23:50.309 | INFO     | GNCService | GNC: WP Route started — 2 WPs, dir=forward, completion=stop
+2026-05-28 19:23:53.919 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:23:54.276 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:23:55.058 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:23:55.422 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:23:56.521 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:23:56.874 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:23:57.975 | INFO     | CommsService | Command received and published: CommandType.STOP_WP_ROUTE (seq=1)
+2026-05-28 19:23:57.996 | INFO     | GNCService | GNC: WP Route stopped
+2026-05-28 19:23:58.008 | INFO     | ManagerService | Manager received command: CommandType.STOP_WP_ROUTE
+2026-05-28 19:23:58.008 | INFO     | ManagerService | WP Route STOPPED
+2026-05-28 19:23:59.648 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:24:00.005 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:24:03.081 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=1)
+2026-05-28 19:24:03.135 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:24:03.135 | INFO     | ManagerService | Mode changed to: STATION
+2026-05-28 19:24:12.113 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=2)
+2026-05-28 19:24:12.175 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:24:12.175 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 19:24:14.627 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:24:15.008 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:24:18.877 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:24:19.235 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:24:24.533 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=1)
+2026-05-28 19:24:24.541 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:24:24.541 | INFO     | ManagerService | Mode changed to: STATION
+2026-05-28 19:24:26.228 | INFO     | CommsService | Command received and published: CommandType.SET_STATION (seq=2)
+2026-05-28 19:24:26.250 | INFO     | ManagerService | Manager received command: CommandType.SET_STATION
+2026-05-28 19:24:26.251 | INFO     | ManagerService | Station WP set: {'lat': 39.32510265883525, 'lon': -0.5757636515223794}, reaching: 3m, station: 10m
+2026-05-28 19:24:34.244 | INFO     | CommsService | Command received and published: CommandType.START_STATION (seq=3)
+2026-05-28 19:24:34.291 | INFO     | ManagerService | Manager received command: CommandType.START_STATION
+2026-05-28 19:24:34.292 | INFO     | ManagerService | Station keeping STARTED
+2026-05-28 19:24:34.306 | INFO     | GNCService | PathFollower: loaded 2 waypoints
+2026-05-28 19:24:34.313 | INFO     | GNCService | StationKeeper: APPROACHING (d > 10.0m)
+2026-05-28 19:24:34.313 | INFO     | GNCService | GNC: Station keeping started at (39.325103, -0.575764), reaching=3m, station=10m
+2026-05-28 19:24:36.701 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:24:37.082 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:24:37.706 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:24:38.060 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:24:38.551 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:24:38.914 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:24:39.878 | INFO     | CommsService | Command received and published: CommandType.STOP_STATION (seq=1)
+2026-05-28 19:24:39.902 | INFO     | GNCService | GNC: Station keeping stopped
+2026-05-28 19:24:39.919 | INFO     | ManagerService | Manager received command: CommandType.STOP_STATION
+2026-05-28 19:24:39.919 | INFO     | ManagerService | Station keeping STOPPED
+2026-05-28 19:24:43.839 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=2)
+2026-05-28 19:24:43.938 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:24:43.938 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 19:24:49.899 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=3)
+2026-05-28 19:24:49.971 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:24:49.971 | INFO     | ManagerService | Mode changed to: STATION
+2026-05-28 19:24:54.668 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=4)
+2026-05-28 19:24:54.694 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:24:54.695 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 19:26:07.690 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=5)
+2026-05-28 19:26:07.745 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-28 19:26:07.745 | INFO     | ManagerService | WP Route STARTED: 2 waypoints, dir=forward
+2026-05-28 19:26:07.759 | INFO     | GNCService | PathFollower: loaded 3 waypoints
+2026-05-28 19:26:07.779 | INFO     | GNCService | GNC: WP Route started — 2 WPs, dir=forward, completion=stop
+2026-05-28 19:26:20.653 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-05-28 19:26:20.653 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-05-28 19:26:20.653 | INFO     | NavigationService | Process NavigationService received signal 2. Stopping...
+2026-05-28 19:26:20.653 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-05-28 19:26:20.653 | INFO     | GNCService | Process GNCService received signal 2. Stopping...
+2026-05-28 19:26:20.654 | INFO     | GNCService | Process GNCService stopped.
+2026-05-28 19:26:20.657 | INFO     | HALService | Process HALService stopped.
+2026-05-28 19:26:20.663 | INFO     | NavigationService | Process NavigationService stopped.
+2026-05-28 19:26:20.698 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:26:20.709 | INFO     | ManagerService | Process ManagerService stopped.
+2026-05-28 19:26:20.806 | INFO     | CommsService | [Web Server] ZMQ consumer task cancelled
+2026-05-28 19:26:20.807 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-05-28 19:26:20.821 | INFO     | CommsService | MAVLink bridge stopped.
+2026-05-28 19:26:20.889 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-05-28 19:26:26.776 | INFO     | MAIN | Starting USV Control System
+2026-05-28 19:26:26.776 | INFO     | MAIN | Mode: SIMULATION
+2026-05-28 19:26:27.269 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-05-28 19:26:27.829 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-05-28 19:26:27.821 | INFO     | HALService | Process HALService starting...
+2026-05-28 19:26:27.816 | INFO     | ManagerService | Process ManagerService starting...
+2026-05-28 19:26:27.835 | INFO     | CommsService | Starting Web Server on port 8000
+2026-05-28 19:26:27.835 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:26:27.836 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:26:27.837 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-05-28 19:26:27.839 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-05-28 19:26:27.837 | ERROR    | HALService | [GNSS Node] Cannot open /dev/gnss_um982: could not open port '/dev/gnss_um982': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:26:27.837 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-05-28 19:26:27.830 | INFO     | GNCService | Process GNCService starting...
+2026-05-28 19:26:27.827 | INFO     | NavigationService | Process NavigationService starting...
+2026-05-28 19:26:27.840 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:26:27.840 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-05-28 19:26:27.840 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-05-28 19:26:27.845 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:26:27.845 | ERROR    | HALService | [IMU Node] Cannot open /dev/serial0: could not open port '/dev/serial0': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:26:27.846 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:26:27.847 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-05-28 19:26:27.847 | ERROR    | HALService | [Power Node] Cannot open /dev/power_pzem: could not open port '/dev/power_pzem': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying...
+2026-05-28 19:26:27.847 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-05-28 19:26:27.848 | INFO     | HALService | [ESP32 Node] Starting (with auto-retry)...
+2026-05-28 19:26:27.848 | INFO     | HALService | ESP32 Node started on /dev/esp32
+2026-05-28 19:26:27.848 | ERROR    | HALService | [ESP32 Node] Cannot open /dev/esp32: could not open port '/dev/esp32': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying every 3.0s (this message will not repeat).
+2026-05-28 19:26:27.848 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-05-28 19:26:27.856 | INFO     | CommsService | Starting Web Server...
+2026-05-28 19:26:27.944 | INFO     | NavigationService | Navigation Process initialized (passthrough mode)
+2026-05-28 19:26:27.944 | INFO     | NavigationService | Process NavigationService entering loop at 20.0 Hz
+2026-05-28 19:26:28.039 | INFO     | ManagerService | Manager: settings loaded from c:\PYTHON\ControlUSV\src\manager\..\..\data\manager_settings.json
+2026-05-28 19:26:28.039 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-05-28 19:26:28.039 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-05-28 19:26:28.072 | INFO     | CommsService | Command publisher connected to ZMQ broker
+2026-05-28 19:26:28.076 | INFO     | CommsService | [Web Server] ZMQ consumer subscribed on tcp://127.0.0.1:5556
+2026-05-28 19:26:28.569 | INFO     | GNCService | GNC Process initialized (waiting for AUTO mode)
+2026-05-28 19:26:28.569 | INFO     | GNCService | Process GNCService entering loop at 20.0 Hz
+2026-05-28 19:26:29.337 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:26:43.466 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:26:43.846 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:26:47.561 | INFO     | CommsService | Command received and published: CommandType.START_RT_SIM (seq=1)
+2026-05-28 19:26:47.590 | INFO     | GNCService | GNC: Starting RT simulation (Physics Engine Only)
+2026-05-28 19:26:47.590 | INFO     | GNCService | GNC: RT simulation started
+2026-05-28 19:26:47.607 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
+2026-05-28 19:26:47.634 | INFO     | ManagerService | Manager received command: CommandType.START_RT_SIM
+2026-05-28 19:26:47.634 | INFO     | ManagerService | Manager: RT Simulation STARTED — vehicle auto-DISARMED
+2026-05-28 19:26:47.635 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-05-28 19:27:08.331 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+g...
+2026-05-28 19:27:08.331 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-05-28 19:27:08.331 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-05-28 19:27:08.331 | INFO     | GNCService | Process GNCService received signal 2. Stopping...
+2026-05-28 19:27:08.338 | INFO     | NavigationService | Process NavigationService stopped.
+2026-05-28 19:27:08.341 | INFO     | HALService | Process HALService stopped.
+2026-05-28 19:27:08.356 | INFO     | GNCService | Process GNCService stopped.
+2026-05-28 19:27:08.364 | INFO     | ManagerService | Process ManagerService stopped.
+2026-05-28 19:27:08.397 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:27:08.504 | INFO     | CommsService | [Web Server] ZMQ consumer task cancelled
+2026-05-28 19:27:08.506 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-05-28 19:27:08.519 | INFO     | CommsService | MAVLink bridge stopped.
+2026-05-28 19:27:08.596 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-05-28 19:27:35.957 | INFO     | MAIN | Starting USV Control System
+2026-05-28 19:27:35.958 | INFO     | MAIN | Mode: SIMULATION
+2026-05-28 19:27:36.519 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-05-28 19:27:37.042 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-05-28 19:27:37.048 | INFO     | CommsService | Starting Web Server on port 8000
+2026-05-28 19:27:37.051 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-05-28 19:27:37.039 | INFO     | HALService | Process HALService starting...
+2026-05-28 19:27:37.037 | INFO     | NavigationService | Process NavigationService starting...
+2026-05-28 19:27:37.051 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:27:37.052 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:27:37.052 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-05-28 19:27:37.052 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-05-28 19:27:37.036 | INFO     | GNCService | Process GNCService starting...
+2026-05-28 19:27:37.042 | INFO     | ManagerService | Process ManagerService starting...
+2026-05-28 19:27:37.053 | ERROR    | HALService | [GNSS Node] Cannot open /dev/gnss_um982: could not open port '/dev/gnss_um982': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:27:37.057 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:27:37.057 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-05-28 19:27:37.057 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-05-28 19:27:37.058 | ERROR    | HALService | [IMU Node] Cannot open /dev/serial0: could not open port '/dev/serial0': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:27:37.061 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:27:37.062 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:27:37.062 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-05-28 19:27:37.063 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-05-28 19:27:37.063 | ERROR    | HALService | [Power Node] Cannot open /dev/power_pzem: could not open port '/dev/power_pzem': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying...
+2026-05-28 19:27:37.063 | INFO     | HALService | [ESP32 Node] Starting (with auto-retry)...
+2026-05-28 19:27:37.063 | INFO     | HALService | ESP32 Node started on /dev/esp32
+2026-05-28 19:27:37.064 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-05-28 19:27:37.064 | ERROR    | HALService | [ESP32 Node] Cannot open /dev/esp32: could not open port '/dev/esp32': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying every 3.0s (this message will not repeat).
+2026-05-28 19:27:37.068 | INFO     | CommsService | Starting Web Server...
+2026-05-28 19:27:37.154 | INFO     | NavigationService | Navigation Process initialized (passthrough mode)
+2026-05-28 19:27:37.154 | INFO     | NavigationService | Process NavigationService entering loop at 20.0 Hz
+2026-05-28 19:27:37.266 | INFO     | ManagerService | Manager: settings loaded from c:\PYTHON\ControlUSV\src\manager\..\..\data\manager_settings.json
+2026-05-28 19:27:37.266 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-05-28 19:27:37.266 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-05-28 19:27:37.283 | INFO     | CommsService | Command publisher connected to ZMQ broker
+2026-05-28 19:27:37.286 | INFO     | CommsService | [Web Server] ZMQ consumer subscribed on tcp://127.0.0.1:5556
+2026-05-28 19:27:37.780 | INFO     | GNCService | GNC Process initialized (waiting for AUTO mode)
+2026-05-28 19:27:37.781 | INFO     | GNCService | Process GNCService entering loop at 20.0 Hz
+2026-05-28 19:27:38.387 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:29:22.469 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-05-28 19:29:22.469 | INFO     | NavigationService | Process NavigationService received signal 2. Stopping...
+2026-05-28 19:29:22.469 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-05-28 19:29:22.469 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-05-28 19:29:22.469 | INFO     | GNCService | Process GNCService received signal 2. Stopping...
+2026-05-28 19:29:22.483 | INFO     | HALService | Process HALService stopped.
+2026-05-28 19:29:22.501 | INFO     | NavigationService | Process NavigationService stopped.
+2026-05-28 19:29:22.510 | INFO     | GNCService | Process GNCService stopped.
+2026-05-28 19:29:22.568 | INFO     | ManagerService | Process ManagerService stopped.
+2026-05-28 19:29:22.570 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:29:22.676 | INFO     | CommsService | [Web Server] ZMQ consumer task cancelled
+2026-05-28 19:29:22.677 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-05-28 19:29:22.691 | INFO     | CommsService | MAVLink bridge stopped.
+2026-05-28 19:29:22.763 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-05-28 19:29:30.056 | INFO     | MAIN | Starting USV Control System
+2026-05-28 19:29:30.056 | INFO     | MAIN | Mode: SIMULATION
+2026-05-28 19:29:30.639 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-05-28 19:29:31.155 | INFO     | ManagerService | Process ManagerService starting...
+2026-05-28 19:29:31.170 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-05-28 19:29:31.176 | INFO     | CommsService | Starting Web Server on port 8000
+2026-05-28 19:29:31.180 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-05-28 19:29:31.180 | INFO     | HALService | Process HALService starting...
+2026-05-28 19:29:31.190 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:29:31.169 | INFO     | GNCService | Process GNCService starting...
+2026-05-28 19:29:31.179 | INFO     | NavigationService | Process NavigationService starting...
+2026-05-28 19:29:31.191 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:29:31.192 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-05-28 19:29:31.192 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-05-28 19:29:31.197 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:29:31.199 | INFO     | CommsService | Starting Web Server...
+2026-05-28 19:29:31.197 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-05-28 19:29:31.198 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-05-28 19:29:31.198 | ERROR    | HALService | [GNSS Node] Cannot open /dev/gnss_um982: could not open port '/dev/gnss_um982': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:29:31.201 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:29:31.201 | ERROR    | HALService | [IMU Node] Cannot open /dev/serial0: could not open port '/dev/serial0': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:29:31.204 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:29:31.204 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-05-28 19:29:31.204 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-05-28 19:29:31.206 | ERROR    | HALService | [Power Node] Cannot open /dev/power_pzem: could not open port '/dev/power_pzem': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying...
+2026-05-28 19:29:31.206 | INFO     | HALService | [ESP32 Node] Starting (with auto-retry)...
+2026-05-28 19:29:31.206 | INFO     | HALService | ESP32 Node started on /dev/esp32
+2026-05-28 19:29:31.207 | ERROR    | HALService | [ESP32 Node] Cannot open /dev/esp32: could not open port '/dev/esp32': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying every 3.0s (this message will not repeat).
+2026-05-28 19:29:31.207 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-05-28 19:29:31.292 | INFO     | NavigationService | Navigation Process initialized (passthrough mode)
+2026-05-28 19:29:31.292 | INFO     | NavigationService | Process NavigationService entering loop at 20.0 Hz
+2026-05-28 19:29:31.371 | INFO     | ManagerService | Manager: settings loaded from c:\PYTHON\ControlUSV\src\manager\..\..\data\manager_settings.json
+2026-05-28 19:29:31.371 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-05-28 19:29:31.371 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-05-28 19:29:31.419 | INFO     | CommsService | Command publisher connected to ZMQ broker
+2026-05-28 19:29:31.422 | INFO     | CommsService | [Web Server] ZMQ consumer subscribed on tcp://127.0.0.1:5556
+2026-05-28 19:29:31.727 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:29:31.912 | INFO     | GNCService | GNC Process initialized (waiting for AUTO mode)
+2026-05-28 19:29:31.913 | INFO     | GNCService | Process GNCService entering loop at 20.0 Hz
+2026-05-28 19:29:38.460 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-05-28 19:29:38.459 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-05-28 19:29:38.460 | INFO     | NavigationService | Process NavigationService received signal 2. Stopping...
+2026-05-28 19:29:38.460 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-05-28 19:29:38.460 | INFO     | HALService | Process HALService stopped.
+2026-05-28 19:29:38.460 | INFO     | GNCService | Process GNCService received signal 2. Stopping...
+2026-05-28 19:29:38.476 | INFO     | GNCService | Process GNCService stopped.
+2026-05-28 19:29:38.501 | INFO     | NavigationService | Process NavigationService stopped.
+2026-05-28 19:29:38.510 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:29:38.517 | INFO     | ManagerService | Process ManagerService stopped.
+2026-05-28 19:29:38.619 | INFO     | CommsService | [Web Server] ZMQ consumer task cancelled
+2026-05-28 19:29:38.620 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-05-28 19:29:38.634 | INFO     | CommsService | MAVLink bridge stopped.
+2026-05-28 19:29:38.713 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-05-28 19:29:41.159 | INFO     | MAIN | Starting USV Control System
+2026-05-28 19:29:41.159 | INFO     | MAIN | Mode: SIMULATION
+2026-05-28 19:29:41.669 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-05-28 19:29:42.191 | INFO     | NavigationService | Process NavigationService starting...
+2026-05-28 19:29:42.191 | INFO     | GNCService | Process GNCService starting...
+2026-05-28 19:29:42.217 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-05-28 19:29:42.223 | INFO     | CommsService | Starting Web Server on port 8000
+2026-05-28 19:29:42.223 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-05-28 19:29:42.217 | INFO     | HALService | Process HALService starting...
+2026-05-28 19:29:42.228 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:29:42.229 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:29:42.217 | INFO     | ManagerService | Process ManagerService starting...
+2026-05-28 19:29:42.229 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-05-28 19:29:42.229 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-05-28 19:29:42.233 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:29:42.233 | ERROR    | HALService | [GNSS Node] Cannot open /dev/gnss_um982: could not open port '/dev/gnss_um982': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:29:42.234 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-05-28 19:29:42.234 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-05-28 19:29:42.237 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:29:42.237 | ERROR    | HALService | [IMU Node] Cannot open /dev/serial0: could not open port '/dev/serial0': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:29:42.238 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:29:42.238 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-05-28 19:29:42.238 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-05-28 19:29:42.240 | ERROR    | HALService | [Power Node] Cannot open /dev/power_pzem: could not open port '/dev/power_pzem': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying...
+2026-05-28 19:29:42.240 | INFO     | HALService | [ESP32 Node] Starting (with auto-retry)...
+2026-05-28 19:29:42.240 | INFO     | HALService | ESP32 Node started on /dev/esp32
+2026-05-28 19:29:42.241 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-05-28 19:29:42.241 | ERROR    | HALService | [ESP32 Node] Cannot open /dev/esp32: could not open port '/dev/esp32': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying every 3.0s (this message will not repeat).
+2026-05-28 19:29:42.243 | INFO     | CommsService | Starting Web Server...
+2026-05-28 19:29:42.306 | INFO     | NavigationService | Navigation Process initialized (passthrough mode)
+2026-05-28 19:29:42.306 | INFO     | NavigationService | Process NavigationService entering loop at 20.0 Hz
+2026-05-28 19:29:42.437 | INFO     | ManagerService | Manager: settings loaded from c:\PYTHON\ControlUSV\src\manager\..\..\data\manager_settings.json
+2026-05-28 19:29:42.437 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-05-28 19:29:42.437 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-05-28 19:29:42.452 | INFO     | CommsService | Command publisher connected to ZMQ broker
+2026-05-28 19:29:42.455 | INFO     | CommsService | [Web Server] ZMQ consumer subscribed on tcp://127.0.0.1:5556
+2026-05-28 19:29:42.833 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:29:42.929 | INFO     | GNCService | GNC Process initialized (waiting for AUTO mode)
+2026-05-28 19:29:42.929 | INFO     | GNCService | Process GNCService entering loop at 20.0 Hz
+2026-05-28 19:32:23.406 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-05-28 19:32:23.406 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-05-28 19:32:23.406 | INFO     | GNCService | Process GNCService received signal 2. Stopping...
+2026-05-28 19:32:23.406 | INFO     | NavigationService | Process NavigationService received signal 2. Stopping...
+2026-05-28 19:32:23.418 | INFO     | NavigationService | Process NavigationService stopped.
+2026-05-28 19:32:23.426 | INFO     | HALService | Process HALService stopped.
+2026-05-28 19:32:23.433 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:32:23.438 | INFO     | ManagerService | Process ManagerService stopped.
+2026-05-28 19:32:23.449 | INFO     | GNCService | Process GNCService stopped.
+2026-05-28 19:32:23.540 | INFO     | CommsService | [Web Server] ZMQ consumer task cancelled
+2026-05-28 19:32:23.541 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-05-28 19:32:23.555 | INFO     | CommsService | MAVLink bridge stopped.
+2026-05-28 19:32:23.628 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-05-28 19:32:25.488 | INFO     | MAIN | Starting USV Control System
+2026-05-28 19:32:25.488 | INFO     | MAIN | Mode: SIMULATION
+2026-05-28 19:32:25.995 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-05-28 19:32:26.541 | INFO     | HALService | Process HALService starting...
+2026-05-28 19:32:26.552 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:32:26.553 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:32:26.553 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-05-28 19:32:26.552 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-05-28 19:32:26.554 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-05-28 19:32:26.554 | ERROR    | HALService | [GNSS Node] Cannot open /dev/gnss_um982: could not open port '/dev/gnss_um982': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:32:26.559 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:32:26.557 | INFO     | CommsService | Starting Web Server on port 8000
+2026-05-28 19:32:26.558 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-05-28 19:32:26.542 | INFO     | GNCService | Process GNCService starting...
+2026-05-28 19:32:26.559 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-05-28 19:32:26.559 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-05-28 19:32:26.560 | ERROR    | HALService | [IMU Node] Cannot open /dev/serial0: could not open port '/dev/serial0': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:32:26.564 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:32:26.565 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:32:26.566 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-05-28 19:32:26.566 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-05-28 19:32:26.552 | INFO     | NavigationService | Process NavigationService starting...
+2026-05-28 19:32:26.567 | ERROR    | HALService | [Power Node] Cannot open /dev/power_pzem: could not open port '/dev/power_pzem': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying...
+2026-05-28 19:32:26.567 | INFO     | HALService | [ESP32 Node] Starting (with auto-retry)...
+2026-05-28 19:32:26.568 | INFO     | HALService | ESP32 Node started on /dev/esp32
+2026-05-28 19:32:26.568 | ERROR    | HALService | [ESP32 Node] Cannot open /dev/esp32: could not open port '/dev/esp32': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying every 3.0s (this message will not repeat).
+2026-05-28 19:32:26.568 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-05-28 19:32:26.552 | INFO     | ManagerService | Process ManagerService starting...
+2026-05-28 19:32:26.578 | INFO     | CommsService | Starting Web Server...
+2026-05-28 19:32:26.668 | INFO     | NavigationService | Navigation Process initialized (passthrough mode)
+2026-05-28 19:32:26.668 | INFO     | NavigationService | Process NavigationService entering loop at 20.0 Hz
+2026-05-28 19:32:26.773 | INFO     | ManagerService | Manager: settings loaded from c:\PYTHON\ControlUSV\src\manager\..\..\data\manager_settings.json
+2026-05-28 19:32:26.773 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-05-28 19:32:26.773 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-05-28 19:32:26.782 | INFO     | CommsService | Command publisher connected to ZMQ broker
+2026-05-28 19:32:26.785 | INFO     | CommsService | [Web Server] ZMQ consumer subscribed on tcp://127.0.0.1:5556
+2026-05-28 19:32:27.241 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:32:27.282 | INFO     | GNCService | GNC Process initialized (waiting for AUTO mode)
+2026-05-28 19:32:27.282 | INFO     | GNCService | Process GNCService entering loop at 20.0 Hz
+2026-05-28 19:32:30.034 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=29)
+2026-05-28 19:32:30.091 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:32:30.091 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 19:32:34.810 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:32:35.186 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:32:36.374 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:32:36.735 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:32:40.527 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=1)
+2026-05-28 19:32:40.540 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:32:40.541 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:32:41.577 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=2)
+2026-05-28 19:32:41.646 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:32:41.647 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:32:42.485 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=3)
+2026-05-28 19:32:42.550 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:32:42.551 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:32:42.979 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=4)
+2026-05-28 19:32:43.053 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:32:43.054 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:32:43.168 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=5)
+2026-05-28 19:32:43.254 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:32:43.255 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:32:43.339 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=6)
+2026-05-28 19:32:43.355 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:32:43.356 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:32:43.684 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=7)
+2026-05-28 19:32:43.756 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:32:43.756 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:32:43.879 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=8)
+2026-05-28 19:32:43.958 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:32:43.958 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:32:44.052 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=9)
+2026-05-28 19:32:44.059 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:32:44.059 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:32:44.223 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=10)
+2026-05-28 19:32:44.259 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:32:44.260 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:32:44.382 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=11)
+2026-05-28 19:32:44.460 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:32:44.461 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:32:44.547 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=12)
+2026-05-28 19:32:44.561 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:32:44.562 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:32:44.742 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=13)
+2026-05-28 19:32:44.763 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:32:44.763 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:32:44.885 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=14)
+2026-05-28 19:32:44.964 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:32:44.964 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:32:45.072 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=15)
+2026-05-28 19:32:45.165 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:32:45.166 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:32:45.244 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=16)
+2026-05-28 19:32:45.266 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:32:45.267 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:32:45.402 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=17)
+2026-05-28 19:32:45.468 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:32:45.468 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:32:45.574 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=18)
+2026-05-28 19:32:45.670 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:32:45.670 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:32:45.732 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=19)
+2026-05-28 19:32:45.771 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:32:45.771 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:32:49.019 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:32:49.394 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:32:50.647 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:32:54.434 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:33:03.232 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:33:03.578 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:33:10.933 | INFO     | CommsService | Command received and published: CommandType.START_RT_SIM (seq=1)
+2026-05-28 19:33:10.963 | INFO     | GNCService | GNC: Starting RT simulation (Physics Engine Only)
+2026-05-28 19:33:10.964 | INFO     | GNCService | GNC: RT simulation started
+2026-05-28 19:33:10.972 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
+2026-05-28 19:33:10.990 | INFO     | ManagerService | Manager received command: CommandType.START_RT_SIM
+2026-05-28 19:33:10.990 | INFO     | ManagerService | Manager: RT Simulation STARTED — vehicle auto-DISARMED
+2026-05-28 19:33:10.990 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-05-28 19:33:12.155 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=2)
+2026-05-28 19:33:12.180 | INFO     | GNCService | PathFollower: loaded 3 waypoints
+2026-05-28 19:33:12.197 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-28 19:33:12.198 | INFO     | ManagerService | WP Route STARTED: 2 waypoints, dir=forward
+2026-05-28 19:33:12.204 | INFO     | GNCService | GNC: WP Route started — 2 WPs, dir=forward, completion=stop
+2026-05-28 19:33:15.937 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:33:16.301 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:33:17.407 | WARNING  | CommsService | Failed to send to client, removing: 
+2026-05-28 19:33:17.407 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:33:17.744 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:33:18.360 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:33:18.684 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:33:19.282 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:33:19.609 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:33:20.145 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:33:20.480 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:33:20.998 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:33:21.334 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:33:21.749 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:33:22.080 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:33:22.468 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:33:22.799 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:33:23.203 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:33:23.536 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:33:23.856 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:33:24.193 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:33:24.471 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:33:24.804 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:33:28.611 | INFO     | CommsService | Command received and published: CommandType.STOP_WP_ROUTE (seq=1)
+2026-05-28 19:33:28.627 | INFO     | GNCService | GNC: WP Route stopped
+2026-05-28 19:33:28.684 | INFO     | ManagerService | Manager received command: CommandType.STOP_WP_ROUTE
+2026-05-28 19:33:28.684 | INFO     | ManagerService | WP Route STOPPED
+2026-05-28 19:33:29.637 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=2)
+2026-05-28 19:33:29.688 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:33:29.688 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:33:31.371 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:33:31.708 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:33:32.564 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:33:32.888 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:33:33.390 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:33:33.713 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:35:03.197 | INFO     | GNCService | Process GNCService received signal 2. Stopping...
+2026-05-28 19:35:03.197 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-05-28 19:35:03.197 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-05-28 19:35:03.197 | INFO     | NavigationService | Process NavigationService received signal 2. Stopping...
+2026-05-28 19:35:03.197 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-05-28 19:35:03.198 | INFO     | NavigationService | Process NavigationService stopped.
+2026-05-28 19:35:03.203 | INFO     | HALService | Process HALService stopped.
+2026-05-28 19:35:03.212 | INFO     | GNCService | Process GNCService stopped.
+2026-05-28 19:35:03.253 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:35:03.260 | INFO     | ManagerService | Process ManagerService stopped.
+2026-05-28 19:35:03.361 | INFO     | CommsService | [Web Server] ZMQ consumer task cancelled
+2026-05-28 19:35:03.362 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-05-28 19:35:03.376 | INFO     | CommsService | MAVLink bridge stopped.
+2026-05-28 19:35:03.442 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-05-28 19:35:05.493 | INFO     | MAIN | Starting USV Control System
+2026-05-28 19:35:05.493 | INFO     | MAIN | Mode: SIMULATION
+2026-05-28 19:35:05.979 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-05-28 19:35:06.550 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-05-28 19:35:06.557 | INFO     | CommsService | Starting Web Server on port 8000
+2026-05-28 19:35:06.558 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-05-28 19:35:06.551 | INFO     | HALService | Process HALService starting...
+2026-05-28 19:35:06.565 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:35:06.566 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:35:06.566 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-05-28 19:35:06.552 | INFO     | NavigationService | Process NavigationService starting...
+2026-05-28 19:35:06.552 | INFO     | ManagerService | Process ManagerService starting...
+2026-05-28 19:35:06.566 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-05-28 19:35:06.550 | INFO     | GNCService | Process GNCService starting...
+2026-05-28 19:35:06.570 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:35:06.571 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-05-28 19:35:06.571 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-05-28 19:35:06.571 | ERROR    | HALService | [GNSS Node] Cannot open /dev/gnss_um982: could not open port '/dev/gnss_um982': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:35:06.571 | ERROR    | HALService | [IMU Node] Cannot open /dev/serial0: could not open port '/dev/serial0': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:35:06.574 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:35:06.575 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:35:06.575 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-05-28 19:35:06.576 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-05-28 19:35:06.576 | ERROR    | HALService | [Power Node] Cannot open /dev/power_pzem: could not open port '/dev/power_pzem': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying...
+2026-05-28 19:35:06.576 | INFO     | HALService | [ESP32 Node] Starting (with auto-retry)...
+2026-05-28 19:35:06.576 | INFO     | HALService | ESP32 Node started on /dev/esp32
+2026-05-28 19:35:06.577 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-05-28 19:35:06.577 | ERROR    | HALService | [ESP32 Node] Cannot open /dev/esp32: could not open port '/dev/esp32': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying every 3.0s (this message will not repeat).
+2026-05-28 19:35:06.578 | INFO     | CommsService | Starting Web Server...
+2026-05-28 19:35:06.668 | INFO     | NavigationService | Navigation Process initialized (passthrough mode)
+2026-05-28 19:35:06.668 | INFO     | NavigationService | Process NavigationService entering loop at 20.0 Hz
+2026-05-28 19:35:06.775 | INFO     | ManagerService | Manager: settings loaded from c:\PYTHON\ControlUSV\src\manager\..\..\data\manager_settings.json
+2026-05-28 19:35:06.775 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-05-28 19:35:06.775 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-05-28 19:35:06.789 | INFO     | CommsService | Command publisher connected to ZMQ broker
+2026-05-28 19:35:06.792 | INFO     | CommsService | [Web Server] ZMQ consumer subscribed on tcp://127.0.0.1:5556
+2026-05-28 19:35:07.081 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:35:07.292 | INFO     | GNCService | GNC Process initialized (waiting for AUTO mode)
+2026-05-28 19:35:07.292 | INFO     | GNCService | Process GNCService entering loop at 20.0 Hz
+2026-05-28 19:35:19.344 | INFO     | CommsService | Command received and published: CommandType.START_RT_SIM (seq=122)
+2026-05-28 19:35:19.393 | INFO     | GNCService | GNC: Starting RT simulation (Physics Engine Only)
+2026-05-28 19:35:19.393 | INFO     | GNCService | GNC: RT simulation started
+2026-05-28 19:35:19.398 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
+2026-05-28 19:35:19.437 | INFO     | ManagerService | Manager received command: CommandType.START_RT_SIM
+2026-05-28 19:35:19.437 | INFO     | ManagerService | Manager: RT Simulation STARTED — vehicle auto-DISARMED
+2026-05-28 19:35:19.437 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-05-28 19:35:21.571 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=145)
+2026-05-28 19:35:21.648 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:35:21.648 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 19:35:33.130 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=147)
+2026-05-28 19:35:33.138 | INFO     | GNCService | PathFollower: loaded 3 waypoints
+2026-05-28 19:35:33.157 | INFO     | GNCService | GNC: WP Route started — 2 WPs, dir=forward, completion=stop
+2026-05-28 19:35:33.209 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-28 19:35:33.210 | INFO     | ManagerService | WP Route STARTED: 2 waypoints, dir=forward
+2026-05-28 19:35:34.119 | INFO     | CommsService | Command received and published: CommandType.STOP_WP_ROUTE (seq=148)
+2026-05-28 19:35:34.153 | INFO     | GNCService | GNC: WP Route stopped
+2026-05-28 19:35:34.214 | INFO     | ManagerService | Manager received command: CommandType.STOP_WP_ROUTE
+2026-05-28 19:35:34.214 | INFO     | ManagerService | WP Route STOPPED
+2026-05-28 19:35:39.736 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=149)
+2026-05-28 19:35:39.746 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:35:39.747 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:35:41.702 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=150)
+2026-05-28 19:35:41.713 | ERROR    | GNCService | GNC: WP Route needs at least 2 waypoints
+2026-05-28 19:35:41.758 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-28 19:35:41.759 | INFO     | ManagerService | WP Route STARTED: 1 waypoints, dir=forward
+2026-05-28 19:35:52.000 | INFO     | CommsService | Command received and published: CommandType.STOP_WP_ROUTE (seq=151)
+2026-05-28 19:35:52.009 | INFO     | ManagerService | Manager received command: CommandType.STOP_WP_ROUTE
+2026-05-28 19:35:52.009 | INFO     | ManagerService | WP Route STOPPED
+2026-05-28 19:36:11.912 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:36:12.300 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:36:24.476 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=1)
+2026-05-28 19:36:24.569 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-28 19:36:24.570 | INFO     | ManagerService | WP Route STARTED: 2 waypoints, dir=forward
+2026-05-28 19:36:24.550 | INFO     | GNCService | PathFollower: loaded 3 waypoints
+2026-05-28 19:36:24.570 | INFO     | GNCService | GNC: WP Route started — 2 WPs, dir=forward, completion=stop
+2026-05-28 19:36:29.397 | INFO     | GNCService | Process GNCService received signal 2. Stopping...
+2026-05-28 19:36:29.397 | INFO     | NavigationService | Process NavigationService received signal 2. Stopping...
+2026-05-28 19:36:29.397 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-05-28 19:36:29.398 | INFO     | HALService | Process HALService received signal 2. Stopping...
+s...
+2026-05-28 19:36:29.405 | INFO     | HALService | Process HALService stopped.
+2026-05-28 19:36:29.420 | INFO     | NavigationService | Process NavigationService stopped.
+2026-05-28 19:36:29.440 | INFO     | GNCService | Process GNCService stopped.
+2026-05-28 19:36:29.476 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:36:29.496 | INFO     | ManagerService | Process ManagerService stopped.
+2026-05-28 19:36:29.583 | INFO     | CommsService | [Web Server] ZMQ consumer task cancelled
+2026-05-28 19:36:29.584 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-05-28 19:36:29.598 | INFO     | CommsService | MAVLink bridge stopped.
+2026-05-28 19:36:29.662 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-05-28 19:36:36.589 | INFO     | MAIN | Starting USV Control System
+2026-05-28 19:36:36.589 | INFO     | MAIN | Mode: SIMULATION
+2026-05-28 19:36:37.087 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-05-28 19:36:37.627 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-05-28 19:36:37.635 | INFO     | CommsService | Starting Web Server on port 8000
+2026-05-28 19:36:37.636 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-05-28 19:36:37.630 | INFO     | HALService | Process HALService starting...
+2026-05-28 19:36:37.639 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:36:37.642 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:36:37.627 | INFO     | NavigationService | Process NavigationService starting...
+2026-05-28 19:36:37.643 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-05-28 19:36:37.627 | INFO     | ManagerService | Process ManagerService starting...
+2026-05-28 19:36:37.643 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-05-28 19:36:37.644 | ERROR    | HALService | [GNSS Node] Cannot open /dev/gnss_um982: could not open port '/dev/gnss_um982': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:36:37.648 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:36:37.626 | INFO     | GNCService | Process GNCService starting...
+2026-05-28 19:36:37.649 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-05-28 19:36:37.650 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-05-28 19:36:37.652 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:36:37.653 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:36:37.653 | ERROR    | HALService | [IMU Node] Cannot open /dev/serial0: could not open port '/dev/serial0': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:36:37.653 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-05-28 19:36:37.653 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-05-28 19:36:37.654 | ERROR    | HALService | [Power Node] Cannot open /dev/power_pzem: could not open port '/dev/power_pzem': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying...
+2026-05-28 19:36:37.654 | INFO     | HALService | [ESP32 Node] Starting (with auto-retry)...
+2026-05-28 19:36:37.654 | INFO     | HALService | ESP32 Node started on /dev/esp32
+2026-05-28 19:36:37.655 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-05-28 19:36:37.655 | ERROR    | HALService | [ESP32 Node] Cannot open /dev/esp32: could not open port '/dev/esp32': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying every 3.0s (this message will not repeat).
+2026-05-28 19:36:37.656 | INFO     | CommsService | Starting Web Server...
+2026-05-28 19:36:37.745 | INFO     | NavigationService | Navigation Process initialized (passthrough mode)
+2026-05-28 19:36:37.745 | INFO     | NavigationService | Process NavigationService entering loop at 20.0 Hz
+2026-05-28 19:36:37.853 | INFO     | ManagerService | Manager: settings loaded from c:\PYTHON\ControlUSV\src\manager\..\..\data\manager_settings.json
+2026-05-28 19:36:37.853 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-05-28 19:36:37.853 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-05-28 19:36:37.859 | INFO     | CommsService | Command publisher connected to ZMQ broker
+2026-05-28 19:36:37.861 | INFO     | CommsService | [Web Server] ZMQ consumer subscribed on tcp://127.0.0.1:5556
+2026-05-28 19:36:38.118 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:36:38.368 | INFO     | GNCService | GNC Process initialized (waiting for AUTO mode)
+2026-05-28 19:36:38.368 | INFO     | GNCService | Process GNCService entering loop at 20.0 Hz
+2026-05-28 19:36:50.907 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=1)
+2026-05-28 19:36:50.909 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:36:50.909 | INFO     | ManagerService | Mode changed to: STATION
+2026-05-28 19:36:53.981 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=2)
+2026-05-28 19:36:54.024 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:36:54.024 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 19:37:38.272 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=3)
+2026-05-28 19:37:38.324 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:37:38.325 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:37:50.676 | INFO     | CommsService | Command received and published: CommandType.START_RT_SIM (seq=4)
+2026-05-28 19:37:50.678 | INFO     | ManagerService | Manager received command: CommandType.START_RT_SIM
+2026-05-28 19:37:50.678 | INFO     | ManagerService | Manager: RT Simulation STARTED — vehicle auto-DISARMED
+2026-05-28 19:37:50.714 | INFO     | GNCService | GNC: Starting RT simulation (Physics Engine Only)
+2026-05-28 19:37:50.714 | INFO     | GNCService | GNC: RT simulation started
+2026-05-28 19:37:50.720 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
+2026-05-28 19:37:50.779 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-05-28 19:37:55.250 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=5)
+2026-05-28 19:37:55.302 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:37:55.303 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:37:59.459 | INFO     | HALService | Process HALService received signal 2. Stopping...
+ing...
+2026-05-28 19:37:59.460 | INFO     | GNCService | Process GNCService received signal 2. Stopping...
+2026-05-28 19:37:59.460 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-05-28 19:37:59.460 | INFO     | NavigationService | Process NavigationService received signal 2. Stopping...
+2026-05-28 19:37:59.474 | INFO     | HALService | Process HALService stopped.
+2026-05-28 19:37:59.489 | INFO     | GNCService | Process GNCService stopped.
+2026-05-28 19:37:59.494 | INFO     | NavigationService | Process NavigationService stopped.
+2026-05-28 19:37:59.523 | INFO     | ManagerService | Process ManagerService stopped.
+2026-05-28 19:37:59.533 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:37:59.640 | INFO     | CommsService | [Web Server] ZMQ consumer task cancelled
+2026-05-28 19:37:59.641 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-05-28 19:37:59.656 | INFO     | CommsService | MAVLink bridge stopped.
+2026-05-28 19:37:59.729 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-05-28 19:38:01.132 | INFO     | MAIN | Starting USV Control System
+2026-05-28 19:38:01.133 | INFO     | MAIN | Mode: SIMULATION
+2026-05-28 19:38:01.638 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-05-28 19:38:02.185 | INFO     | NavigationService | Process NavigationService starting...
+2026-05-28 19:38:02.184 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-05-28 19:38:02.191 | INFO     | CommsService | Starting Web Server on port 8000
+2026-05-28 19:38:02.193 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-05-28 19:38:02.185 | INFO     | HALService | Process HALService starting...
+2026-05-28 19:38:02.194 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:38:02.200 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:38:02.184 | INFO     | ManagerService | Process ManagerService starting...
+2026-05-28 19:38:02.200 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-05-28 19:38:02.200 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-05-28 19:38:02.201 | ERROR    | HALService | [GNSS Node] Cannot open /dev/gnss_um982: could not open port '/dev/gnss_um982': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:38:02.204 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:38:02.184 | INFO     | GNCService | Process GNCService starting...
+2026-05-28 19:38:02.206 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-05-28 19:38:02.206 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-05-28 19:38:02.206 | ERROR    | HALService | [IMU Node] Cannot open /dev/serial0: could not open port '/dev/serial0': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:38:02.208 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:38:02.209 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:38:02.209 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-05-28 19:38:02.209 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-05-28 19:38:02.210 | ERROR    | HALService | [Power Node] Cannot open /dev/power_pzem: could not open port '/dev/power_pzem': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying...
+2026-05-28 19:38:02.210 | INFO     | HALService | [ESP32 Node] Starting (with auto-retry)...
+2026-05-28 19:38:02.210 | INFO     | HALService | ESP32 Node started on /dev/esp32
+2026-05-28 19:38:02.211 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-05-28 19:38:02.211 | ERROR    | HALService | [ESP32 Node] Cannot open /dev/esp32: could not open port '/dev/esp32': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying every 3.0s (this message will not repeat).
+2026-05-28 19:38:02.214 | INFO     | CommsService | Starting Web Server...
+2026-05-28 19:38:02.304 | INFO     | NavigationService | Navigation Process initialized (passthrough mode)
+2026-05-28 19:38:02.304 | INFO     | NavigationService | Process NavigationService entering loop at 20.0 Hz
+2026-05-28 19:38:02.408 | INFO     | ManagerService | Manager: settings loaded from c:\PYTHON\ControlUSV\src\manager\..\..\data\manager_settings.json
+2026-05-28 19:38:02.409 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-05-28 19:38:02.409 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-05-28 19:38:02.426 | INFO     | CommsService | Command publisher connected to ZMQ broker
+2026-05-28 19:38:02.428 | INFO     | CommsService | [Web Server] ZMQ consumer subscribed on tcp://127.0.0.1:5556
+2026-05-28 19:38:02.853 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:38:02.923 | INFO     | GNCService | GNC Process initialized (waiting for AUTO mode)
+2026-05-28 19:38:02.924 | INFO     | GNCService | Process GNCService entering loop at 20.0 Hz
+2026-05-28 19:38:03.959 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:38:04.320 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:38:08.570 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=1)
+2026-05-28 19:38:08.636 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:38:08.636 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 19:38:09.898 | INFO     | CommsService | Command received and published: CommandType.START_RT_SIM (seq=2)
+2026-05-28 19:38:09.937 | INFO     | GNCService | GNC: Starting RT simulation (Physics Engine Only)
+2026-05-28 19:38:09.938 | INFO     | GNCService | GNC: RT simulation started
+2026-05-28 19:38:09.943 | INFO     | ManagerService | Manager received command: CommandType.START_RT_SIM
+2026-05-28 19:38:09.943 | INFO     | ManagerService | Manager: RT Simulation STARTED — vehicle auto-DISARMED
+2026-05-28 19:38:09.943 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-05-28 19:38:09.946 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
+2026-05-28 19:38:45.024 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:38:45.377 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:38:46.605 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:38:46.941 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:38:47.504 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:38:47.844 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:39:20.460 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=2)
+2026-05-28 19:39:20.486 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-28 19:39:20.487 | INFO     | ManagerService | WP Route STARTED: 2 waypoints, dir=forward
+2026-05-28 19:39:20.486 | INFO     | GNCService | PathFollower: loaded 3 waypoints
+2026-05-28 19:39:20.507 | INFO     | GNCService | GNC: WP Route started — 2 WPs, dir=forward, completion=stop
+2026-05-28 19:39:22.733 | INFO     | CommsService | Command received and published: CommandType.STOP_WP_ROUTE (seq=3)
+2026-05-28 19:39:22.770 | INFO     | GNCService | GNC: WP Route stopped
+2026-05-28 19:39:22.799 | INFO     | ManagerService | Manager received command: CommandType.STOP_WP_ROUTE
+2026-05-28 19:39:22.799 | INFO     | ManagerService | WP Route STOPPED
+2026-05-28 19:39:24.767 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:39:25.115 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:39:26.103 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:39:26.425 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:39:27.288 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:39:27.616 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:39:33.211 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=1)
+2026-05-28 19:39:33.254 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-28 19:39:33.255 | INFO     | ManagerService | WP Route STARTED: 2 waypoints, dir=forward
+2026-05-28 19:39:33.258 | INFO     | GNCService | PathFollower: loaded 3 waypoints
+2026-05-28 19:39:33.283 | INFO     | GNCService | GNC: WP Route started — 2 WPs, dir=forward, completion=stop
+2026-05-28 19:39:41.318 | INFO     | CommsService | Command received and published: CommandType.STOP_WP_ROUTE (seq=2)
+2026-05-28 19:39:41.353 | INFO     | GNCService | GNC: WP Route stopped
+2026-05-28 19:39:41.395 | INFO     | ManagerService | Manager received command: CommandType.STOP_WP_ROUTE
+2026-05-28 19:39:41.395 | INFO     | ManagerService | WP Route STOPPED
+2026-05-28 19:39:42.503 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=3)
+2026-05-28 19:39:42.602 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:39:42.602 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:39:44.378 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=4)
+2026-05-28 19:39:44.398 | ERROR    | GNCService | GNC: WP Route needs at least 2 waypoints
+2026-05-28 19:39:44.409 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-28 19:39:44.409 | INFO     | ManagerService | WP Route STARTED: 1 waypoints, dir=forward
+2026-05-28 19:40:57.009 | INFO     | CommsService | Command received and published: CommandType.STOP_WP_ROUTE (seq=5)
+2026-05-28 19:40:57.063 | INFO     | ManagerService | Manager received command: CommandType.STOP_WP_ROUTE
+2026-05-28 19:40:57.063 | INFO     | ManagerService | WP Route STOPPED
+2026-05-28 19:41:03.123 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:41:03.470 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:41:10.091 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-05-28 19:41:10.091 | INFO     | GNCService | Process GNCService received signal 2. Stopping...
+2026-05-28 19:41:10.091 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-05-28 19:41:10.091 | INFO     | NavigationService | Process NavigationService received signal 2. Stopping...
+2026-05-28 19:41:10.091 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-05-28 19:41:10.094 | INFO     | NavigationService | Process NavigationService stopped.
+2026-05-28 19:41:10.098 | INFO     | HALService | Process HALService stopped.
+2026-05-28 19:41:10.117 | INFO     | GNCService | Process GNCService stopped.
+2026-05-28 19:41:10.120 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:41:10.128 | INFO     | ManagerService | Process ManagerService stopped.
+2026-05-28 19:41:10.227 | INFO     | CommsService | [Web Server] ZMQ consumer task cancelled
+2026-05-28 19:41:10.228 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-05-28 19:41:10.242 | INFO     | CommsService | MAVLink bridge stopped.
+2026-05-28 19:41:10.318 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-05-28 19:41:12.165 | INFO     | MAIN | Starting USV Control System
+2026-05-28 19:41:12.166 | INFO     | MAIN | Mode: SIMULATION
+2026-05-28 19:41:12.660 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-05-28 19:41:13.215 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-05-28 19:41:13.221 | INFO     | CommsService | Starting Web Server on port 8000
+2026-05-28 19:41:13.216 | INFO     | HALService | Process HALService starting...
+2026-05-28 19:41:13.224 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-05-28 19:41:13.223 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:41:13.225 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:41:13.229 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-05-28 19:41:13.229 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-05-28 19:41:13.233 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:41:13.234 | ERROR    | HALService | [GNSS Node] Cannot open /dev/gnss_um982: could not open port '/dev/gnss_um982': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:41:13.220 | INFO     | NavigationService | Process NavigationService starting...
+2026-05-28 19:41:13.215 | INFO     | ManagerService | Process ManagerService starting...
+2026-05-28 19:41:13.234 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-05-28 19:41:13.234 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-05-28 19:41:13.239 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:41:13.240 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:41:13.240 | ERROR    | HALService | [IMU Node] Cannot open /dev/serial0: could not open port '/dev/serial0': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:41:13.241 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-05-28 19:41:13.241 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-05-28 19:41:13.241 | INFO     | HALService | [ESP32 Node] Starting (with auto-retry)...
+2026-05-28 19:41:13.241 | INFO     | HALService | ESP32 Node started on /dev/esp32
+2026-05-28 19:41:13.241 | ERROR    | HALService | [Power Node] Cannot open /dev/power_pzem: could not open port '/dev/power_pzem': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying...
+2026-05-28 19:41:13.241 | ERROR    | HALService | [ESP32 Node] Cannot open /dev/esp32: could not open port '/dev/esp32': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying every 3.0s (this message will not repeat).
+2026-05-28 19:41:13.242 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-05-28 19:41:13.224 | INFO     | GNCService | Process GNCService starting...
+2026-05-28 19:41:13.242 | INFO     | CommsService | Starting Web Server...
+2026-05-28 19:41:13.336 | INFO     | NavigationService | Navigation Process initialized (passthrough mode)
+2026-05-28 19:41:13.336 | INFO     | NavigationService | Process NavigationService entering loop at 20.0 Hz
+2026-05-28 19:41:13.440 | INFO     | ManagerService | Manager: settings loaded from c:\PYTHON\ControlUSV\src\manager\..\..\data\manager_settings.json
+2026-05-28 19:41:13.440 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-05-28 19:41:13.440 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-05-28 19:41:13.456 | INFO     | CommsService | Command publisher connected to ZMQ broker
+2026-05-28 19:41:13.458 | INFO     | CommsService | [Web Server] ZMQ consumer subscribed on tcp://127.0.0.1:5556
+2026-05-28 19:41:13.946 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:41:13.961 | INFO     | GNCService | GNC Process initialized (waiting for AUTO mode)
+2026-05-28 19:41:13.961 | INFO     | GNCService | Process GNCService entering loop at 20.0 Hz
+2026-05-28 19:41:15.385 | INFO     | CommsService | Command received and published: CommandType.START_RT_SIM (seq=1)
+2026-05-28 19:41:15.425 | INFO     | GNCService | GNC: Starting RT simulation (Physics Engine Only)
+2026-05-28 19:41:15.426 | INFO     | GNCService | GNC: RT simulation started
+2026-05-28 19:41:15.442 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
+2026-05-28 19:41:15.450 | INFO     | ManagerService | Manager received command: CommandType.START_RT_SIM
+2026-05-28 19:41:15.450 | INFO     | ManagerService | Manager: RT Simulation STARTED — vehicle auto-DISARMED
+2026-05-28 19:41:15.450 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-05-28 19:41:16.292 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=11)
+2026-05-28 19:41:16.355 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:41:16.355 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 19:41:23.912 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=13)
+2026-05-28 19:41:23.993 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:41:23.993 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:41:24.415 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=14)
+2026-05-28 19:41:24.496 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:41:24.497 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:41:24.677 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=15)
+2026-05-28 19:41:24.697 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:41:24.697 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:41:25.788 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=16)
+2026-05-28 19:41:25.802 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:41:25.803 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:44:33.876 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-05-28 19:44:33.876 | INFO     | GNCService | Process GNCService received signal 2. Stopping...
+2026-05-28 19:44:33.876 | INFO     | NavigationService | Process NavigationService received signal 2. Stopping...
+2026-05-28 19:44:33.876 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-05-28 19:44:33.876 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-05-28 19:44:33.888 | INFO     | GNCService | Process GNCService stopped.
+2026-05-28 19:44:33.892 | INFO     | HALService | Process HALService stopped.
+2026-05-28 19:44:33.917 | INFO     | NavigationService | Process NavigationService stopped.
+2026-05-28 19:44:33.972 | INFO     | ManagerService | Process ManagerService stopped.
+2026-05-28 19:44:33.981 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:44:34.088 | INFO     | CommsService | [Web Server] ZMQ consumer task cancelled
+2026-05-28 19:44:34.089 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-05-28 19:44:34.103 | INFO     | CommsService | MAVLink bridge stopped.
+2026-05-28 19:44:34.168 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-05-28 19:44:36.576 | INFO     | MAIN | Starting USV Control System
+2026-05-28 19:44:36.576 | INFO     | MAIN | Mode: SIMULATION
+2026-05-28 19:44:37.058 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-05-28 19:44:37.589 | INFO     | HALService | Process HALService starting...
+2026-05-28 19:44:37.595 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:44:37.600 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:44:37.600 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-05-28 19:44:37.601 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-05-28 19:44:37.601 | ERROR    | HALService | [GNSS Node] Cannot open /dev/gnss_um982: could not open port '/dev/gnss_um982': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:44:37.603 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:44:37.604 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-05-28 19:44:37.604 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-05-28 19:44:37.607 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:44:37.608 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:44:37.608 | ERROR    | HALService | [IMU Node] Cannot open /dev/serial0: could not open port '/dev/serial0': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:44:37.609 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-05-28 19:44:37.609 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-05-28 19:44:37.610 | ERROR    | HALService | [Power Node] Cannot open /dev/power_pzem: could not open port '/dev/power_pzem': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying...
+2026-05-28 19:44:37.610 | INFO     | HALService | [ESP32 Node] Starting (with auto-retry)...
+2026-05-28 19:44:37.610 | INFO     | HALService | ESP32 Node started on /dev/esp32
+2026-05-28 19:44:37.610 | ERROR    | HALService | [ESP32 Node] Cannot open /dev/esp32: could not open port '/dev/esp32': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying every 3.0s (this message will not repeat).
+2026-05-28 19:44:37.611 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-05-28 19:44:37.608 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-05-28 19:44:37.613 | INFO     | CommsService | Starting Web Server on port 8000
+2026-05-28 19:44:37.613 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-05-28 19:44:37.612 | INFO     | NavigationService | Process NavigationService starting...
+2026-05-28 19:44:37.608 | INFO     | ManagerService | Process ManagerService starting...
+2026-05-28 19:44:37.608 | INFO     | GNCService | Process GNCService starting...
+2026-05-28 19:44:37.633 | INFO     | CommsService | Starting Web Server...
+2026-05-28 19:44:37.725 | INFO     | NavigationService | Navigation Process initialized (passthrough mode)
+2026-05-28 19:44:37.725 | INFO     | NavigationService | Process NavigationService entering loop at 20.0 Hz
+2026-05-28 19:44:37.831 | INFO     | ManagerService | Manager: settings loaded from c:\PYTHON\ControlUSV\src\manager\..\..\data\manager_settings.json
+2026-05-28 19:44:37.831 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-05-28 19:44:37.831 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-05-28 19:44:37.841 | INFO     | CommsService | Command publisher connected to ZMQ broker
+2026-05-28 19:44:37.843 | INFO     | CommsService | [Web Server] ZMQ consumer subscribed on tcp://127.0.0.1:5556
+2026-05-28 19:44:38.298 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:44:38.346 | INFO     | GNCService | GNC Process initialized (waiting for AUTO mode)
+2026-05-28 19:44:38.346 | INFO     | GNCService | Process GNCService entering loop at 20.0 Hz
+2026-05-28 19:44:40.785 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:44:41.160 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:44:43.565 | INFO     | CommsService | Command received and published: CommandType.START_RT_SIM (seq=1)
+2026-05-28 19:44:43.592 | INFO     | GNCService | GNC: Starting RT simulation (Physics Engine Only)
+2026-05-28 19:44:43.592 | INFO     | GNCService | GNC: RT simulation started
+2026-05-28 19:44:43.612 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
+2026-05-28 19:44:43.660 | INFO     | ManagerService | Manager received command: CommandType.START_RT_SIM
+2026-05-28 19:44:43.660 | INFO     | ManagerService | Manager: RT Simulation STARTED — vehicle auto-DISARMED
+2026-05-28 19:44:43.660 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-05-28 19:45:02.277 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=189)
+2026-05-28 19:45:02.361 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:45:02.361 | INFO     | ManagerService | Mode changed to: STATION
+2026-05-28 19:45:23.660 | INFO     | CommsService | Command received and published: CommandType.SET_STATION (seq=191)
+2026-05-28 19:45:23.664 | INFO     | ManagerService | Manager received command: CommandType.SET_STATION
+2026-05-28 19:45:23.665 | INFO     | ManagerService | Station WP set: {'lat': 39.32396685223242, 'lon': -0.5811332410400212}, reaching: 3m, station: 10m
+2026-05-28 19:45:25.153 | INFO     | CommsService | Command received and published: CommandType.START_STATION (seq=192)
+2026-05-28 19:45:25.172 | INFO     | ManagerService | Manager received command: CommandType.START_STATION
+2026-05-28 19:45:25.172 | INFO     | ManagerService | Station keeping STARTED
+2026-05-28 19:45:25.180 | INFO     | GNCService | PathFollower: loaded 2 waypoints
+2026-05-28 19:45:25.187 | INFO     | GNCService | StationKeeper: APPROACHING (d > 10.0m)
+2026-05-28 19:45:25.188 | INFO     | GNCService | GNC: Station keeping started at (39.323967, -0.581133), reaching=3m, station=10m
+2026-05-28 19:45:26.210 | INFO     | CommsService | Command received and published: CommandType.STOP_STATION (seq=193)
+2026-05-28 19:45:26.247 | INFO     | GNCService | GNC: Station keeping stopped
+2026-05-28 19:45:26.278 | INFO     | ManagerService | Manager received command: CommandType.STOP_STATION
+2026-05-28 19:45:26.278 | INFO     | ManagerService | Station keeping STOPPED
+2026-05-28 19:45:29.588 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:45:29.945 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:45:34.596 | INFO     | CommsService | Command received and published: CommandType.START_STATION (seq=1)
+2026-05-28 19:45:34.620 | INFO     | ManagerService | Manager received command: CommandType.START_STATION
+2026-05-28 19:45:34.620 | INFO     | ManagerService | Station keeping STARTED
+2026-05-28 19:45:34.616 | INFO     | GNCService | PathFollower: loaded 2 waypoints
+2026-05-28 19:45:34.624 | INFO     | GNCService | StationKeeper: APPROACHING (d > 10.0m)
+2026-05-28 19:45:34.624 | INFO     | GNCService | GNC: Station keeping started at (39.323967, -0.581133), reaching=3m, station=10m
+2026-05-28 19:45:35.991 | INFO     | CommsService | Command received and published: CommandType.STOP_STATION (seq=2)
+2026-05-28 19:45:36.027 | INFO     | ManagerService | Manager received command: CommandType.STOP_STATION
+2026-05-28 19:45:36.027 | INFO     | ManagerService | Station keeping STOPPED
+2026-05-28 19:45:36.038 | INFO     | GNCService | GNC: Station keeping stopped
+2026-05-28 19:45:38.010 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:45:38.348 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:45:42.036 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=2)
+2026-05-28 19:45:42.056 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:45:42.056 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 19:45:49.521 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=3)
+2026-05-28 19:45:49.525 | INFO     | GNCService | PathFollower: loaded 3 waypoints
+2026-05-28 19:45:49.546 | INFO     | GNCService | GNC: WP Route started — 2 WPs, dir=forward, completion=stop
+2026-05-28 19:45:49.599 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-28 19:45:49.600 | INFO     | ManagerService | WP Route STARTED: 2 waypoints, dir=forward
+2026-05-28 19:45:51.562 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:45:51.916 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:45:52.470 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:45:52.803 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:45:55.558 | INFO     | CommsService | Command received and published: CommandType.STOP_WP_ROUTE (seq=1)
+2026-05-28 19:45:55.564 | INFO     | GNCService | GNC: WP Route stopped
+2026-05-28 19:45:55.627 | INFO     | ManagerService | Manager received command: CommandType.STOP_WP_ROUTE
+2026-05-28 19:45:55.627 | INFO     | ManagerService | WP Route STOPPED
+2026-05-28 19:45:58.111 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:45:58.443 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:46:00.816 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=2)
+2026-05-28 19:46:00.853 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-28 19:46:00.853 | INFO     | ManagerService | WP Route STARTED: 2 waypoints, dir=forward
+2026-05-28 19:46:00.880 | INFO     | GNCService | PathFollower: loaded 3 waypoints
+2026-05-28 19:46:00.901 | INFO     | GNCService | GNC: WP Route started — 2 WPs, dir=forward, completion=stop
+2026-05-28 19:46:03.368 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:46:03.702 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:46:04.708 | INFO     | CommsService | Command received and published: CommandType.STOP_WP_ROUTE (seq=1)
+2026-05-28 19:46:04.755 | INFO     | GNCService | GNC: WP Route stopped
+2026-05-28 19:46:04.773 | INFO     | ManagerService | Manager received command: CommandType.STOP_WP_ROUTE
+2026-05-28 19:46:04.773 | INFO     | ManagerService | WP Route STOPPED
+2026-05-28 19:46:10.574 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=2)
+2026-05-28 19:46:10.604 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:46:10.606 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:46:16.267 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=3)
+2026-05-28 19:46:16.272 | ERROR    | GNCService | GNC: WP Route needs at least 2 waypoints
+2026-05-28 19:46:16.331 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-28 19:46:16.332 | INFO     | ManagerService | WP Route STARTED: 1 waypoints, dir=forward
+2026-05-28 19:46:45.743 | INFO     | CommsService | Command received and published: CommandType.STOP_WP_ROUTE (seq=4)
+2026-05-28 19:46:45.778 | INFO     | ManagerService | Manager received command: CommandType.STOP_WP_ROUTE
+2026-05-28 19:46:45.778 | INFO     | ManagerService | WP Route STOPPED
+2026-05-28 19:46:48.990 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=5)
+2026-05-28 19:46:48.994 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:46:48.995 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:46:54.825 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=6)
+2026-05-28 19:46:54.922 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-28 19:46:54.923 | INFO     | ManagerService | WP Route STARTED: 2 waypoints, dir=forward
+2026-05-28 19:46:54.911 | INFO     | GNCService | PathFollower: loaded 3 waypoints
+2026-05-28 19:46:54.933 | INFO     | GNCService | GNC: WP Route started — 2 WPs, dir=forward, completion=stop
+2026-05-28 19:47:06.526 | INFO     | CommsService | Command received and published: CommandType.STOP_WP_ROUTE (seq=7)
+2026-05-28 19:47:06.557 | INFO     | GNCService | GNC: WP Route stopped
+2026-05-28 19:47:06.579 | INFO     | ManagerService | Manager received command: CommandType.STOP_WP_ROUTE
+2026-05-28 19:47:06.580 | INFO     | ManagerService | WP Route STOPPED
+2026-05-28 19:47:07.463 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=8)
+2026-05-28 19:47:07.484 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:47:07.485 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:47:21.976 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=9)
+2026-05-28 19:47:22.055 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-28 19:47:22.055 | INFO     | ManagerService | WP Route STARTED: 2 waypoints, dir=forward
+2026-05-28 19:47:22.063 | INFO     | GNCService | PathFollower: loaded 3 waypoints
+2026-05-28 19:47:22.087 | INFO     | GNCService | GNC: WP Route started — 2 WPs, dir=forward, completion=stop
+2026-05-28 19:47:29.536 | INFO     | CommsService | Command received and published: CommandType.STOP_WP_ROUTE (seq=10)
+2026-05-28 19:47:29.555 | INFO     | GNCService | GNC: WP Route stopped
+2026-05-28 19:47:29.592 | INFO     | ManagerService | Manager received command: CommandType.STOP_WP_ROUTE
+2026-05-28 19:47:29.592 | INFO     | ManagerService | WP Route STOPPED
+2026-05-28 19:47:31.230 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:47:31.594 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:47:33.085 | INFO     | NavigationService | Process NavigationService received signal 2. Stopping...
+2026-05-28 19:47:33.085 | INFO     | GNCService | Process GNCService received signal 2. Stopping...
+2026-05-28 19:47:33.085 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-05-28 19:47:33.085 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-05-28 19:47:33.085 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-05-28 19:47:33.087 | INFO     | HALService | Process HALService stopped.
+2026-05-28 19:47:33.106 | INFO     | GNCService | Process GNCService stopped.
+2026-05-28 19:47:33.106 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:47:33.110 | INFO     | ManagerService | Process ManagerService stopped.
+2026-05-28 19:47:33.116 | INFO     | NavigationService | Process NavigationService stopped.
+2026-05-28 19:47:33.212 | INFO     | CommsService | [Web Server] ZMQ consumer task cancelled
+2026-05-28 19:47:33.213 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-05-28 19:47:33.227 | INFO     | CommsService | MAVLink bridge stopped.
+2026-05-28 19:47:33.309 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-05-28 19:47:34.818 | INFO     | MAIN | Starting USV Control System
+2026-05-28 19:47:34.818 | INFO     | MAIN | Mode: SIMULATION
+2026-05-28 19:47:35.304 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-05-28 19:47:35.844 | INFO     | HALService | Process HALService starting...
+2026-05-28 19:47:35.849 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-05-28 19:47:35.855 | INFO     | CommsService | Starting Web Server on port 8000
+2026-05-28 19:47:35.854 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:47:35.856 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:47:35.856 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-05-28 19:47:35.858 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-05-28 19:47:35.849 | INFO     | ManagerService | Process ManagerService starting...
+2026-05-28 19:47:35.856 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-05-28 19:47:35.857 | ERROR    | HALService | [GNSS Node] Cannot open /dev/gnss_um982: could not open port '/dev/gnss_um982': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:47:35.847 | INFO     | NavigationService | Process NavigationService starting...
+2026-05-28 19:47:35.860 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:47:35.862 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-05-28 19:47:35.862 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-05-28 19:47:35.862 | ERROR    | HALService | [IMU Node] Cannot open /dev/serial0: could not open port '/dev/serial0': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:47:35.866 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:47:35.868 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:47:35.868 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-05-28 19:47:35.868 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-05-28 19:47:35.869 | ERROR    | HALService | [Power Node] Cannot open /dev/power_pzem: could not open port '/dev/power_pzem': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying...
+2026-05-28 19:47:35.869 | INFO     | HALService | [ESP32 Node] Starting (with auto-retry)...
+2026-05-28 19:47:35.869 | INFO     | HALService | ESP32 Node started on /dev/esp32
+2026-05-28 19:47:35.870 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-05-28 19:47:35.870 | ERROR    | HALService | [ESP32 Node] Cannot open /dev/esp32: could not open port '/dev/esp32': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying every 3.0s (this message will not repeat).
+2026-05-28 19:47:35.852 | INFO     | GNCService | Process GNCService starting...
+2026-05-28 19:47:35.875 | INFO     | CommsService | Starting Web Server...
+2026-05-28 19:47:35.963 | INFO     | NavigationService | Navigation Process initialized (passthrough mode)
+2026-05-28 19:47:35.963 | INFO     | NavigationService | Process NavigationService entering loop at 20.0 Hz
+2026-05-28 19:47:36.072 | INFO     | ManagerService | Manager: settings loaded from c:\PYTHON\ControlUSV\src\manager\..\..\data\manager_settings.json
+2026-05-28 19:47:36.072 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-05-28 19:47:36.072 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-05-28 19:47:36.090 | INFO     | CommsService | Command publisher connected to ZMQ broker
+2026-05-28 19:47:36.093 | INFO     | CommsService | [Web Server] ZMQ consumer subscribed on tcp://127.0.0.1:5556
+2026-05-28 19:47:36.413 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:47:36.590 | INFO     | GNCService | GNC Process initialized (waiting for AUTO mode)
+2026-05-28 19:47:36.590 | INFO     | GNCService | Process GNCService entering loop at 20.0 Hz
+2026-05-28 19:47:40.694 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:47:41.026 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:47:44.495 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-05-28 19:47:44.495 | INFO     | NavigationService | Process NavigationService received signal 2. Stopping...
+2026-05-28 19:47:44.495 | INFO     | GNCService | Process GNCService received signal 2. Stopping...
+2026-05-28 19:47:44.495 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-05-28 19:47:44.495 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-05-28 19:47:44.505 | INFO     | GNCService | Process GNCService stopped.
+2026-05-28 19:47:44.510 | INFO     | ManagerService | Process ManagerService stopped.
+2026-05-28 19:47:44.512 | INFO     | HALService | Process HALService stopped.
+2026-05-28 19:47:44.521 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 19:47:44.528 | INFO     | NavigationService | Process NavigationService stopped.
+2026-05-28 19:47:44.628 | INFO     | CommsService | [Web Server] ZMQ consumer task cancelled
+2026-05-28 19:47:44.629 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-05-28 19:47:44.642 | INFO     | CommsService | MAVLink bridge stopped.
+2026-05-28 19:47:44.705 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-05-28 19:47:50.654 | INFO     | MAIN | Starting USV Control System
+2026-05-28 19:47:50.654 | INFO     | MAIN | Mode: SIMULATION
+2026-05-28 19:47:51.306 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-05-28 19:47:51.701 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-05-28 19:47:51.707 | INFO     | CommsService | Starting Web Server on port 8000
+2026-05-28 19:47:51.707 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-05-28 19:47:51.701 | INFO     | HALService | Process HALService starting...
+2026-05-28 19:47:51.715 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:47:51.717 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:47:51.700 | INFO     | NavigationService | Process NavigationService starting...
+2026-05-28 19:47:51.698 | INFO     | GNCService | Process GNCService starting...
+2026-05-28 19:47:51.717 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-05-28 19:47:51.700 | INFO     | ManagerService | Process ManagerService starting...
+2026-05-28 19:47:51.717 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-05-28 19:47:51.721 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:47:51.721 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-05-28 19:47:51.722 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-05-28 19:47:51.722 | ERROR    | HALService | [GNSS Node] Cannot open /dev/gnss_um982: could not open port '/dev/gnss_um982': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:47:51.724 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 19:47:51.725 | ERROR    | HALService | [IMU Node] Cannot open /dev/serial0: could not open port '/dev/serial0': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 19:47:51.726 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 19:47:51.727 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-05-28 19:47:51.727 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-05-28 19:47:51.727 | ERROR    | HALService | [Power Node] Cannot open /dev/power_pzem: could not open port '/dev/power_pzem': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying...
+2026-05-28 19:47:51.727 | INFO     | HALService | [ESP32 Node] Starting (with auto-retry)...
+2026-05-28 19:47:51.728 | INFO     | HALService | ESP32 Node started on /dev/esp32
+2026-05-28 19:47:51.728 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-05-28 19:47:51.728 | ERROR    | HALService | [ESP32 Node] Cannot open /dev/esp32: could not open port '/dev/esp32': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying every 3.0s (this message will not repeat).
+2026-05-28 19:47:51.728 | INFO     | CommsService | Starting Web Server...
+2026-05-28 19:47:51.818 | INFO     | NavigationService | Navigation Process initialized (passthrough mode)
+2026-05-28 19:47:51.818 | INFO     | NavigationService | Process NavigationService entering loop at 20.0 Hz
+2026-05-28 19:47:51.925 | INFO     | ManagerService | Manager: settings loaded from c:\PYTHON\ControlUSV\src\manager\..\..\data\manager_settings.json
+2026-05-28 19:47:51.925 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-05-28 19:47:51.925 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-05-28 19:47:51.946 | INFO     | CommsService | Command publisher connected to ZMQ broker
+2026-05-28 19:47:51.949 | INFO     | CommsService | [Web Server] ZMQ consumer subscribed on tcp://127.0.0.1:5556
+2026-05-28 19:47:52.436 | INFO     | GNCService | GNC Process initialized (waiting for AUTO mode)
+2026-05-28 19:47:52.436 | INFO     | GNCService | Process GNCService entering loop at 20.0 Hz
+2026-05-28 19:47:53.168 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 19:47:59.793 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=1)
+2026-05-28 19:47:59.860 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:47:59.860 | INFO     | ManagerService | Mode changed to: STATION
+2026-05-28 19:48:01.299 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=2)
+2026-05-28 19:48:01.369 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:48:01.369 | INFO     | ManagerService | Mode changed to: MANUAL
+2026-05-28 19:48:04.563 | INFO     | CommsService | Command received and published: CommandType.START_RT_SIM (seq=3)
+2026-05-28 19:48:04.584 | INFO     | ManagerService | Manager received command: CommandType.START_RT_SIM
+2026-05-28 19:48:04.584 | INFO     | ManagerService | Manager: RT Simulation STARTED — vehicle auto-DISARMED
+2026-05-28 19:48:04.587 | INFO     | GNCService | GNC: Starting RT simulation (Physics Engine Only)
+2026-05-28 19:48:04.588 | INFO     | GNCService | GNC: RT simulation started
+2026-05-28 19:48:04.601 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
+2026-05-28 19:48:04.685 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-05-28 19:48:05.680 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=15)
+2026-05-28 19:48:05.690 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:48:05.690 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 19:48:06.902 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=16)
+2026-05-28 19:48:06.998 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 19:48:06.998 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 19:48:22.090 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=17)
+2026-05-28 19:48:22.135 | ERROR    | GNCService | GNC: WP Route needs at least 2 waypoints
+2026-05-28 19:48:22.173 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-28 19:48:22.174 | INFO     | ManagerService | WP Route STARTED: 1 waypoints, dir=forward
+2026-05-28 19:48:27.189 | INFO     | CommsService | Command received and published: CommandType.STOP_WP_ROUTE (seq=18)
+2026-05-28 19:48:27.200 | INFO     | ManagerService | Manager received command: CommandType.STOP_WP_ROUTE
+2026-05-28 19:48:27.200 | INFO     | ManagerService | WP Route STOPPED
+2026-05-28 19:50:27.404 | INFO     | CommsService | Command received and published: CommandType.SET_HOME_WP (seq=19)
+2026-05-28 19:50:27.423 | INFO     | GNCService | GNC: Home WP set: {'lat': 39.32354828414003, 'lon': -0.5814214215030233}
+2026-05-28 19:50:27.480 | INFO     | ManagerService | Manager received command: CommandType.SET_HOME_WP
+2026-05-28 19:50:27.481 | INFO     | ManagerService | Home WP set: {'lat': 39.32354828414003, 'lon': -0.5814214215030233}
+2026-05-28 19:51:01.080 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=20)
+2026-05-28 19:51:01.149 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:51:01.149 | INFO     | ManagerService | Mode changed to: STATION
+2026-05-28 19:51:14.399 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=21)
+2026-05-28 19:51:14.411 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:51:14.411 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 19:51:18.974 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=22)
+2026-05-28 19:51:19.033 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:51:19.033 | INFO     | ManagerService | Mode changed to: STATION
+2026-05-28 19:51:21.695 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=23)
+2026-05-28 19:51:21.746 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:51:21.746 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 19:51:26.098 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=24)
+2026-05-28 19:51:26.170 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:51:26.170 | INFO     | ManagerService | Mode changed to: STATION
+2026-05-28 19:51:31.168 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=25)
+2026-05-28 19:51:31.194 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:51:31.194 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 19:52:23.190 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=26)
+2026-05-28 19:52:23.246 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:52:23.246 | INFO     | ManagerService | Mode changed to: STATION
+2026-05-28 19:52:25.582 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=27)
+2026-05-28 19:52:25.659 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:52:25.659 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 19:52:43.567 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=28)
+2026-05-28 19:52:43.658 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:52:43.658 | INFO     | ManagerService | Mode changed to: STATION
+2026-05-28 19:56:41.285 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=29)
+2026-05-28 19:56:41.317 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:56:41.317 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 19:56:42.776 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=30)
+2026-05-28 19:56:42.825 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:56:42.825 | INFO     | ManagerService | Mode changed to: STATION
+2026-05-28 19:57:12.133 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=31)
+2026-05-28 19:57:12.166 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:57:12.166 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 19:57:19.529 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=32)
+2026-05-28 19:57:19.605 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:57:19.605 | INFO     | ManagerService | Mode changed to: MANUAL
+2026-05-28 19:57:20.533 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=42)
+2026-05-28 19:57:20.611 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:57:20.611 | INFO     | ManagerService | Mode changed to: STATION
+2026-05-28 19:57:21.231 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=43)
+2026-05-28 19:57:21.315 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:57:21.315 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 19:58:36.232 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=44)
+2026-05-28 19:58:36.291 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:58:36.292 | INFO     | ManagerService | Mode changed to: STATION
+2026-05-28 19:58:38.339 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=45)
+2026-05-28 19:58:38.404 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 19:58:38.404 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 20:01:13.116 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-05-28 20:01:13.116 | INFO     | NavigationService | Process NavigationService received signal 2. Stopping...
+2026-05-28 20:01:13.116 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-05-28 20:01:13.116 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-05-28 20:01:13.122 | INFO     | HALService | Process HALService stopped.
+2026-05-28 20:01:13.133 | INFO     | NavigationService | Process NavigationService stopped.
+2026-05-28 20:01:13.143 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-28 20:01:13.145 | INFO     | ManagerService | Process ManagerService stopped.
+2026-05-28 20:01:13.158 | INFO     | GNCService | Process GNCService stopped.
+2026-05-28 20:01:13.249 | INFO     | CommsService | [Web Server] ZMQ consumer task cancelled
+2026-05-28 20:01:13.250 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-05-28 20:01:13.265 | INFO     | CommsService | MAVLink bridge stopped.
+2026-05-28 20:01:13.334 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-05-28 20:01:18.991 | INFO     | MAIN | Starting USV Control System
+2026-05-28 20:01:18.991 | INFO     | MAIN | Mode: SIMULATION
+2026-05-28 20:01:19.476 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-05-28 20:01:20.045 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-05-28 20:01:20.045 | INFO     | ManagerService | Process ManagerService starting...
+2026-05-28 20:01:20.052 | INFO     | CommsService | Starting Web Server on port 8000
+2026-05-28 20:01:20.053 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-05-28 20:01:20.043 | INFO     | HALService | Process HALService starting...
+2026-05-28 20:01:20.056 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 20:01:20.057 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 20:01:20.058 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-05-28 20:01:20.043 | INFO     | NavigationService | Process NavigationService starting...
+2026-05-28 20:01:20.058 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-05-28 20:01:20.059 | ERROR    | HALService | [GNSS Node] Cannot open /dev/gnss_um982: could not open port '/dev/gnss_um982': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 20:01:20.043 | INFO     | GNCService | Process GNCService starting...
+2026-05-28 20:01:20.063 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 20:01:20.063 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-05-28 20:01:20.063 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-05-28 20:01:20.064 | ERROR    | HALService | [IMU Node] Cannot open /dev/serial0: could not open port '/dev/serial0': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-28 20:01:20.067 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-28 20:01:20.068 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-28 20:01:20.068 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-05-28 20:01:20.068 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-05-28 20:01:20.069 | INFO     | HALService | [ESP32 Node] Starting (with auto-retry)...
+2026-05-28 20:01:20.069 | INFO     | HALService | ESP32 Node started on /dev/esp32
+2026-05-28 20:01:20.069 | ERROR    | HALService | [ESP32 Node] Cannot open /dev/esp32: could not open port '/dev/esp32': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying every 3.0s (this message will not repeat).
+2026-05-28 20:01:20.069 | ERROR    | HALService | [Power Node] Cannot open /dev/power_pzem: could not open port '/dev/power_pzem': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying...
+2026-05-28 20:01:20.069 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-05-28 20:01:20.073 | INFO     | CommsService | Starting Web Server...
+2026-05-28 20:01:20.161 | INFO     | NavigationService | Navigation Process initialized (passthrough mode)
+2026-05-28 20:01:20.161 | INFO     | NavigationService | Process NavigationService entering loop at 20.0 Hz
+2026-05-28 20:01:20.269 | INFO     | ManagerService | Manager: settings loaded from c:\PYTHON\ControlUSV\src\manager\..\..\data\manager_settings.json
+2026-05-28 20:01:20.269 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-05-28 20:01:20.269 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-05-28 20:01:20.281 | INFO     | CommsService | Command publisher connected to ZMQ broker
+2026-05-28 20:01:20.283 | INFO     | CommsService | [Web Server] ZMQ consumer subscribed on tcp://127.0.0.1:5556
+2026-05-28 20:01:20.783 | INFO     | GNCService | GNC Process initialized (waiting for AUTO mode)
+2026-05-28 20:01:20.783 | INFO     | GNCService | Process GNCService entering loop at 20.0 Hz
+2026-05-28 20:01:20.845 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-28 20:01:25.010 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=1)
+2026-05-28 20:01:25.091 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 20:01:25.091 | INFO     | ManagerService | Mode changed to: STATION
+2026-05-28 20:01:28.220 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=2)
+2026-05-28 20:01:28.305 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-28 20:01:28.305 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-28 20:01:32.960 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=3)
+2026-05-28 20:01:33.026 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 20:01:33.026 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 20:01:40.288 | INFO     | CommsService | Command received and published: CommandType.START_RT_SIM (seq=4)
+2026-05-28 20:01:40.303 | INFO     | GNCService | GNC: Starting RT simulation (Physics Engine Only)
+2026-05-28 20:01:40.304 | INFO     | GNCService | GNC: RT simulation started
+2026-05-28 20:01:40.307 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
+2026-05-28 20:01:40.358 | INFO     | ManagerService | Manager received command: CommandType.START_RT_SIM
+2026-05-28 20:01:40.358 | INFO     | ManagerService | Manager: RT Simulation STARTED — vehicle auto-DISARMED
+2026-05-28 20:01:40.358 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-05-28 20:01:41.953 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=5)
+2026-05-28 20:01:41.968 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-28 20:01:41.969 | INFO     | ManagerService | WP Route STARTED: 1 waypoints, dir=forward
+2026-05-28 20:01:41.977 | INFO     | GNCService | PathFollower: loaded 2 waypoints
+2026-05-28 20:01:41.990 | INFO     | GNCService | GNC: WP Route started — 1 WPs, dir=forward, completion=stop
+2026-05-28 20:01:58.790 | INFO     | CommsService | Command received and published: CommandType.STOP_WP_ROUTE (seq=6)
+2026-05-28 20:01:58.822 | INFO     | GNCService | GNC: WP Route stopped
+2026-05-28 20:01:58.858 | INFO     | ManagerService | Manager received command: CommandType.STOP_WP_ROUTE
+2026-05-28 20:01:58.858 | INFO     | ManagerService | WP Route STOPPED
+2026-05-28 20:02:10.025 | INFO     | CommsService | Command received and published: CommandType.CLEAR_WP_ROUTE (seq=7)
+2026-05-28 20:02:10.118 | INFO     | ManagerService | Manager received command: CommandType.CLEAR_WP_ROUTE
+2026-05-28 20:02:10.119 | INFO     | ManagerService | WP Route CLEARED
+2026-05-28 20:02:18.800 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=8)
+2026-05-28 20:02:18.839 | INFO     | GNCService | PathFollower: loaded 3 waypoints
+2026-05-28 20:02:18.860 | INFO     | GNCService | GNC: WP Route started — 2 WPs, dir=forward, completion=stop
+2026-05-28 20:02:18.864 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-28 20:02:18.865 | INFO     | ManagerService | WP Route STARTED: 2 waypoints, dir=forward

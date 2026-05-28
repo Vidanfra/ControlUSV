@@ -35,6 +35,9 @@ class ManagerProcess(ServiceProcess):
         
         # WP Route state
         self.wp_route_active = False
+        self.wp_route_waypoints = []       # [{lat, lon, radius, speed}]
+        self.wp_route_direction = 'forward'
+        self.wp_route_completion = 'stop'
         
         # Fail-safe state
         self.home_wp = None  # {lat, lon}
@@ -86,6 +89,9 @@ class ManagerProcess(ServiceProcess):
             "station_reaching_radius": self.station_reaching_radius,
             "station_radius": self.station_radius,
             "wp_route_active": self.wp_route_active,
+            "wp_route_waypoints": self.wp_route_waypoints,
+            "wp_route_direction": self.wp_route_direction,
+            "wp_route_completion": self.wp_route_completion,
             "gnss_fix_type": self.gnss_fix_type,
             "home_wp": self.home_wp,
             "failsafe_config": self.failsafe_config.model_dump(),
@@ -149,6 +155,7 @@ class ManagerProcess(ServiceProcess):
                 }
                 self.station_reaching_radius = cmd.payload.get("reaching_radius", 3.0)
                 self.station_radius = cmd.payload.get("station_radius", 10.0)
+                self._save_settings()
                 logger.info(f"Station WP set: {self.station_wp}, reaching: {self.station_reaching_radius}m, station: {self.station_radius}m")
 
             elif cmd.type == CommandType.START_STATION:
@@ -165,13 +172,27 @@ class ManagerProcess(ServiceProcess):
             elif cmd.type == CommandType.START_WP_ROUTE:
                 if 'cruise_speed_kn' in cmd.payload:
                     self.gnc_config.cruise_speed_kn = cmd.payload['cruise_speed_kn']
-                    self._save_settings()
+                # Persist the full mission so it survives page refresh / reconnects.
+                wps = cmd.payload.get('waypoints')
+                if wps:
+                    self.wp_route_waypoints = wps
+                self.wp_route_direction  = cmd.payload.get('direction',  self.wp_route_direction)
+                self.wp_route_completion = cmd.payload.get('completion', self.wp_route_completion)
                 self.wp_route_active = True
-                logger.info(f"WP Route STARTED: {cmd.payload}")
+                self._save_settings()
+                logger.info(f"WP Route STARTED: {len(self.wp_route_waypoints)} waypoints, dir={self.wp_route_direction}")
 
             elif cmd.type == CommandType.STOP_WP_ROUTE:
                 self.wp_route_active = False
                 logger.info("WP Route STOPPED")
+
+            elif cmd.type == CommandType.CLEAR_WP_ROUTE:
+                self.wp_route_active = False
+                self.wp_route_waypoints = []
+                self.wp_route_direction = 'forward'
+                self.wp_route_completion = 'stop'
+                self._save_settings()
+                logger.info("WP Route CLEARED")
 
             elif cmd.type == CommandType.SET_HOME_WP:
                 self.home_wp = {
@@ -260,6 +281,21 @@ class ManagerProcess(ServiceProcess):
                     self.failsafe_config = FailsafeConfig(**data['failsafe_config'])
                 if 'home_wp' in data:
                     self.home_wp = data['home_wp']
+                if 'wp_route_waypoints' in data:
+                    self.wp_route_waypoints = data['wp_route_waypoints']
+                if 'wp_route_direction' in data:
+                    self.wp_route_direction = data['wp_route_direction']
+                if 'wp_route_completion' in data:
+                    self.wp_route_completion = data['wp_route_completion']
+                # Safety: never auto-resume an active mission on backend restart.
+                # wp_route_active / station_active are reset to False so the
+                # operator must explicitly press START again.
+                if 'station_wp' in data:
+                    self.station_wp = data['station_wp']
+                if 'station_reaching_radius' in data:
+                    self.station_reaching_radius = data['station_reaching_radius']
+                if 'station_radius' in data:
+                    self.station_radius = data['station_radius']
                 logger.info(f"Manager: settings loaded from {_SETTINGS_FILE}")
         except Exception as e:
             logger.warning(f"Manager: could not load settings ({e}), using defaults")
@@ -273,6 +309,12 @@ class ManagerProcess(ServiceProcess):
                     'gnc_config': self.gnc_config.model_dump(),
                     'failsafe_config': self.failsafe_config.model_dump(),
                     'home_wp': self.home_wp,
+                    'wp_route_waypoints': self.wp_route_waypoints,
+                    'wp_route_direction': self.wp_route_direction,
+                    'wp_route_completion': self.wp_route_completion,
+                    'station_wp': self.station_wp,
+                    'station_reaching_radius': self.station_reaching_radius,
+                    'station_radius': self.station_radius,
                 }, f, indent=2)
         except Exception as e:
             logger.warning(f"Manager: could not save settings: {e}")

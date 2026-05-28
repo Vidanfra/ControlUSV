@@ -126,15 +126,29 @@ def test_each_subscriber_creates_its_own_zmq_context():
 # Mission waypoint list is held only in GNCProcess RAM.  A GNC restart
 # (watchdog-triggered) loses the active mission silently.
 # ---------------------------------------------------------------------------
-def test_mission_state_is_not_persisted():
+# ---------------------------------------------------------------------------
+# Finding A5 (HIGH) — FIXED 2026-05-28:
+# Mission waypoints are now persisted to manager_settings.json on every
+# START_WP_ROUTE / SET_STATION command and restored on backend restart.
+# The system/status heartbeat includes wp_route_waypoints so the frontend
+# can recover the active mission after a page refresh.
+# ---------------------------------------------------------------------------
+def test_mission_state_is_persisted():
     from src.manager import process as mgr
 
     save_src = inspect.getsource(mgr.ManagerProcess._save_settings)
-    # Only gnc_config, failsafe_config, home_wp are persisted — no waypoints,
-    # no station_wp, no mission progress.
-    assert "waypoints" not in save_src
-    assert "station_wp" not in save_src
-    assert "wp_route" not in save_src
+    assert "wp_route_waypoints" in save_src
+    assert "station_wp" in save_src
+    assert "wp_route_direction" in save_src
+    assert "wp_route_completion" in save_src
+
+    load_src = inspect.getsource(mgr.ManagerProcess._load_settings)
+    assert "wp_route_waypoints" in load_src
+    assert "station_wp" in load_src
+
+    # Heartbeat payload must also broadcast waypoints to the frontend
+    loop_src = inspect.getsource(mgr.ManagerProcess.loop)
+    assert "wp_route_waypoints" in loop_src
 
 
 # ---------------------------------------------------------------------------
