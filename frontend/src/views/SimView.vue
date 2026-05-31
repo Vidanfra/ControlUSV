@@ -2,120 +2,16 @@
   <div class="sim-container">
     <!-- Left: Parameters Panel -->
     <div class="params-panel">
-      <h2>Simulation Setup</h2>
 
-      <!-- Waypoint Source -->
-      <section class="section">
-        <h3>Waypoints</h3>
-        <div class="btn-row">
-          <button class="btn" @click="loadCurrentRoute" :disabled="telemetry.missionWaypoints.length === 0">
-            Load Current Route ({{ telemetry.missionWaypoints.length }} WP)
-          </button>
-          <button class="btn btn-accent" @click="telemetry.navigateToMapPlanner()">
-            Create New Route
-          </button>
-          <label class="btn btn-secondary file-label">
-            Browse CSV
-            <input type="file" accept=".csv,.txt" @change="onCsvUpload" hidden />
-          </label>
-        </div>
-        <div v-if="waypoints.length > 0" class="wp-summary">
-          {{ waypoints.length }} waypoints loaded
-          <button class="btn-sm btn-danger" @click="waypoints = []">Clear</button>
-        </div>
-        <table v-if="waypoints.length > 0" class="wp-table">
-          <thead><tr><th>#</th><th>Lat</th><th>Lon</th><th>Radius</th><th>Speed</th></tr></thead>
-          <tbody>
-            <tr v-for="(wp, i) in waypoints" :key="i">
-              <td>{{ i + 1 }}</td>
-              <td>{{ wp.lat.toFixed(6) }}</td>
-              <td>{{ wp.lon.toFixed(6) }}</td>
-              <td><input type="number" v-model.number="wp.radius" step="1" min="1" class="num-input" /></td>
-              <td><input type="number" v-model.number="wp.speed" step="0.1" min="0.1" class="num-input" /></td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-
-      <!-- Profiles -->
-      <section class="section">
-        <h3>Profiles 
-          <button class="btn-sm" @click="addProfile" :disabled="profiles.length >= 6">+ Add</button>
-        </h3>
-        <div v-for="(p, i) in profiles" :key="i" class="profile-card">
-          <div class="profile-header">
-            <span class="profile-dot" :style="{ background: COLORS[i % COLORS.length] }"></span>
-            <input
-              type="text"
-              v-model="p.name"
-              class="profile-name-input"
-              :placeholder="`Profile ${i + 1}`"
-            />
-            <button v-if="profiles.length > 1" class="btn-sm btn-danger" @click="profiles.splice(i, 1)">x</button>
-          </div>
-          <div class="param-grid">
-            <label>Payload [kg]<input type="number" v-model.number="p.payload_kg" step="5" min="0" /></label>
-            <label>PID &omega;<sub>n</sub><input type="number" v-model.number="p.wn_pid" step="0.5" min="0.1" /></label>
-            <label>PID &zeta;<input type="number" v-model.number="p.zeta_pid" step="0.1" min="0.1" /></label>
-            <label>Ref &omega;<sub>n</sub><input type="number" v-model.number="p.wn_ref" step="0.1" min="0.1" /></label>
-            <label>Ref &zeta;<input type="number" v-model.number="p.zeta_ref" step="0.1" min="0.1" /></label>
-            <label>ALOS &delta; [m]<input type="number" v-model.number="p.delta" step="1" min="1" /></label>
-            <label>ALOS &gamma;<input type="number" v-model.number="p.gamma" step="0.01" min="0" /></label>
-            <label>Current [m/s]<input type="number" v-model.number="p.current_speed" step="0.05" min="0" /></label>
-            <label>Curr Dir [&deg;]<input type="number" v-model.number="p.current_dir" step="5" /></label>
-            <label>Surge F [N]<input type="number" v-model.number="p.surge_force" step="10" min="0" /></label>
-          </div>
-        </div>
-      </section>
-
-      <!-- Simulation Settings -->
-      <section class="section">
-        <h3>Settings</h3>
-        <div class="param-grid">
-          <label>Total Time [s]<input type="number" v-model.number="totalTime" step="50" min="10" /></label>
-          <label>Time Step [s]<input type="number" v-model.number="timeStep" step="0.01" min="0.005" /></label>
-          <label>Start Position
-            <select v-model="startMode">
-              <option value="first_wp">First Waypoint</option>
-              <option value="last_wp">Last Waypoint (Reverse)</option>
-              <option value="current_pos">Current USV Position</option>
-            </select>
-          </label>
-          <label>Completion Mode
-            <select v-model="completionMode">
-              <option value="stop_time">Run Full Time</option>
-              <option value="one_way">Stop at Last WP</option>
-              <option value="loop">Loop (same dir)</option>
-              <option value="loop_reverse">Loop (reverse)</option>
-            </select>
-          </label>
-        </div>
-      </section>
-
-      <!-- Launch -->
-      <div class="launch-row">
-        <button 
-          class="btn btn-launch" 
-          @click="launchSimulation" 
-          :disabled="waypoints.length < 2 || telemetry.simulationRunning"
-        >
-          {{ telemetry.simulationRunning ? 'Running...' : 'Launch Simulation' }}
-        </button>
-        <button 
-          v-if="telemetry.simulationResults.length > 0"
-          class="btn btn-secondary"
-          @click="telemetry.clearSimulation()"
-        >
-          Clear Results
-        </button>
-      </div>
-
-      <div v-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
-      <div v-if="successMsg" class="success-msg">{{ successMsg }}</div>
-
-      <!-- ========== RT Simulation Section ========== -->
+      <!-- ========== RT Simulation (primary) ========== -->
       <section class="section rt-section">
         <h2 class="rt-title">Real-Time Simulation</h2>
+        <p class="rt-subtitle">
+          Drives the live frontend/backend pipeline. PID, ALOS and waypoint
+          parameters are taken from the <strong>Settings</strong> tab and the
+          active <strong>Mission Plan</strong>. Only physics, environment and
+          sensor parameters are configured here.
+        </p>
 
         <div v-if="telemetry.rtSimActive" class="rt-status-banner">
           SIM RUNNING &mdash; {{ telemetry.rtSimElapsed.toFixed(1) }}s
@@ -137,39 +33,48 @@
           </div>
         </div>
 
-        <div class="rt-profile-info">
-          <span class="profile-dot" :style="{ background: COLORS[0] }"></span>
-          Using <strong>{{ profiles[0]?.name || 'Profile 1' }}</strong> parameters
-          &mdash; payload {{ profiles[0]?.payload_kg ?? 25 }} kg,
-          surge {{ profiles[0]?.surge_force ?? 150 }} N,
-          current {{ profiles[0]?.current_speed ?? 0 }} m/s
+        <!-- Vehicle & environment -->
+        <h3>Vehicle &amp; Environment</h3>
+        <div class="param-grid">
+          <label>Payload [kg]
+            <input type="number" v-model.number="rtEnv.payload_kg" step="5" min="0" />
+          </label>
+          <label>Current Speed [m/s]
+            <input type="number" v-model.number="rtEnv.current_speed" step="0.05" min="0" />
+          </label>
+          <label>Current Dir [&deg;]
+            <input type="number" v-model.number="rtEnv.current_dir" step="5" />
+          </label>
         </div>
 
+        <!-- Sensors & runtime -->
+        <h3>Sensors &amp; Runtime</h3>
         <div class="param-grid">
-          <label>Start Direction
-            <select v-model="rtStartMode">
-              <option value="first_wp">Forward</option>
-              <option value="last_wp">Reverse</option>
-            </select>
-          </label>
-          <label>Completion
-            <select v-model="rtCompletionMode">
-              <option value="stop_time">Run Full Time</option>
-              <option value="one_way">Stop at Last WP</option>
-              <option value="loop">Loop</option>
-              <option value="loop_reverse">Loop &amp; Reverse</option>
-            </select>
-          </label>
           <label>GNSS Mode
             <select v-model="rtGnssMode">
-              <option value="rtk_fix">RTK Fix</option>
+              <option value="rtk_fix">RTK Fix (best)</option>
               <option value="dgnss">DGNSS</option>
-              <option value="gps">GPS</option>
+              <option value="gps">GPS (degraded)</option>
             </select>
           </label>
           <label>Time Step [s]
             <input type="number" v-model.number="rtTimeStep" step="0.01" min="0.01" max="0.2" />
           </label>
+        </div>
+
+        <!-- Settings being inherited -->
+        <div class="rt-settings-badge" v-if="telemetry.gncConfig">
+          Controller (Settings tab):
+          &omega;<sub>n</sub>={{ telemetry.gncConfig.wn }},
+          &zeta;={{ telemetry.gncConfig.zeta }},
+          k<sub>&delta;</sub>={{ telemetry.gncConfig.k_delta }}s,
+          &gamma;={{ telemetry.gncConfig.gamma }},
+          cruise={{ telemetry.gncConfig.cruise_speed_kn }} kn
+        </div>
+        <div class="rt-settings-badge">
+          Route (WP Route panel):
+          direction=<strong>{{ telemetry.wpRouteDirection }}</strong>,
+          completion=<strong>{{ telemetry.wpRouteCompletion }}</strong>
         </div>
 
         <div class="launch-row" style="margin-top: 10px;">
@@ -189,20 +94,143 @@
           </button>
         </div>
         <div v-if="telemetry.missionWaypoints.length < 2" class="rt-hint">
-          Upload a mission with &ge; 2 waypoints first.
+          Load a mission with &ge; 2 waypoints from the Map / Mission Planner first.
         </div>
       </section>
+
+      <!-- ========== Static Simulation (secondary, collapsed) ========== -->
+      <details class="static-section">
+        <summary class="static-summary">
+          Static Simulation
+          <span class="static-summary-hint">model validation &amp; PID tuning &mdash; offline multi-profile compare</span>
+        </summary>
+
+        <p class="static-note">
+          Static profiles run offline and let you compare up to 6 vehicle /
+          controller configurations. These values do <strong>not</strong>
+          affect Real-Time simulation.
+        </p>
+
+        <!-- Waypoint Source -->
+        <section class="section">
+          <h3>Waypoints</h3>
+          <div class="btn-row">
+            <button class="btn" @click="loadCurrentRoute" :disabled="telemetry.missionWaypoints.length === 0">
+              Load Current Route ({{ telemetry.missionWaypoints.length }} WP)
+            </button>
+            <button class="btn btn-accent" @click="telemetry.navigateToMapPlanner()">
+              Create New Route
+            </button>
+            <label class="btn btn-secondary file-label">
+              Browse CSV
+              <input type="file" accept=".csv,.txt" @change="onCsvUpload" hidden />
+            </label>
+          </div>
+          <div v-if="waypoints.length > 0" class="wp-summary">
+            {{ waypoints.length }} waypoints loaded
+            <button class="btn-sm btn-danger" @click="waypoints = []">Clear</button>
+          </div>
+          <table v-if="waypoints.length > 0" class="wp-table">
+            <thead><tr><th>#</th><th>Lat</th><th>Lon</th><th>Radius</th><th>Speed</th></tr></thead>
+            <tbody>
+              <tr v-for="(wp, i) in waypoints" :key="i">
+                <td>{{ i + 1 }}</td>
+                <td>{{ wp.lat.toFixed(6) }}</td>
+                <td>{{ wp.lon.toFixed(6) }}</td>
+                <td><input type="number" v-model.number="wp.radius" step="1" min="1" class="num-input" /></td>
+                <td><input type="number" v-model.number="wp.speed" step="0.1" min="0.1" class="num-input" /></td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- Profiles -->
+        <section class="section">
+          <h3>Profiles
+            <button class="btn-sm" @click="addProfile" :disabled="profiles.length >= 6">+ Add</button>
+          </h3>
+          <div v-for="(p, i) in profiles" :key="i" class="profile-card">
+            <div class="profile-header">
+              <span class="profile-dot" :style="{ background: COLORS[i % COLORS.length] }"></span>
+              <input
+                type="text"
+                v-model="p.name"
+                class="profile-name-input"
+                :placeholder="`Profile ${i + 1}`"
+              />
+              <button v-if="profiles.length > 1" class="btn-sm btn-danger" @click="profiles.splice(i, 1)">x</button>
+            </div>
+            <div class="param-grid">
+              <label>Payload [kg]<input type="number" v-model.number="p.payload_kg" step="5" min="0" /></label>
+              <label>PID &omega;<sub>n</sub><input type="number" v-model.number="p.wn_pid" step="0.5" min="0.1" /></label>
+              <label>PID &zeta;<input type="number" v-model.number="p.zeta_pid" step="0.1" min="0.1" /></label>
+              <label>Ref &omega;<sub>n</sub><input type="number" v-model.number="p.wn_ref" step="0.1" min="0.1" /></label>
+              <label>Ref &zeta;<input type="number" v-model.number="p.zeta_ref" step="0.1" min="0.1" /></label>
+              <label>ALOS &delta; [m]<input type="number" v-model.number="p.delta" step="1" min="1" /></label>
+              <label>ALOS &gamma;<input type="number" v-model.number="p.gamma" step="0.01" min="0" /></label>
+              <label>Current [m/s]<input type="number" v-model.number="p.current_speed" step="0.05" min="0" /></label>
+              <label>Curr Dir [&deg;]<input type="number" v-model.number="p.current_dir" step="5" /></label>
+              <label>Surge F [N]<input type="number" v-model.number="p.surge_force" step="10" min="0" /></label>
+            </div>
+          </div>
+        </section>
+
+        <!-- Simulation Settings -->
+        <section class="section">
+          <h3>Settings</h3>
+          <div class="param-grid">
+            <label>Total Time [s]<input type="number" v-model.number="totalTime" step="50" min="10" /></label>
+            <label>Time Step [s]<input type="number" v-model.number="timeStep" step="0.01" min="0.005" /></label>
+            <label>Start Position
+              <select v-model="startMode">
+                <option value="first_wp">First Waypoint</option>
+                <option value="last_wp">Last Waypoint (Reverse)</option>
+                <option value="current_pos">Current USV Position</option>
+              </select>
+            </label>
+            <label>Completion Mode
+              <select v-model="completionMode">
+                <option value="stop_time">Run Full Time</option>
+                <option value="one_way">Stop at Last WP</option>
+                <option value="loop">Loop (same dir)</option>
+                <option value="loop_reverse">Loop (reverse)</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <!-- Launch -->
+        <div class="launch-row">
+          <button
+            class="btn btn-launch"
+            @click="launchSimulation"
+            :disabled="waypoints.length < 2 || telemetry.simulationRunning"
+          >
+            {{ telemetry.simulationRunning ? 'Running...' : 'Launch Simulation' }}
+          </button>
+          <button
+            v-if="telemetry.simulationResults.length > 0"
+            class="btn btn-secondary"
+            @click="telemetry.clearSimulation()"
+          >
+            Clear Results
+          </button>
+        </div>
+
+        <div v-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
+        <div v-if="successMsg" class="success-msg">{{ successMsg }}</div>
+      </details>
     </div>
 
     <!-- Right: Results -->
     <div class="results-panel">
-      <SimResults 
-        :results="telemetry.simulationResults" 
+      <SimResults
+        :results="telemetry.simulationResults"
         :waypoints="waypoints"
       />
       <div v-if="telemetry.simulationResults.length === 0" class="no-results">
-        <p>No simulation results yet.</p>
-        <p>Configure waypoints and parameters, then click <strong>Launch Simulation</strong>.</p>
+        <p>No static simulation results yet.</p>
+        <p>Expand <strong>Static Simulation</strong>, configure profiles and click <strong>Launch Simulation</strong>.</p>
       </div>
     </div>
   </div>
@@ -227,10 +255,18 @@ const errorMsg = ref('')
 const successMsg = ref('')
 
 // RT Simulation state
-const rtStartMode = ref('first_wp')
-const rtCompletionMode = ref('one_way')
 const rtGnssMode = ref('rtk_fix')
 const rtTimeStep = ref(0.05)
+
+// RT vehicle / environment parameters (physics only — controller gains,
+// cruise speed, route direction and completion come from Settings tab and
+// the WP Route panel; waypoints come from the active mission).
+const defaultRtEnv = () => ({
+  payload_kg: 25,
+  current_speed: 0.0,
+  current_dir: 0.0,
+})
+const rtEnv = ref(defaultRtEnv())
 
 const defaultProfile = () => ({
   name: 'Profile 1',
@@ -264,12 +300,21 @@ onMounted(() => {
       if (parsed.timeStep !== undefined) timeStep.value = parsed.timeStep
       if (parsed.startMode) startMode.value = parsed.startMode
       if (parsed.completionMode) completionMode.value = parsed.completionMode
-      if (parsed.rtStartMode) rtStartMode.value = parsed.rtStartMode
-      if (parsed.rtCompletionMode) rtCompletionMode.value = parsed.rtCompletionMode
       if (parsed.rtGnssMode) rtGnssMode.value = parsed.rtGnssMode
       if (parsed.rtTimeStep !== undefined) rtTimeStep.value = parsed.rtTimeStep
       if (parsed.simDefaultLat !== undefined) telemetry.simDefaultLat = parsed.simDefaultLat
       if (parsed.simDefaultLon !== undefined) telemetry.simDefaultLon = parsed.simDefaultLon
+      if (parsed.rtEnv) {
+        rtEnv.value = { ...defaultRtEnv(), ...parsed.rtEnv }
+      } else if (parsed.profiles && parsed.profiles[0]) {
+        // Migrate from legacy schema: seed rtEnv from old profile 0.
+        const p0 = parsed.profiles[0]
+        rtEnv.value = {
+          payload_kg:    p0.payload_kg    ?? 25,
+          current_speed: p0.current_speed ?? 0.0,
+          current_dir:   p0.current_dir   ?? 0.0,
+        }
+      }
     } catch (e) {
       console.error('Failed to load sim settings', e)
     }
@@ -277,17 +322,16 @@ onMounted(() => {
 })
 
 watch(
-  [waypoints, profiles, totalTime, timeStep, startMode, completionMode, rtStartMode, rtCompletionMode, rtGnssMode, rtTimeStep],
+  [waypoints, profiles, rtEnv, totalTime, timeStep, startMode, completionMode, rtGnssMode, rtTimeStep],
   () => {
     const toSave = {
       waypoints: waypoints.value,
       profiles: profiles.value,
+      rtEnv: rtEnv.value,
       totalTime: totalTime.value,
       timeStep: timeStep.value,
       startMode: startMode.value,
       completionMode: completionMode.value,
-      rtStartMode: rtStartMode.value,
-      rtCompletionMode: rtCompletionMode.value,
       rtGnssMode: rtGnssMode.value,
       rtTimeStep: rtTimeStep.value,
       simDefaultLat: telemetry.simDefaultLat,
@@ -388,30 +432,23 @@ async function launchSimulation() {
 }
 
 function launchRTSim() {
-  const p = profiles.value[0] || {}
   const startLat = telemetry.simStartWaypoint?.lat ?? telemetry.simDefaultLat
   const startLon = telemetry.simStartWaypoint?.lon ?? telemetry.simDefaultLon
+  // Backend RT sim ignores controller-tuning, start_mode and completion_mode
+  // (they come from Settings / WP Route panel respectively), and surge_force
+  // is shadowed by the cruise-speed slider, so only physics/environment and
+  // sensor parameters are forwarded here.
   telemetry.startRTSim({
-    // Start position
     current_lat:     startLat,
     current_lon:     startLon,
     current_heading: telemetry.heading,
-    // Profile 0 vehicle / controller / environment parameters
-    payload_kg:    p.payload_kg    ?? 25,
-    wn_pid:        p.wn_pid        ?? 4.0,
-    zeta_pid:      p.zeta_pid      ?? 0.5,
-    wn_ref:        p.wn_ref        ?? 1.0,
-    zeta_ref:      p.zeta_ref      ?? 1.0,
-    delta:         p.delta         ?? 5.0,
-    gamma:         p.gamma         ?? 0.0,
-    current_speed: p.current_speed ?? 0.0,
-    current_dir:   p.current_dir   ?? 0.0,
-    surge_force:   p.surge_force   ?? 150,
-    // RT-specific settings
-    gnss_mode:       rtGnssMode.value,
-    time_step:       rtTimeStep.value,
-    completion_mode: rtCompletionMode.value,
-    start_mode:      rtStartMode.value,
+    // Vehicle / environment (physics)
+    payload_kg:    rtEnv.value.payload_kg    ?? 25,
+    current_speed: rtEnv.value.current_speed ?? 0.0,
+    current_dir:   rtEnv.value.current_dir   ?? 0.0,
+    // Sensor / runtime
+    gnss_mode: rtGnssMode.value,
+    time_step: rtTimeStep.value,
   })
 }
 
@@ -663,15 +700,78 @@ h3 {
 
 /* RT Simulation Section */
 .rt-section {
-  border-top: 2px solid #FFA500;
-  margin-top: 18px;
-  padding-top: 12px;
+  border: 1px solid #FFA500;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 18px;
+  background: #1a1612;
 }
 
 .rt-title {
   color: #FFA500 !important;
+  margin: 0 0 6px 0;
+  font-size: 1.1rem;
+}
+
+.rt-subtitle {
+  font-size: 0.75rem;
+  color: #999;
+  margin: 0 0 12px 0;
+  line-height: 1.35;
+}
+
+.rt-settings-badge {
+  margin-top: 10px;
+  padding: 5px 8px;
+  background: #14181d;
+  border: 1px dashed #3a4250;
+  border-radius: 4px;
+  color: #8aa;
+  font-size: 0.72rem;
+  font-family: 'Consolas', monospace;
+}
+
+/* Static Simulation collapsible */
+.static-section {
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 0 12px;
+  background: #181818;
+}
+.static-section[open] {
+  padding-bottom: 12px;
+}
+.static-summary {
+  cursor: pointer;
+  padding: 10px 0;
+  font-size: 0.95rem;
+  color: #ccc;
+  font-weight: bold;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.static-summary::-webkit-details-marker { display: none; }
+.static-summary::before {
+  content: '\25B6';
+  font-size: 0.7rem;
+  color: #888;
+  transition: transform 0.15s;
+}
+.static-section[open] .static-summary::before {
+  transform: rotate(90deg);
+}
+.static-summary-hint {
+  font-weight: normal;
+  font-size: 0.72rem;
+  color: #777;
+}
+.static-note {
+  font-size: 0.75rem;
+  color: #888;
   margin: 0 0 10px 0;
-  font-size: 1rem;
+  line-height: 1.35;
 }
 
 .rt-status-banner {
