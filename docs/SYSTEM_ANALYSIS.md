@@ -610,4 +610,282 @@ The README's "Bugs" table tracks B-01..B-15 (most FIXED). This audit adds:
 | B-29 | 🟡 | HAL never retries node `__init__` after first failure (vs. the per-node inner retry which only kicks in after a successful `__init__`) | C8 |
 | B-30 | 🟢 | Deprecated `@app.on_event("startup")` | C5 |
 
-— End of analysis —
+— End of original analysis (2026-05-20) —
+
+---
+
+# Re-audit · 2026-05-31
+
+*Eleven days after the original audit. Reviewer re-read the same areas plus
+every line of the new Logs/Monitor/Port-Tester subsystem added in the
+meantime. Every line below was verified directly in source — items the
+exploration subagent flagged but I could not confirm are listed under
+"Corrected claims" rather than as findings.*
+
+## R0. What changed in eleven days
+
+A **Logs** tab plus a host-monitor service were added end-to-end:
+
+- `src/drivers/system_monitor.py` — psutil-driven 1 Hz host stats
+  (CPU / RAM / disk / network / uptime / OS).
+- `src/comms/log_fields.py` — curated catalog of every loggable variable
+  (13 groups, ~100 fields, dot-path resolver, full-precision set for
+  lat/lon, rad→deg conversion set for attitude/heading/course).
+- `src/comms/logger_process.py` — `LoggerProcess` hosting any number of
+  CSV file loggers (with hourly rotation) and JSON broadcasters (UDP or
+  TCP server).
+- `src/comms/web_server.py` — three new unauthenticated REST endpoints:
+  `/api/log-fields`, `/api/fs/list`, `/api/fs/mkdir`, `/api/app-log`.
+- Frontend `LogsView`, `LogEntryEditor`, `FilePicker`, `LogPreviewPanel`,
+  `AppLogViewer` components.
+- Standalone `json_port_tester.py` (Tkinter) to verify broadcaster output.
+
+Alongside this, several of the original audit items received targeted
+fixes (full table below).
+
+## R1. Status of every original B-16…B-30 finding
+
+| ID | Severity | Status | Verified at |
+|----|----------|--------|-------------|
+| **B-16** Comm-loss failsafe wired to local heartbeat | 🔴 | ✅ **FIXED** | New `comms/link` topic + 1 Hz publisher in `src/comms/web_server.py` (`publish_link_status`), GNC `_consume_link` in `src/gnc/process.py` only bumps `last_heartbeat_time` when `ws_alive=True`, frontend sends `{"type":"PING"}` at 1 Hz in `frontend/src/stores/telemetry.js`. |
+| **B-17** Non-atomic settings write | 🔴 | ❌ **NOT FIXED** | `_save_settings` in `src/manager/process.py` still does `open(_SETTINGS_FILE, 'w'); json.dump(...)` — no temp file, no `fsync`, no `os.replace`. `_load_settings` failure still only logs `.warning` with no operator alert. |
+| **B-18** No WS auth | 🔴 | ❌ **NOT FIXED** | `/ws` in `src/comms/web_server.py` accepts any client, no token. **Now compounded by R2-1 / R2-2 below.** |
+| **B-19** Firmware dead-man's switch + driver retry | 🟠 | ⚠️ **PARTIAL** | Firmware watchdog implemented (250 ms timeout → zero motors) in `firmware/ESP32firmware/ESP32firmware.ino`. Driver still has no retry on ACK timeout (`src/drivers/esp32.py:43-58`) and no explicit zero-motors before close on shutdown. |
+| **B-20** Mission state not persisted | 🟠 | ⚠️ **PARTIAL** | `wp_route_waypoints`, `wp_route_direction`, `wp_route_completion`, `station_wp`, station radii are now persisted in `_save_settings`. **Auto-resume is intentionally NOT implemented**: `wp_route_active` and `station_active` are reset to `False` on load — operator must press START again (safety choice, documented in code comment). |
+| **B-21** CommandMessage seq/nonce/ack | 🟠 | ✅ **FIXED** | `seq: Optional[int]` field added to `CommandMessage`. Per-WS-connection dedup in `process_incoming_command`. ACK echoed on accept and on duplicate. |
+| **B-22** GNC self-loop on COMMAND_USER | 🟡 | ✅ **FIXED** | GNC publishes to dedicated `Topics.GNC_SYNC` topic; Manager mirrors via `_handle_gnc_sync`. Code comment explicitly notes the old self-loop is gone. |
+| **B-23** Wall-clock for interval timers | 🟡 | ⚠️ **MOSTLY FIXED** | GNC failsafes use `time.monotonic()` (`mono` passed into `_check_failsafes`). Residual: `src/drivers/esp32.py:43-58` still uses `time.time()` for the 200 ms ACK wait. Minor — NTP step could perturb one frame. |
+| **B-24** Dead `battery_voltage = 12.6` | 🟡 | ✅ **FIXED** | Field removed from Manager heartbeat. |
+| **B-25** Relays hard-coded `1,1,1` | 🟡 | ❌ **NOT FIXED** | `src/drivers/esp32.py` still calls `self.driver.send_command(port_pct, stbd_pct, 1, 1, 1)`. **Significant safety implication:** R1 (motor relay) is the physical kill-switch the firmware watchdog is supposed to open on timeout, but the firmware now only zeros PWM — R1 stays latched closed. See R3 below. |
+| **B-26** Hardware watchdog | 🟡 | ❌ **NOT IMPLEMENTED** | No `/dev/watchdog` interaction anywhere. |
+| **B-27** ZMQ HWM defaults | 🟡 | ✅ **FIXED** | Per-topic `_TOPIC_HWM` table in `src/core/messaging.py`. Publishers set `SNDHWM` per topic; Subscribers use the minimum of subscribed topics' HWMs to prevent heartbeat topics starving sensor topics. |
+| **B-28** Watchdog "give up" with no E-stop | 🟡 | ⚠️ **MILDER THAN STATED** | `main.py` give-up path still publishes only a critical alert, no `EMERGENCY_STOP`. *However*, in practice the GNC death naturally stops the `CONTROL_CMD` stream, and the ESP32 firmware watchdog (B-19) zeros PWM after 250 ms. **Residual gap:** MANUAL_INPUT is re-emitted by *Manager*, not GNC, so a Manager hang while the operator was holding throttle can still trigger the firmware WDT but cannot open R1 (because of B-25). |
+| **B-29** HAL no retry on node `__init__` | 🟡 | ❌ **NOT FIXED** | `src/drivers/process.py` `setup()` catches `__init__` failures and proceeds with the node set to `None`. No outer retry loop. |
+| **B-30** Deprecated `on_event` | 🟢 | ❌ **NOT FIXED** | `@app.on_event("startup")` still in use. Cosmetic, but will break on future FastAPI upgrade. |
+
+**Tally:** 6 fixed, 3 partial / milder than stated, 6 unfixed.
+
+## R2. NEW findings introduced by the Logs/Monitor work
+
+### R2-1 🔴 NEW — Path-traversal arbitrary FS read via `/api/fs/list`
+**File:** `src/comms/web_server.py` (`/api/fs/list` route).
+
+The endpoint accepts any absolute path with no jail. On Windows the empty
+path enumerates all drive letters; on Linux a request like
+`{"path": "/etc"}` returns the full directory listing. Combined with the
+unauthenticated WS surface (B-18), this is a one-request remote enumeration
+primitive — including private keys under `~/.ssh`, NTRIP credentials, etc.
+
+**Fix:** introduce a whitelist of allowed roots (e.g. `~/usv_logs`,
+mounted USB mount points) and reject any `req.path` whose
+`os.path.realpath` does not start with one of them. Reject symlinks
+explicitly. Add token auth (shares fix with B-18).
+
+### R2-2 🔴 NEW — Arbitrary directory creation via `/api/fs/mkdir`
+**File:** `src/comms/web_server.py` (`/api/fs/mkdir` route).
+
+`os.makedirs(req.path, exist_ok=True)` with no validation. An attacker can:
+- create paths under `/boot` or `/etc` (DoS via inode exhaustion or
+  shadowing of system configuration)
+- prepare a writable directory that a subsequent CSV logger can then write
+  arbitrary content into (a sequence: `mkdir` → `SET_LOGGING_CONFIG`
+  pointing CSV logger at the new directory).
+
+**Fix:** same whitelist as R2-1.
+
+### R2-3 🔴 NEW — `/api/app-log` exposes full backend log
+**File:** `src/comms/web_server.py` (`/api/app-log` route).
+
+Returns up to 5000 lines from `logs/usv_control.log`. The log contains
+commands (incl. MANUAL_INPUT throttle/steering history), GNSS positions,
+NTRIP info, and stack traces with paths and IPs — high-value
+reconnaissance. Token-gate it.
+
+### R2-4 🟠 NEW — `SET_LOGGING_CONFIG` is applied twice on every push
+**Files:** `src/comms/logger_process.py` (subscribes to both
+`Topics.COMMAND_USER` and `Topics.GNC_SYNC`), `src/manager/process.py`
+(re-broadcasts the new `logging_config` on `GNC_SYNC` after accepting
+`SET_LOGGING_CONFIG`).
+
+`LoggerProcess._handle_command` calls `_apply_config` directly on the
+incoming `SET_LOGGING_CONFIG`, and then a few milliseconds later
+`_apply_config` runs again from the `GNC_SYNC` re-broadcast. The two
+applies are functionally idempotent but cause every active CSV logger to be
+stop/start-cycled twice on every config push: the first file is created
+with a start-ISO, immediately closed without an end-ISO appended (because
+the rename in `_close_file` only happens on rotation or shutdown — verified
+in source) — actually re-reading: `_close_file` *does* append the
+end-ISO. So the visible artefact is a tiny zero/one-row file pair on every
+push, not a corruption. Still a defect; fix by removing `SET_LOGGING_CONFIG`
+from the `COMMAND_USER` branch in `_handle_command` (Manager already
+forwards via `GNC_SYNC`).
+
+### R2-5 🟡 NEW — `CsvLoggerConfig.output_path` is not jailed in the model
+**File:** `src/core/models.py` (`CsvLoggerConfig`).
+
+No Pydantic validator on `output_path`. Even a benign operator can
+inadvertently target `/boot/cmdline.txt` (file → fills with CSV →
+brick on reboot), or any system directory. Compounds R2-2.
+
+**Fix:** `@field_validator("output_path")` that resolves the path,
+rejects symlinks, and requires it to live under a whitelisted root.
+
+### R2-6 🟡 NEW — Unknown `frequency_unit` silently falls back to seconds
+**File:** `src/comms/logger_process.py` (`_period_seconds`).
+
+```python
+unit = (unit or "hz").lower()
+if unit == "hz":
+    return 1.0 / max(value, 1e-6)
+return max(float(value), 1e-3)   # everything that's not exactly "hz" → seconds
+```
+
+A typo like `"Hz "` (trailing space) or `"hertz"` is silently treated as
+seconds, producing a 1000× period error. Add an explicit accept-set
+(`{"hz","s","sec","seconds"}`) and raise / reject otherwise. Also bound
+`frequency_value` in the Pydantic model (`gt=0`, `le=200`).
+
+### R2-7 🟡 NEW — CSV `fsync` runs inline on the writer thread
+**File:** `src/comms/logger_process.py` (`CsvLoggerTask._write_row`).
+
+Every 5 s the writer thread calls `os.fsync(self._file.fileno())` inline.
+On a worn SD card this can stall the writer for >100 ms, causing missed
+samples and jitter at high-rate loggers (e.g. 20 Hz IMU logger). Either
+drop the explicit `fsync` (loguru does its own flush; rotation re-opens
+the file anyway) or move it to a dedicated flusher thread.
+
+### R2-8 🟡 NEW — `system_monitor` network counter delta has no sanity check
+**File:** `src/drivers/system_monitor.py`.
+
+`drx = io.bytes_recv - self._last_net_rx` is published as kbps without a
+`max(0, …)` guard. Counter wrap (rare but possible) or interface reset
+yields a huge negative or huge positive kbps. Bound to `[0, 1 Gbps]` and
+log when clamped.
+
+### R2-9 🟡 NEW — CPU temp returns `0.0` on Windows (ambiguous sentinel)
+**File:** `src/drivers/system_monitor.py`.
+
+`cpu_temp_c = … if Linux else 0.0`. 0 °C is a legal temperature; the
+frontend strip displays "0 °C" instead of "—". Use `None` and have the
+frontend render N/A.
+
+### R2-10 🟢 NEW — `json_port_tester.py` TCP client does not auto-reconnect
+**File:** `json_port_tester.py`.
+
+When the TCP server closes the connection, the receiver thread exits and
+the user must manually reconnect. Quality-of-life only — add an
+exponential-backoff reconnect.
+
+## R3. Most dangerous combination today
+
+Three things in combination are the single highest field risk now:
+
+1. **B-18 (no WS auth)** — anyone with the ngrok URL can send commands.
+2. **R2-1 / R2-2 / R2-3 (filesystem REST endpoints, no auth, no jail)** —
+   anyone with the URL can read or write the Pi's filesystem.
+3. **B-25 (relays hard-coded ON)** — even when the firmware watchdog
+   correctly zeros PWM on a Pi/GNC freeze, **R1 (motor relay) stays
+   latched closed**. The intended hardware kill-switch is bypassed by the
+   driver. A stuck-on MOSFET or a runaway ESC signal will still drive the
+   boat.
+
+In other words: the recent feature additions widened the public attack
+surface (a remote-code-execution-equivalent on the Pi) while the
+hardware-level kill-switch remained disconnected. **Both of these must be
+addressed before any deployment beyond a controlled pond.**
+
+## R4. Corrected claims (exploration subagent vs ground truth)
+
+For honesty, four claims the exploration subagent raised that did **not**
+hold up when I read the source myself:
+
+- **"ZMQ drain holds `snapshots_lock` across 500 iterations."** False. The
+  lock is acquired/released per message in `LoggerProcess.loop`. No
+  starvation.
+- **"TCP broadcaster leaks sockets; must call `os.close(c.fileno())` after
+  `c.close()`."** False. `socket.close()` releases the file descriptor;
+  the suggested `os.close(fileno())` would be a double-close bug.
+- **"`sendall` blocks the broadcaster on slow clients."** Only partially —
+  client sockets are set non-blocking in `_accept_tcp` (`client.setblocking(False)`),
+  so a slow client raises `BlockingIOError` and is dropped, not blocking.
+- **"Config reload races: old and new tasks run concurrently against
+  `snapshots`."** Both old and new tasks only *read* `snapshots` (writes
+  happen exclusively in `LoggerProcess.loop`). Worst case is one extra
+  duplicate row in the outgoing-file before the daemon dies. Not a
+  corruption risk.
+
+These were excluded from R2 above.
+
+## R5. Updated bug table (deltas vs 2026-05-20 audit)
+
+| ID | Severity | Title | Status (2026-05-31) |
+|----|----------|-------|---------------------|
+| B-16 | 🔴 | Comm-loss failsafe wired to local heartbeat | ✅ FIXED |
+| B-17 | 🔴 | Non-atomic settings write | ❌ OPEN |
+| B-18 | 🔴 | No WS authentication | ❌ OPEN (worsened by R2-1..3) |
+| B-19 | 🟠 | ESP32 dead-man + driver retry | ⚠️ PARTIAL (firmware done, driver no retry) |
+| B-20 | 🟠 | Mission state lost on restart | ⚠️ PARTIAL (persisted, but no auto-resume by design) |
+| B-21 | 🟠 | CommandMessage seq/nonce/ack | ✅ FIXED |
+| B-22 | 🟡 | GNC self-loop on COMMAND_USER | ✅ FIXED |
+| B-23 | 🟡 | Wall clock for interval timers | ⚠️ MOSTLY FIXED (residual in esp32.py) |
+| B-24 | 🟡 | Dead `battery_voltage=12.6` | ✅ FIXED |
+| B-25 | 🟡 | Relays hard-coded ON | ❌ OPEN (raised to 🟠 in practice — disables hardware kill-switch) |
+| B-26 | 🟡 | Hardware watchdog | ❌ OPEN |
+| B-27 | 🟡 | ZMQ HWM defaults | ✅ FIXED |
+| B-28 | 🟡 | Watchdog give-up no E-stop | ⚠️ MILDER (firmware WDT mitigates GNC case) |
+| B-29 | 🟡 | HAL no retry on `__init__` | ❌ OPEN |
+| B-30 | 🟢 | Deprecated `@app.on_event` | ❌ OPEN |
+| **R2-1** | 🔴 | Path-traversal `/api/fs/list` | NEW — open |
+| **R2-2** | 🔴 | Arbitrary mkdir `/api/fs/mkdir` | NEW — open |
+| **R2-3** | 🔴 | Unauth log read `/api/app-log` | NEW — open |
+| **R2-4** | 🟠 | `SET_LOGGING_CONFIG` applied twice | NEW — open |
+| **R2-5** | 🟡 | `output_path` not jailed in Pydantic | NEW — open |
+| **R2-6** | 🟡 | Silent `frequency_unit` fallback | NEW — open |
+| **R2-7** | 🟡 | CSV `fsync` blocks writer thread | NEW — open |
+| **R2-8** | 🟡 | system_monitor net delta unsanitized | NEW — open |
+| **R2-9** | 🟡 | CPU temp `0.0` ambiguous on Windows | NEW — open |
+| **R2-10** | 🟢 | json_port_tester no TCP reconnect | NEW — open |
+
+## R6. Recommendations, ranked by impact-per-effort (revised)
+
+The top-4 from the original audit collapsed to **two** items still open
+(B-17 and B-18). Those two, plus the new filesystem-API hole and the
+missing physical kill-switch, are the must-do list:
+
+1. **Jail + token-gate the new REST endpoints** (R2-1 / R2-2 / R2-3 +
+   B-18). Single FastAPI `Depends(verify_token)` + a `_validate_path`
+   helper shared by `/api/fs/list` and `/api/fs/mkdir`. ~50 lines, closes
+   the biggest exposure introduced in the last cycle.
+2. **Wire R1 / R3 to a `SET_RELAY` command** (B-25). Add fields to
+   `CONTROL_CMD`, propagate through `Esp32Node.run`, drive R1 from the
+   ARM/DISARM state. Restores the physical kill-switch the firmware
+   watchdog assumes.
+3. **Atomic settings write + critical alert on load failure** (B-17).
+   `tempfile.mkstemp` in same dir → `f.flush(); os.fsync();
+   os.replace(tmp, _SETTINGS_FILE)`. On load failure, set a
+   `settings_load_error=True` field in the next heartbeat so the
+   frontend banner pops.
+4. **Validate `output_path` and `frequency_unit` in Pydantic** (R2-5 /
+   R2-6). Pure server-side hardening; ~15 lines.
+5. **De-duplicate `SET_LOGGING_CONFIG` apply path** (R2-4). Remove the
+   `COMMAND_USER` branch in `LoggerProcess._handle_command` for the
+   logging-config opcode (keep the preview start/stop opcodes).
+6. **Driver-side resend on ACK timeout + explicit zero-then-close on
+   disconnect** (B-19 residual). ~20 lines in `src/drivers/esp32.py`.
+7. **Backfill `time.monotonic()` in the ESP32 ACK loop** (B-23
+   residual). One-line change.
+8. **Move CSV `fsync` off the writer thread** (R2-7). Cheap; avoids
+   jitter on worn SD cards.
+9. **Sanitize `system_monitor` deltas, use `None` for unavailable CPU
+   temp** (R2-8 / R2-9). Two-line guards.
+10. **Hardware watchdog enable + tickle** (B-26). One line in
+    `/boot/config.txt` + a tickle in `main.py`.
+11. **HAL `__init__` retry loop** (B-29). Wrap each node start in the
+    same outer retry pattern the inner `*.run()` methods already use.
+12. **FastAPI `lifespan` migration** (B-30). Cosmetic; do it next time
+    FastAPI is bumped.
+
+Items 1–3 are the prerequisites for any field deployment beyond a pond.
+Items 4–8 are the second wave; items 9–12 are quality-of-life.
+
+— End of re-audit (2026-05-31) —
