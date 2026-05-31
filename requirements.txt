@@ -11,3 +11,4 @@ pyserial
 minimalmodbus
 pynmea2
 numpy
+psutil

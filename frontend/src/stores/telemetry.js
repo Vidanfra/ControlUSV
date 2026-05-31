@@ -234,6 +234,21 @@ export const useTelemetryStore = defineStore('telemetry', {
       accel_ms2: 0.3,
       vel_profiler_enabled: true,
     },
+
+    // Logs feature
+    loggingConfig: { csv_loggers: [], json_broadcasters: [] },
+    logFieldCatalog: null,        // { groups: [...], os: 'Windows'|'Linux'|... }
+    loggerPreviews: {},           // id → latest preview payload
+    systemMonitor: {
+      timestamp: 0,
+      cpu_percent: 0,
+      cpu_temp_c: null,
+      ram_used_mb: 0, ram_total_mb: 0, ram_percent: 0,
+      disk_used_gb: 0, disk_total_gb: 0, disk_percent: 0,
+      uptime_s: 0,
+      net_rx_kbps: 0, net_tx_kbps: 0,
+      hostname: '', os_name: '',
+    },
   }),
 
   getters: {
@@ -522,6 +537,87 @@ export const useTelemetryStore = defineStore('telemetry', {
       // unrelated parameters (wn, zeta, k_delta, …) to their defaults.
       this.sendCommand('SET_GNC_CONFIG', this.gncConfig)
     },
+
+    // ─── Logs feature ────────────────────────────────────────────────
+    async fetchLogFieldCatalog(force = false) {
+      if (this.logFieldCatalog && !force) return this.logFieldCatalog
+      try {
+        const baseUrl = `${window.location.protocol}//${window.location.hostname}:8000`
+        const resp = await fetch(`${baseUrl}/api/log-fields`)
+        this.logFieldCatalog = await resp.json()
+      } catch (e) {
+        console.error('fetchLogFieldCatalog failed', e)
+      }
+      return this.logFieldCatalog
+    },
+
+    async fsList(path = '', showHidden = false) {
+      const baseUrl = `${window.location.protocol}//${window.location.hostname}:8000`
+      const resp = await fetch(`${baseUrl}/api/fs/list`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path, show_hidden: showHidden }),
+      })
+      return resp.json()
+    },
+
+    async fsMkdir(path) {
+      const baseUrl = `${window.location.protocol}//${window.location.hostname}:8000`
+      const resp = await fetch(`${baseUrl}/api/fs/mkdir`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path }),
+      })
+      return resp.json()
+    },
+
+    async fetchAppLog(lines = 50, offset = 0) {
+      const baseUrl = `${window.location.protocol}//${window.location.hostname}:8000`
+      const resp = await fetch(`${baseUrl}/api/app-log?lines=${lines}&offset=${offset}`)
+      return resp.json()
+    },
+
+    pushLoggingConfig() {
+      this.sendCommand('SET_LOGGING_CONFIG', this.loggingConfig)
+    },
+
+    upsertCsvLogger(cfg) {
+      const arr = [...this.loggingConfig.csv_loggers]
+      const idx = arr.findIndex(c => c.id === cfg.id)
+      if (idx >= 0) arr[idx] = cfg
+      else arr.push(cfg)
+      this.loggingConfig = { ...this.loggingConfig, csv_loggers: arr }
+      this.pushLoggingConfig()
+    },
+
+    upsertJsonBroadcaster(cfg) {
+      const arr = [...this.loggingConfig.json_broadcasters]
+      const idx = arr.findIndex(c => c.id === cfg.id)
+      if (idx >= 0) arr[idx] = cfg
+      else arr.push(cfg)
+      this.loggingConfig = { ...this.loggingConfig, json_broadcasters: arr }
+      this.pushLoggingConfig()
+    },
+
+    removeLogger(id) {
+      this.loggingConfig = {
+        csv_loggers: this.loggingConfig.csv_loggers.filter(c => c.id !== id),
+        json_broadcasters: this.loggingConfig.json_broadcasters.filter(c => c.id !== id),
+      }
+      this.pushLoggingConfig()
+    },
+
+    toggleLogger(id, enabled) {
+      const apply = (list) => list.map(c => c.id === id ? { ...c, enabled } : c)
+      this.loggingConfig = {
+        csv_loggers: apply(this.loggingConfig.csv_loggers),
+        json_broadcasters: apply(this.loggingConfig.json_broadcasters),
+      }
+      this.pushLoggingConfig()
+    },
+
+    startLoggerPreview(id) { this.sendCommand('LOGGER_START_PREVIEW', { id }) },
+    stopLoggerPreview(id)  { this.sendCommand('LOGGER_STOP_PREVIEW',  { id }) },
     
     setSimStartWp(lat, lon) {
       this.simStartWaypoint = { lat, lon }
@@ -997,6 +1093,10 @@ export const useTelemetryStore = defineStore('telemetry', {
                this.gncConfig = data.gnc_config
                localStorage.setItem('gncConfig', JSON.stringify(data.gnc_config))
              }
+             if (data.logging_config) {
+               // Backend is authoritative for logging config.
+               this.loggingConfig = data.logging_config
+             }
           }
           else if (topic === 'gnc/control_debug') {
              this.targetHeading = data.target_heading
@@ -1113,6 +1213,14 @@ export const useTelemetryStore = defineStore('telemetry', {
                console.log(`[Telemetry] Updated ${sensor} status to:`, this.sensorStatus[sensor])
              } else {
                console.warn(`[Telemetry] Unknown sensor: ${sensor}`)
+             }
+          }
+          else if (topic === 'system/monitor') {
+             this.systemMonitor = { ...this.systemMonitor, ...data }
+          }
+          else if (topic === 'logger/preview') {
+             if (data && data.id) {
+               this.loggerPreviews = { ...this.loggerPreviews, [data.id]: data }
              }
           }
 

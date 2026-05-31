@@ -47,6 +47,9 @@ class CommandType(str, Enum):
     SET_HOME_WP = "SET_HOME_WP"
     SET_FAILSAFE_CONFIG = "SET_FAILSAFE_CONFIG"
     SET_GNC_CONFIG = "SET_GNC_CONFIG"
+    SET_LOGGING_CONFIG = "SET_LOGGING_CONFIG"
+    LOGGER_START_PREVIEW = "LOGGER_START_PREVIEW"
+    LOGGER_STOP_PREVIEW = "LOGGER_STOP_PREVIEW"
 
 class Waypoint(BaseModel):
     lat: float
@@ -312,3 +315,62 @@ class RTSimStatus(BaseModel):
     current_wp: int = 0
     total_wp: int = 0
     loops_completed: int = 0
+
+
+# ============================================================================
+# SYSTEM MONITOR (Raspberry / host telemetry)
+# ============================================================================
+
+class SystemMonitorMessage(BaseModel):
+    """Host system telemetry (CPU, RAM, disk, temperature, network).
+    Published on system/monitor at 1 Hz by SystemMonitorProcess.
+    """
+    timestamp: float = Field(..., description="Unix timestamp")
+    cpu_percent: float = Field(0.0, description="CPU usage [%]")
+    cpu_temp_c: float = Field(0.0, description="CPU temperature [°C]; 0 if unavailable")
+    ram_used_mb: float = Field(0.0, description="RAM used [MB]")
+    ram_total_mb: float = Field(0.0, description="RAM total [MB]")
+    ram_percent: float = Field(0.0, description="RAM used [%]")
+    disk_used_gb: float = Field(0.0, description="Root disk used [GB]")
+    disk_total_gb: float = Field(0.0, description="Root disk total [GB]")
+    disk_percent: float = Field(0.0, description="Root disk used [%]")
+    uptime_s: float = Field(0.0, description="System uptime [s]")
+    net_rx_kbps: float = Field(0.0, description="Network RX rate [kbps]")
+    net_tx_kbps: float = Field(0.0, description="Network TX rate [kbps]")
+    hostname: str = Field("", description="Host name")
+    os_name: str = Field("", description="OS family: 'Linux' | 'Windows' | 'Darwin'")
+
+
+# ============================================================================
+# LOGGING (CSV file loggers + JSON network broadcasters)
+# ============================================================================
+
+class CsvLoggerConfig(BaseModel):
+    """One CSV-file logger."""
+    id: str = Field(..., description="Stable unique id")
+    name: str = Field(..., description="Operator-chosen base file name (no extension)")
+    enabled: bool = True
+    frequency_value: float = Field(1.0, gt=0, description="Numeric frequency value")
+    frequency_unit: str = Field("hz", description="'hz' (samples/s) or 's' (period in seconds)")
+    rotation_hours: float = Field(1.0, gt=0, description="Rotate to a new file every N hours")
+    output_path: str = Field(..., description="Output directory (created if missing)")
+    fields: List[str] = Field(default_factory=list, description="Field IDs from LOG_FIELD_CATALOG (timestamp_utc is always prepended)")
+
+
+class JsonBroadcasterConfig(BaseModel):
+    """One JSON network broadcaster (UDP or TCP server)."""
+    id: str = Field(..., description="Stable unique id")
+    name: str = Field(..., description="Operator-chosen name (label only)")
+    enabled: bool = True
+    frequency_value: float = Field(1.0, gt=0, description="Numeric frequency value")
+    frequency_unit: str = Field("hz", description="'hz' or 's'")
+    protocol: str = Field("udp", description="'udp' (sendto host:port) or 'tcp' (server bound to host:port)")
+    host: str = Field("127.0.0.1", description="UDP destination host or TCP bind address")
+    port: int = Field(9999, gt=0, lt=65536, description="UDP destination port or TCP listen port")
+    fields: List[str] = Field(default_factory=list, description="Field IDs from LOG_FIELD_CATALOG (timestamp_utc is always included)")
+
+
+class LoggingConfig(BaseModel):
+    """All loggers + broadcasters managed by LoggerProcess."""
+    csv_loggers: List[CsvLoggerConfig] = Field(default_factory=list)
+    json_broadcasters: List[JsonBroadcasterConfig] = Field(default_factory=list)

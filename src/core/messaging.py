@@ -24,6 +24,8 @@ class Topics(str, Enum):
     SIM_STATUS = "sim/status"
     COMMS_LINK = "comms/link"          # frontend↔backend WS liveness (web_server → GNC)
     GNC_SYNC = "gnc/internal_sync"     # GNC → Manager state-sync (failsafe-driven)
+    SYSTEM_MONITOR = "system/monitor"  # Raspberry/host CPU, RAM, disk, temperature (1 Hz)
+    LOGGER_PREVIEW = "logger/preview"  # Per-logger live preview rows (subtopic = logger id)
 
 
 # Per-topic high-water-marks. Defaults to 200 (~10 s at 20 Hz). Heartbeats use a
@@ -32,6 +34,8 @@ _TOPIC_HWM = {
     "system/status": 10,
     "comms/link":    10,
     "gnc/internal_sync": 50,
+    "system/monitor": 10,
+    "logger/preview": 20,
 }
 
 def _hwm_for(topic_value: str) -> int:

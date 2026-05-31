@@ -52,6 +52,7 @@ import PowerView from './views/PowerView.vue'
 import ImuView from './views/ImuView.vue'
 import SimView from './views/SimView.vue'
 import SettingsView from './views/SettingsView.vue'
+import LogsView from './views/LogsView.vue'
 
 const telemetry = useTelemetryStore()
 
@@ -70,6 +71,7 @@ const tabs = [
   { id: 'power', name: 'Power', component: PowerView },
   { id: 'imu', name: 'IMU', component: ImuView },
   { id: 'sim', name: 'Simulation', component: SimView },
+  { id: 'logs', name: 'Logs', component: LogsView },
   { id: 'settings', name: 'Settings', component: SettingsView }
 ]
 

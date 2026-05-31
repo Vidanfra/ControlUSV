@@ -92,6 +92,8 @@ _ZMQ_TOPICS = [
     Topics.CONTROL_CMD,
     Topics.SIM_STATUS,
     Topics.COMMS_LINK,
+    Topics.SYSTEM_MONITOR,
+    Topics.LOGGER_PREVIEW,
 ]
 
 async def consume_zmq():
@@ -511,6 +513,138 @@ async def upload_waypoints(file: UploadFile = File(...)):
     except Exception as e:
         logger.error(f"CSV upload failed: {e}")
         return {"status": "error", "message": str(e)}
+
+
+# --- Logs feature: catalog + filesystem browser ---
+from src.comms.log_fields import LOG_FIELD_GROUPS
+from pydantic import BaseModel
+import platform
+
+
+@app.get("/api/log-fields")
+async def get_log_fields():
+    """Return the curated log-field catalog used by the Logs tab."""
+    return {"groups": LOG_FIELD_GROUPS, "os": platform.system()}
+
+
+class FsListRequest(BaseModel):
+    path: str = ""
+    show_hidden: bool = False
+
+
+@app.post("/api/fs/list")
+async def fs_list(req: FsListRequest):
+    """
+    List contents of a directory on the backend host. Returns parent
+    directory, entries (with name/is_dir/size/mtime), and the host OS so
+    the frontend can render drive letters on Windows vs / on Linux.
+    """
+    try:
+        os_name = platform.system()
+        path = req.path or ("" if os_name == "Windows" else "/")
+
+        # Root view on Windows: enumerate drive letters
+        if os_name == "Windows" and (not path or path in ("/", "\\")):
+            import string
+            entries = []
+            for letter in string.ascii_uppercase:
+                root = f"{letter}:\\"
+                if os.path.exists(root):
+                    entries.append({"name": root, "is_dir": True, "size": 0, "mtime": 0})
+            return {"path": "", "parent": "", "entries": entries, "os": os_name}
+
+        if not path:
+            path = "/"
+        path = os.path.abspath(path)
+        if not os.path.isdir(path):
+            return {"status": "error", "message": f"not a directory: {path}"}
+
+        entries = []
+        try:
+            for name in sorted(os.listdir(path)):
+                if not req.show_hidden and name.startswith("."):
+                    continue
+                full = os.path.join(path, name)
+                try:
+                    st = os.stat(full)
+                    entries.append({
+                        "name": name,
+                        "is_dir": os.path.isdir(full),
+                        "size": st.st_size,
+                        "mtime": st.st_mtime,
+                    })
+                except Exception:
+                    entries.append({"name": name, "is_dir": False, "size": 0, "mtime": 0})
+        except PermissionError as e:
+            return {"status": "error", "message": f"permission denied: {e}"}
+
+        parent = os.path.dirname(path)
+        # Windows: parent of a drive root is the drive-letter selector
+        if os_name == "Windows" and len(path) <= 3:
+            parent = ""
+
+        return {"path": path, "parent": parent, "entries": entries, "os": os_name}
+    except Exception as e:
+        logger.error(f"fs_list failed: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+class FsMkdirRequest(BaseModel):
+    path: str
+
+
+@app.post("/api/fs/mkdir")
+async def fs_mkdir(req: FsMkdirRequest):
+    """Create a directory (recursive)."""
+    try:
+        os.makedirs(req.path, exist_ok=True)
+        return {"status": "ok", "path": os.path.abspath(req.path)}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/app-log")
+async def get_app_log(lines: int = 50, offset: int = 0):
+    """
+    Return the tail of the loguru log file (logs/usv_control.log).
+
+    `lines`  : number of lines to return (clamped to [1, 5000])
+    `offset` : how many *trailing* lines to SKIP (used by the "Load more"
+               button — pass the count already shown to walk further back).
+    """
+    log_path = os.path.join(os.getcwd(), "logs", "usv_control.log")
+    if not os.path.exists(log_path):
+        return {"status": "error", "message": "log file not found", "lines": []}
+
+    lines = max(1, min(int(lines), 5000))
+    offset = max(0, int(offset))
+
+    try:
+        size = os.path.getsize(log_path)
+        # Read at most the last 4 MB — more than enough for several thousand lines
+        read_bytes = min(size, 4 * 1024 * 1024)
+        with open(log_path, "rb") as fh:
+            fh.seek(size - read_bytes)
+            buf = fh.read()
+        all_lines = buf.decode("utf-8", errors="replace").splitlines()
+        # all_lines[-1] is the newest line
+        total = len(all_lines)
+        end = total - offset                  # exclusive
+        start = max(0, end - lines)
+        chunk = all_lines[start:end]
+        return {
+            "status": "ok",
+            "path": log_path,
+            "size_bytes": size,
+            "total_buffered_lines": total,
+            "returned_lines": len(chunk),
+            "offset": offset,
+            "has_more": start > 0,
+            "lines": chunk,
+        }
+    except Exception as e:
+        logger.error(f"get_app_log failed: {e}")
+        return {"status": "error", "message": str(e), "lines": []}
 
 
 # --- Static Files ---

@@ -10,7 +10,9 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
 from src.core.config import settings
 from src.core.process import setup_logging
 from src.drivers.process import HALProcess
+from src.drivers.system_monitor import SystemMonitorProcess
 from src.comms.manager import CommsProcess
+from src.comms.logger_process import LoggerProcess
 from src.manager.process import ManagerProcess
 from src.gnc.process import GNCProcess
 from src.gnc.navigation import NavigationProcess
@@ -38,6 +40,8 @@ _CATALOGUE = [
     (HALProcess,        dict(name="HALService",        loop_rate_hz=settings.LOOP_RATES["hal"]),     True),
     (NavigationProcess, dict(name="NavigationService", loop_rate_hz=settings.LOOP_RATES["gnc"]),     True),
     (GNCProcess,        dict(name="GNCService",        loop_rate_hz=settings.LOOP_RATES["gnc"]),     True),
+    (SystemMonitorProcess, dict(name="SystemMonitorService", loop_rate_hz=1),                        False),
+    (LoggerProcess,     dict(name="LoggerService",     loop_rate_hz=50),                            False),
 ]
 
 def _spawn(cls, kwargs):

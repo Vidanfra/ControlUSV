@@ -1,6 +1,9 @@
 from src.core.process import ServiceProcess
 from src.core.messaging import PubSubBroker, Publisher, Subscriber, Topics
-from src.core.models import CommandMessage, CommandType, USVState, VehicleMode, FailsafeConfig, GncConfig
+from src.core.models import (
+    CommandMessage, CommandType, USVState, VehicleMode,
+    FailsafeConfig, GncConfig, LoggingConfig,
+)
 from src.core.config import settings
 from loguru import logger
 import json
@@ -21,6 +24,7 @@ class ManagerProcess(ServiceProcess):
         # 2. Publishers
         self.status_pub = Publisher(Topics.SYSTEM_STATUS)
         self.control_cmd_pub = Publisher(Topics.CONTROL_CMD)
+        self.sync_pub = Publisher(Topics.GNC_SYNC)
         
         # 3. State
         self.is_armed = False
@@ -43,10 +47,22 @@ class ManagerProcess(ServiceProcess):
         self.home_wp = None  # {lat, lon}
         self.failsafe_config = FailsafeConfig()
         self.gnc_config = GncConfig()
+        self.logging_config = LoggingConfig()
         self.gnss_fix_type = 0
 
         # Load previously saved user settings (overrides defaults above)
         self._load_settings()
+
+        # Publish loaded logging_config so LoggerProcess starts with the right
+        # state after a backend restart. Tiny delay so subscribers attach first.
+        time.sleep(0.5)
+        try:
+            self.sync_pub.publish({
+                "op": "logging_config",
+                "logging_config": self.logging_config.model_dump(),
+            })
+        except Exception:
+            pass
 
         logger.info("Manager Process Initialized. Waiting for commands...")
 
@@ -96,6 +112,7 @@ class ManagerProcess(ServiceProcess):
             "home_wp": self.home_wp,
             "failsafe_config": self.failsafe_config.model_dump(),
             "gnc_config": self.gnc_config.model_dump(),
+            "logging_config": self.logging_config.model_dump(),
             "system_status": "ACTIVE"
         }
         self.status_pub.publish(status_payload)
@@ -221,6 +238,23 @@ class ManagerProcess(ServiceProcess):
                 except Exception as e:
                     logger.error(f"Invalid GNC config: {e}")
 
+            elif cmd.type == CommandType.SET_LOGGING_CONFIG:
+                try:
+                    self.logging_config = LoggingConfig(**(cmd.payload or {}))
+                    logger.info(
+                        f"Logging config updated: "
+                        f"csv={len(self.logging_config.csv_loggers)}, "
+                        f"json={len(self.logging_config.json_broadcasters)}"
+                    )
+                    self._save_settings()
+                    # Notify LoggerProcess via GNC_SYNC
+                    self.sync_pub.publish({
+                        "op": "logging_config",
+                        "logging_config": self.logging_config.model_dump(),
+                    })
+                except Exception as e:
+                    logger.error(f"Invalid logging config: {e}")
+
             elif cmd.type == CommandType.START_RT_SIM:
                 self.sim_mode = 'SIMULATION'
                 self.is_armed = False   # Real motors must never run during simulation
@@ -262,6 +296,9 @@ class ManagerProcess(ServiceProcess):
             self.station_active = False
             self.wp_route_active = True
             logger.warning("Manager: GNC reports FAILSAFE_RETURN_HOME \u2014 WP route active")
+        elif op == 'logging_config':
+            # Manager publishes this for LoggerProcess; ignore the echo of our own message.
+            pass
         else:
             logger.warning(f"Manager: unknown GNC sync op '{op}'")
 
@@ -296,6 +333,11 @@ class ManagerProcess(ServiceProcess):
                     self.station_reaching_radius = data['station_reaching_radius']
                 if 'station_radius' in data:
                     self.station_radius = data['station_radius']
+                if 'logging_config' in data:
+                    try:
+                        self.logging_config = LoggingConfig(**data['logging_config'])
+                    except Exception as e:
+                        logger.warning(f"Manager: invalid stored logging_config ({e})")
                 logger.info(f"Manager: settings loaded from {_SETTINGS_FILE}")
         except Exception as e:
             logger.warning(f"Manager: could not load settings ({e}), using defaults")
@@ -315,6 +357,7 @@ class ManagerProcess(ServiceProcess):
                     'station_wp': self.station_wp,
                     'station_reaching_radius': self.station_reaching_radius,
                     'station_radius': self.station_radius,
+                    'logging_config': self.logging_config.model_dump(),
                 }, f, indent=2)
         except Exception as e:
             logger.warning(f"Manager: could not save settings: {e}")
