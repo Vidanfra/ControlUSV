@@ -149,6 +149,15 @@ class GNCProcess(ServiceProcess):
         self.wp_route_loops = 0
         self.wp_route_forward = True
 
+        # Navigation metrics (ETT / ETA / KP)
+        self._route_original_ned = []     # original forward-order [{N, E}] for KP
+        self._route_active_ned = []       # current execution-order [{N, E}]
+        self._route_active_cum_dist = []  # cumulative distance array [0, d01, ...]
+        self._route_active_total_dist = 0.0
+
+        # SOG history for 10-second averaging (for ETT/ETA calculations)
+        self._sog_history = []  # [(timestamp, sog_ms), ...]
+
         # Station keeping state (real mode)
         self.station_active = False
         self.station_keeper = None
@@ -398,6 +407,7 @@ class GNCProcess(ServiceProcess):
         elif cmd.type == CommandType.START_WP_ROUTE:
             self._start_wp_route(cmd.payload)
 
+
         elif cmd.type == CommandType.STOP_WP_ROUTE:
             self._stop_wp_route()
 
@@ -549,8 +559,13 @@ class GNCProcess(ServiceProcess):
                 tau_x_cruise=debug.get('tau_X_cruise', 0.0),
                 v_cruise=debug.get('v_cruise', 0.0),
                 wp_index=debug.get('wp_index', 0),
-                dist_to_wp=debug.get('dist_to_next', 0.0),
+                dist_to_wp=debug.get('dist_to_next', debug.get('station_dist', 0.0)),
                 ref_speed_kn=ref_speed_kn,
+                ett_next_wp=debug.get('ett_next_wp', -1.0),
+                eta_next_wp=debug.get('eta_next_wp', 0.0),
+                ett_route_end=debug.get('ett_route_end', -1.0),
+                eta_route_end=debug.get('eta_route_end', 0.0),
+                kp_m=debug.get('kp_m', 0.0),
             ).model_dump()
         )
 
@@ -579,6 +594,9 @@ class GNCProcess(ServiceProcess):
 
         waypoints = [Waypoint(**wp) if isinstance(wp, dict) else wp for wp in waypoints_raw]
 
+        # Save original forward order before direction reversal (used for KP chainage)
+        _original_wps = list(waypoints)
+
         if direction == 'reverse':
             waypoints = list(reversed(waypoints))
             self.wp_route_forward = False
@@ -599,6 +617,17 @@ class GNCProcess(ServiceProcess):
         for wp in waypoints:
             N, E = latlon_to_ned(wp.lat, wp.lon, lat0, lon0)
             wp_ned.append({'N': N, 'E': E, 'radius': wp.radius, 'speed': wp.speed})
+
+        # Navigation metrics: original (for KP) and active (for ETT/ETA) route geometry
+        self._route_original_ned = []
+        for wp in _original_wps:
+            N_o, E_o = latlon_to_ned(wp.lat, wp.lon, lat0, lon0)
+            self._route_original_ned.append({'N': N_o, 'E': E_o})
+        self._route_active_ned = [{'N': w['N'], 'E': w['E']} for w in wp_ned]
+        self._route_active_cum_dist = self._compute_cum_dist(self._route_active_ned)
+        self._route_active_total_dist = (
+            self._route_active_cum_dist[-1] if self._route_active_cum_dist else 0.0
+        )
 
         # Create controller and load waypoints
         self.controller = _make_default_controller(self.gnc_config)
@@ -658,6 +687,39 @@ class GNCProcess(ServiceProcess):
         h = 1.0 / settings.LOOP_RATES.get('gnc', 20)
 
         n1, n2, debug = self.controller.step(eta, nu, h)
+
+        # ── Navigation metrics (ETT / ETA / KP) ──────────────────────────────────────
+        # Track SOG for 10-second averaging
+        self._sog_history.append((now, self.sog_ms))
+        avg_sog   = self._get_average_sog(now)
+        
+        dist_next = debug.get('dist_to_next', 0.0)
+        wp_idx    = debug.get('wp_index', 0)    # FROM index in bridge route
+        if avg_sog > 0.1:
+            ett_next = dist_next / avg_sog
+            eta_next = now + ett_next
+        else:
+            ett_next, eta_next = -1.0, 0.0
+
+        if (self._route_active_cum_dist and self._route_active_total_dist > 0
+                and wp_idx < len(self._route_active_cum_dist)):
+            dist_beyond = max(
+                self._route_active_total_dist - self._route_active_cum_dist[wp_idx], 0.0
+            )
+            remaining = dist_next + dist_beyond
+            ett_end   = remaining / avg_sog if avg_sog > 0.1 else -1.0
+            eta_end   = now + ett_end if ett_end >= 0 else 0.0
+        else:
+            ett_end, eta_end = -1.0, 0.0
+
+        debug.update({
+            'ett_next_wp':   ett_next,
+            'eta_next_wp':   eta_next,
+            'ett_route_end': ett_end,
+            'eta_route_end': eta_end,
+            'kp_m':          self._compute_kp(N, E),
+        })
+
         self._publish_control(n1, n2, debug, now, nu=nu)
 
         # Check mission completion
@@ -703,6 +765,13 @@ class GNCProcess(ServiceProcess):
             for wp in self.wp_route_waypoints:
                 N, E = latlon_to_ned(wp.lat, wp.lon, lat0, lon0)
                 wp_ned.append({'N': N, 'E': E, 'radius': wp.radius, 'speed': wp.speed})
+
+            # Update active route tracking for reversed direction
+            self._route_active_ned = [{'N': w['N'], 'E': w['E']} for w in wp_ned]
+            self._route_active_cum_dist = self._compute_cum_dist(self._route_active_ned)
+            self._route_active_total_dist = (
+                self._route_active_cum_dist[-1] if self._route_active_cum_dist else 0.0
+            )
 
             N_cur, E_cur = latlon_to_ned(self.lat, self.lon, lat0, lon0)
             current_wp = {'N': N_cur, 'E': E_cur,
@@ -814,7 +883,85 @@ class GNCProcess(ServiceProcess):
         h = 1.0 / settings.LOOP_RATES.get('gnc', 20)
 
         n1, n2, debug = self.station_keeper.step(eta, nu, h)
+
+        # ── ETT / ETA to station WP ────────────────────────────────────────────────
+        # Track SOG for 10-second averaging
+        self._sog_history.append((now, self.sog_ms))
+        avg_sog   = self._get_average_sog(now)
+        
+        dist_next = debug.get('dist_to_next', debug.get('station_dist', 0.0))
+        if avg_sog > 0.1:
+            ett_next = dist_next / avg_sog
+            eta_next = now + ett_next
+        else:
+            ett_next, eta_next = -1.0, 0.0
+        debug.update({
+            'ett_next_wp':   ett_next,
+            'eta_next_wp':   eta_next,
+            'ett_route_end': -1.0,
+            'eta_route_end': 0.0,
+            'kp_m':          0.0,
+        })
+
         self._publish_control(n1, n2, debug, now, nu=nu)
+
+    # ================================================================
+    #  NAVIGATION METRIC HELPERS (ETT / ETA / KP / AVG SOG)
+    # ================================================================
+
+    def _get_average_sog(self, now):
+        """
+        Return average SOG from the last 10 seconds.
+        Prunes old entries from _sog_history.
+        Returns 0.0 if no history available.
+        """
+        WINDOW_AVG_SOG_SECONDS = 40.0
+        cutoff = now - WINDOW_AVG_SOG_SECONDS
+        self._sog_history = [(t, s) for t, s in self._sog_history if t >= cutoff]
+        if not self._sog_history:
+            return 0.0
+        return sum(s for _, s in self._sog_history) / len(self._sog_history)
+
+    def _compute_cum_dist(self, route_ned):
+        """Return cumulative distances [0, d01, d01+d12, ...] for a list of {N,E} dicts."""
+        cum = [0.0]
+        for i in range(1, len(route_ned)):
+            dN = route_ned[i]['N'] - route_ned[i-1]['N']
+            dE = route_ned[i]['E'] - route_ned[i-1]['E']
+            cum.append(cum[-1] + math.sqrt(dN*dN + dE*dE))
+        return cum
+
+    def _compute_kp(self, pos_N, pos_E):
+        """
+        Project (pos_N, pos_E) onto the original forward route and return
+        chainage in metres (KP 0 = route start, KP max = route end).
+        The KP is always in the forward direction regardless of route execution
+        direction (i.e. a reversed route still shows KP increasing from 0).
+        """
+        route = self._route_original_ned
+        if not route or len(route) < 2:
+            return 0.0
+        best_kp = 0.0
+        min_dist_sq = float('inf')
+        cum = 0.0
+        for i in range(len(route) - 1):
+            aN, aE = route[i]['N'], route[i]['E']
+            bN, bE = route[i+1]['N'], route[i+1]['E']
+            dN, dE = bN - aN, bE - aE
+            seg_len_sq = dN*dN + dE*dE
+            if seg_len_sq < 1e-8:
+                continue
+            seg_len = math.sqrt(seg_len_sq)
+            t = ((pos_N - aN) * dN + (pos_E - aE) * dE) / seg_len_sq
+            t = max(0.0, min(1.0, t))
+            proj_N = aN + t * dN
+            proj_E = aE + t * dE
+            dist_sq = (pos_N - proj_N)**2 + (pos_E - proj_E)**2
+            if dist_sq < min_dist_sq:
+                min_dist_sq = dist_sq
+                best_kp = cum + t * seg_len
+            cum += seg_len
+        return best_kp
 
     # ================================================================
     #  FAIL-SAFE MONITORING

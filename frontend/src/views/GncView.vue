@@ -26,61 +26,91 @@
     
     <div class="sidebar" :class="{ 'sim-mode': telemetry.dataSource === 'sim' }">
       <h3>GNC Variables</h3>
-      
-      <div class="stat-box">
-        <h4>Actual Heading</h4>
-        <div class="value">{{ degrees(telemetry.heading) }}&deg;</div>
-      </div>
-      
-      <div class="stat-box">
-        <h4>Target Heading</h4>
-        <div class="value">{{ degrees(telemetry.targetHeading) }}&deg;</div>
-      </div>
-      
-      <div class="stat-box">
-        <h4>Heading Error</h4>
-        <div class="value">{{ degrees(telemetry.headingError) }}&deg;</div>
+
+      <div class="stat-group">
+        <div class="stat-box">
+          <h4>Actual Heading</h4>
+          <div class="value">{{ degrees(telemetry.heading) }}&deg;</div>
+        </div>
+        <div class="stat-box">
+          <h4>Target Heading</h4>
+          <div class="value">{{ degrees(telemetry.targetHeading) }}&deg;</div>
+        </div>
+        <div class="stat-box">
+          <h4>Heading Error</h4>
+          <div class="value">{{ degrees(telemetry.headingError) }}&deg;</div>
+        </div>
+        <div class="stat-box">
+          <h4>COG</h4>
+          <div class="value">{{ (telemetry.gnssCog || 0).toFixed(1) }}&deg;</div>
+        </div>
+        <div class="stat-box">
+          <h4>SOG</h4>
+          <div class="value">{{ (telemetry.gnssSogKnots || 0).toFixed(2) }} kn</div>
+        </div>
+        <div class="stat-box">
+          <h4>Reference Speed</h4>
+          <div class="value">{{ (telemetry.refSpeedKn || 0).toFixed(2) }} kn</div>
+        </div>
+        <div class="stat-box">
+          <h4>Cross Track Error</h4>
+          <div class="value">{{ telemetry.crossTrackError.toFixed(2) }} m</div>
+        </div>
+        <div class="stat-box">
+          <h4>Motor Port</h4>
+          <div class="value motor-port">{{ telemetry.motorPort.toFixed(1) }}%</div>
+        </div>
+        <div class="stat-box">
+          <h4>Motor Starboard</h4>
+          <div class="value motor-starboard">{{ telemetry.motorStarboard.toFixed(1) }}%</div>
+        </div>
+        <div class="stat-box">
+          <h4>Distance to WP</h4>
+          <div class="value">{{ (telemetry.distToWp || 0).toFixed(1) }} m</div>
+        </div>
+        <div class="stat-box">
+          <h4>Target WP</h4>
+          <div class="value">{{ targetWpLabel }}</div>
+        </div>
       </div>
 
-      <div class="stat-box">
-        <h4>COG</h4>
-        <div class="value">{{ (telemetry.gnssCog || 0).toFixed(1) }}&deg;</div>
-      </div>
+      <!-- Waypoint navigation metrics (station or WP route active) -->
+      <template v-if="isAutoActive">
+        <h3 class="mt-3">Waypoint</h3>
+        <div class="stat-group">
+          <div class="stat-box">
+            <h4>ETT WP</h4>
+            <div class="value">{{ formatEtt(telemetry.ettNextWp) }}</div>
+          </div>
+          <div class="stat-box">
+            <h4>ETA WP</h4>
+            <div class="value">{{ formatEta(telemetry.etaNextWp) }}</div>
+          </div>
+        </div>
+      </template>
 
-      <div class="stat-box">
-        <h4>SOG</h4>
-        <div class="value">{{ (telemetry.gnssSogKnots || 0).toFixed(2) }} kn</div>
-      </div>
-
-      <div class="stat-box">
-        <h4>Reference Speed</h4>
-        <div class="value">{{ (telemetry.refSpeedKn || 0).toFixed(2) }} kn</div>
-      </div>
-      
-      <div class="stat-box">
-        <h4>Cross Track Error</h4>
-        <div class="value">{{ telemetry.crossTrackError.toFixed(2) }} m</div>
-      </div>
-      
-      <div class="stat-box">
-        <h4>Motor Port</h4>
-        <div class="value motor-port">{{ telemetry.motorPort.toFixed(1) }}%</div>
-      </div>
-      
-      <div class="stat-box">
-        <h4>Motor Starboard</h4>
-        <div class="value motor-starboard">{{ telemetry.motorStarboard.toFixed(1) }}%</div>
-      </div>
-
-      <div class="stat-box">
-        <h4>Distance to WP</h4>
-        <div class="value">{{ (telemetry.distToWp || 0).toFixed(1) }} m</div>
-      </div>
-
-      <div class="stat-box">
-        <h4>Target WP</h4>
-        <div class="value">{{ targetWpLabel }}</div>
-      </div>
+      <!-- Route metrics (WP route only) -->
+      <template v-if="isRouteActive">
+        <h3 class="mt-3">Route</h3>
+        <div class="stat-group">
+          <div class="stat-box">
+            <h4>ETT End</h4>
+            <div class="value">{{ formatEtt(telemetry.ettRouteEnd) }}</div>
+          </div>
+          <div class="stat-box">
+            <h4>ETA End</h4>
+            <div class="value">{{ formatEta(telemetry.etaRouteEnd) }}</div>
+          </div>
+          <div class="stat-box">
+            <h4>KP Chainage</h4>
+            <div class="value">{{ formatKp(telemetry.kpM) }}</div>
+          </div>
+          <div class="stat-box">
+            <h4>DCC (CTE)</h4>
+            <div class="value">{{ telemetry.crossTrackError.toFixed(2) }} m</div>
+          </div>
+        </div>
+      </template>
     </div>
   </div>
 </template>
@@ -113,6 +143,33 @@ ChartJS.register(
 const telemetry = useTelemetryStore()
 
 const simSuffix = () => telemetry.dataSource === 'sim' ? ' (SIM)' : ''
+
+// Conditional section visibility
+const isAutoActive  = computed(() => telemetry.stationActive || telemetry.wpRouteActive)
+const isRouteActive = computed(() => telemetry.wpRouteActive)
+
+// ETT / ETA / KP formatters (mirrors Dashboard.vue)
+function formatEtt(secs) {
+  if (secs < 0) return '\u2014'
+  if (secs < 60) return `${Math.round(secs)}s`
+  const m = Math.floor(secs / 60)
+  const s = Math.floor(secs % 60)
+  if (m < 60) return `${m}m ${String(s).padStart(2, '0')}s`
+  const h = Math.floor(m / 60)
+  return `${h}h ${String(m % 60).padStart(2, '0')}m`
+}
+
+function formatEta(ts) {
+  if (!ts || ts <= 0) return '\u2014'
+  return new Date(ts * 1000).toLocaleTimeString('en-GB', {
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  })
+}
+
+function formatKp(m) {
+  if (m < 100) return `${Math.round(m)} m`
+  return `${(m / 1000).toFixed(3)} km`
+}
 
 // State
 const timeWindow = ref(60) // seconds
@@ -389,24 +446,35 @@ const speedChartData = computed(() => ({
   max-width: 350px;
   background-color: #1a1a1a;
   border-left: 2px solid #333;
-  padding: 15px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  overflow: hidden;
+  gap: 6px;
+  overflow-y: auto;
 }
 
 .sidebar h3 {
   margin-top: 0;
-  margin-bottom: 5px;
+  margin-bottom: 3px;
   color: #FFA500;
   border-bottom: 1px solid #333;
-  padding-bottom: 10px;
+  padding-bottom: 6px;
+  font-size: 0.85rem;
+}
+
+.mt-3 {
+  margin-top: 10px !important;
+}
+
+.stat-group {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
 }
 
 .stat-box {
   background-color: #252525;
-  padding: 12px 15px;
+  padding: 8px 10px;
   border-radius: 6px;
   display: flex;
   justify-content: space-between;
@@ -417,17 +485,15 @@ const speedChartData = computed(() => ({
 .stat-box h4 {
   margin: 0;
   color: #aaa;
-  font-size: 0.85em;
+  font-size: 0.75em;
   text-transform: uppercase;
   letter-spacing: 1px;
-  line-height: 1.3;
   flex: 1;
-  padding-right: 10px;
-  word-wrap: break-word;
+  padding-right: 8px;
 }
 
 .value {
-  font-size: 1.4em;
+  font-size: 1em;
   font-weight: bold;
   color: white;
   white-space: nowrap;

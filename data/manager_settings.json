@@ -21,28 +21,28 @@
     "ins_action": "emergency_stop"
   },
   "home_wp": {
-    "lat": 39.32369256566997,
-    "lon": -0.5816701083955138
+    "lat": 39.323652482071225,
+    "lon": -0.583101446616098
   },
   "wp_route_waypoints": [
     {
-      "lat": 39.32349957927315,
-      "lon": -0.5854820419777695,
+      "lat": 39.32477707115012,
+      "lon": -0.5826623517797884,
       "radius": 5,
       "speed": 1
     },
     {
-      "lat": 39.32327873516027,
-      "lon": -0.5782022346809583,
+      "lat": 39.3229434598193,
+      "lon": -0.5790999647771855,
       "radius": 5,
       "speed": 1
     }
   ],
-  "wp_route_direction": "reverse",
+  "wp_route_direction": "forward",
   "wp_route_completion": "stop",
   "station_wp": {
-    "lat": 39.323558529267814,
-    "lon": -0.5830491281112131
+    "lat": 39.3239667813352,
+    "lon": -0.5825883937068852
   },
   "station_reaching_radius": 3,
   "station_radius": 10

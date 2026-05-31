@@ -383,9 +383,9 @@ onMounted(() => {
         source: 'home-wp',
         paint: {
           'circle-radius': 8,
-          'circle-color': '#AB47BC',
+          'circle-color': '#1b5e20',
           'circle-stroke-width': 3,
-          'circle-stroke-color': '#fff'
+          'circle-stroke-color': '#a5d6a7'
         }
       })
 
@@ -958,7 +958,7 @@ const updateTrail = () => {
     })
 
     // Change trail color based on sim state
-    const trailColor = telemetry.rtSimActive ? '#FF8C00' : '#FF0000'
+    const trailColor = '#FF0000'
     map.setPaintProperty('trail-line', 'line-color', trailColor)
 }
 

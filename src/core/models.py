@@ -217,6 +217,11 @@ class ControlDebugMessage(BaseModel):
     wp_index: int = Field(0, description="Current (from) waypoint index")
     dist_to_wp: float = Field(0.0, description="Distance to next waypoint [m]")
     ref_speed_kn: float = Field(0.0, description="Reference speed from tau_x_eff drag inversion [kn]")
+    ett_next_wp: float = Field(-1.0, description="Estimated travel time to next WP [s]; -1 if unavailable")
+    eta_next_wp: float = Field(0.0, description="ETA at next WP [Unix timestamp]; 0 if unavailable")
+    ett_route_end: float = Field(-1.0, description="Estimated travel time to end of route [s]; -1 if not in WP route mode")
+    eta_route_end: float = Field(0.0, description="ETA at end of route [Unix timestamp]; 0 if not applicable")
+    kp_m: float = Field(0.0, description="Chainage along the original forward route [m]")
 
 
 # ============================================================================

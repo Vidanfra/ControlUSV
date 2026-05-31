@@ -89,6 +89,13 @@ export const useTelemetryStore = defineStore('telemetry', {
     tauXEff: 0.0,
     refSpeedKn: 0.0,
 
+    // Navigation metrics (ETT / ETA / KP)
+    ettNextWp: -1.0,       // seconds to next WP; -1 = unavailable
+    etaNextWp: 0.0,        // Unix timestamp; 0 = unavailable
+    ettRouteEnd: -1.0,     // seconds to end of route; -1 = not in route mode
+    etaRouteEnd: 0.0,      // Unix timestamp
+    kpM: 0.0,              // chainage along original forward route [m]
+
     // Power additions
     batteryVoltage: 0.0,
     batteryCurrent: 0.0,
@@ -995,6 +1002,11 @@ export const useTelemetryStore = defineStore('telemetry', {
              this.targetHeading = data.target_heading
              this.headingError = data.heading_error
              this.crossTrackError = data.cross_track_error
+             this.ettNextWp   = data.ett_next_wp   ?? -1
+             this.etaNextWp   = data.eta_next_wp   ?? 0
+             this.ettRouteEnd = data.ett_route_end ?? -1
+             this.etaRouteEnd = data.eta_route_end ?? 0
+             this.kpM         = data.kp_m          ?? 0
              // Cache velocity/accel/tau for chart history
              this._lastGncDebug = {
                surgeVel:    data.surge_vel    ?? 0,
