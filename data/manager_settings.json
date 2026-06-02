@@ -243,5 +243,17 @@
         ]
       }
     ]
+  },
+  "relay_config": {
+    "names": [
+      "Communiction Box",
+      "Payload 1",
+      "Payload 2"
+    ],
+    "states": [
+      1,
+      1,
+      1
+    ]
   }
 }

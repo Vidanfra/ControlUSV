@@ -2,8 +2,10 @@ from src.core.process import ServiceProcess
 from src.core.messaging import PubSubBroker, Publisher, Subscriber, Topics
 from src.core.models import (
     CommandMessage, CommandType, USVState, VehicleMode,
-    FailsafeConfig, GncConfig, LoggingConfig,
+    FailsafeConfig, GncConfig, LoggingConfig, RelayConfig,
 )
+
+_RELAY_RESTART_SECONDS = 5.0   # pulse width for the "Restart" button
 from src.core.config import settings
 from loguru import logger
 import json
@@ -48,6 +50,7 @@ class ManagerProcess(ServiceProcess):
         self.failsafe_config = FailsafeConfig()
         self.gnc_config = GncConfig()
         self.logging_config = LoggingConfig()
+        self.relay_config = RelayConfig()
         self.gnss_fix_type = 0
 
         # Load previously saved user settings (overrides defaults above)
@@ -95,6 +98,9 @@ class ManagerProcess(ServiceProcess):
             self._handle_gnc_sync(data)
 
         # 4. Publish System Status Heartbeat
+        # Tick any pending relay restart pulses so the next heartbeat reflects
+        # the post-pulse state (relay re-CLOSED after 5 s).
+        self._tick_relay_restart(time.time())
         status_payload = {
             "timestamp": time.time(),
             "is_armed": self.is_armed,
@@ -113,6 +119,7 @@ class ManagerProcess(ServiceProcess):
             "failsafe_config": self.failsafe_config.model_dump(),
             "gnc_config": self.gnc_config.model_dump(),
             "logging_config": self.logging_config.model_dump(),
+            "relay_config": self.relay_config.model_dump(),
             "system_status": "ACTIVE"
         }
         self.status_pub.publish(status_payload)
@@ -264,8 +271,84 @@ class ManagerProcess(ServiceProcess):
                 self.sim_mode = 'REAL'
                 logger.info("Manager: RT Simulation STOPPED — back to REAL mode")
 
+            elif cmd.type == CommandType.SET_RELAY:
+                self._apply_set_relay(cmd.payload or {})
+
+            elif cmd.type == CommandType.RESTART_RELAY:
+                self._apply_restart_relay(cmd.payload or {})
+
+            elif cmd.type == CommandType.SET_RELAY_NAMES:
+                self._apply_set_relay_names(cmd.payload or {})
+
         except Exception as e:
             logger.error(f"Failed to handle command: {e}")
+
+    # ----------------------------------------------------------------
+    #  Relay control (ESP32 R1 / R2 / R3)
+    # ----------------------------------------------------------------
+
+    def _valid_idx(self, idx) -> bool:
+        return isinstance(idx, int) and 0 <= idx < len(self.relay_config.states)
+
+    def _apply_set_relay(self, payload: dict):
+        idx = payload.get('idx')
+        state = payload.get('state')
+        if not self._valid_idx(idx) or state not in (0, 1):
+            logger.warning(f"Manager: SET_RELAY rejected (idx={idx}, state={state})")
+            return
+        self.relay_config.states[idx] = int(state)
+        # A manual override cancels any pending restart pulse.
+        self.relay_config.restart_until[idx] = 0.0
+        self._save_settings()
+        logger.info(
+            f"Manager: relay R{idx + 1} ('{self.relay_config.names[idx]}') "
+            f"set to {'CLOSED' if state else 'OPEN'}"
+        )
+
+    def _apply_restart_relay(self, payload: dict):
+        idx = payload.get('idx')
+        if not self._valid_idx(idx):
+            logger.warning(f"Manager: RESTART_RELAY rejected (idx={idx})")
+            return
+        # Open the relay now; the loop() tick re-closes it after the pulse.
+        self.relay_config.states[idx] = 0
+        self.relay_config.restart_until[idx] = time.time() + _RELAY_RESTART_SECONDS
+        # No _save_settings() here: the persisted state is the post-pulse state,
+        # which will be saved by the loop() handler when the pulse expires.
+        logger.info(
+            f"Manager: relay R{idx + 1} ('{self.relay_config.names[idx]}') "
+            f"RESTART pulse \u2014 OPEN for {_RELAY_RESTART_SECONDS:.0f}s"
+        )
+
+    def _apply_set_relay_names(self, payload: dict):
+        names = payload.get('names')
+        if not isinstance(names, list) or len(names) != len(self.relay_config.names):
+            logger.warning(f"Manager: SET_RELAY_NAMES rejected (names={names!r})")
+            return
+        cleaned = []
+        for i, n in enumerate(names):
+            s = str(n).strip() if n is not None else ""
+            if not s:
+                s = f"Relay {i + 1}"
+            cleaned.append(s[:32])   # bounded length for the heartbeat payload
+        self.relay_config.names = cleaned
+        self._save_settings()
+        logger.info(f"Manager: relay names updated -> {self.relay_config.names}")
+
+    def _tick_relay_restart(self, now: float):
+        """End any expired restart pulse: re-close the relay and persist."""
+        changed = False
+        for i, deadline in enumerate(self.relay_config.restart_until):
+            if deadline and now >= deadline:
+                self.relay_config.restart_until[i] = 0.0
+                self.relay_config.states[i] = 1
+                changed = True
+                logger.info(
+                    f"Manager: relay R{i + 1} ('{self.relay_config.names[i]}') "
+                    f"restart pulse complete \u2014 re-CLOSED"
+                )
+        if changed:
+            self._save_settings()
 
     # ----------------------------------------------------------------
     #  GNC internal sync (failsafe-driven state updates)
@@ -338,6 +421,15 @@ class ManagerProcess(ServiceProcess):
                         self.logging_config = LoggingConfig(**data['logging_config'])
                     except Exception as e:
                         logger.warning(f"Manager: invalid stored logging_config ({e})")
+                if 'relay_config' in data:
+                    try:
+                        rc = RelayConfig(**data['relay_config'])
+                        # Never resume a pending restart pulse across a backend
+                        # reboot — that would arbitrarily open a relay on startup.
+                        rc.restart_until = [0.0, 0.0, 0.0]
+                        self.relay_config = rc
+                    except Exception as e:
+                        logger.warning(f"Manager: invalid stored relay_config ({e})")
                 logger.info(f"Manager: settings loaded from {_SETTINGS_FILE}")
         except Exception as e:
             logger.warning(f"Manager: could not load settings ({e}), using defaults")
@@ -358,6 +450,12 @@ class ManagerProcess(ServiceProcess):
                     'station_reaching_radius': self.station_reaching_radius,
                     'station_radius': self.station_radius,
                     'logging_config': self.logging_config.model_dump(),
+                    'relay_config': {
+                        'names':  list(self.relay_config.names),
+                        'states': list(self.relay_config.states),
+                        # 'restart_until' is intentionally not persisted —
+                        # pending pulses should not survive a reboot.
+                    },
                 }, f, indent=2)
         except Exception as e:
             logger.warning(f"Manager: could not save settings: {e}")

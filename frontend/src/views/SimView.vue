@@ -39,6 +39,9 @@
           <label>Payload [kg]
             <input type="number" v-model.number="rtEnv.payload_kg" step="5" min="0" />
           </label>
+          <label>Max Thrust [N]
+            <input type="number" v-model.number="rtEnv.surge_force" step="10" min="0" />
+          </label>
           <label>Current Speed [m/s]
             <input type="number" v-model.number="rtEnv.current_speed" step="0.05" min="0" />
           </label>
@@ -60,21 +63,29 @@
           <label>Time Step [s]
             <input type="number" v-model.number="rtTimeStep" step="0.01" min="0.01" max="0.2" />
           </label>
+          <label>Start Direction
+            <select v-model="rtStartMode">
+              <option value="first_wp">Forward</option>
+              <option value="last_wp">Reverse</option>
+            </select>
+          </label>
+          <label>Completion
+            <select v-model="rtCompletionMode">
+              <option value="stop_time">Run Full Time</option>
+              <option value="one_way">Stop at Last WP</option>
+              <option value="loop">Loop</option>
+              <option value="loop_reverse">Loop &amp; Reverse</option>
+            </select>
+          </label>
         </div>
 
         <!-- Settings being inherited -->
         <div class="rt-settings-badge" v-if="telemetry.gncConfig">
-          Controller (Settings tab):
+          Controller from Settings:
           &omega;<sub>n</sub>={{ telemetry.gncConfig.wn }},
           &zeta;={{ telemetry.gncConfig.zeta }},
           k<sub>&delta;</sub>={{ telemetry.gncConfig.k_delta }}s,
-          &gamma;={{ telemetry.gncConfig.gamma }},
-          cruise={{ telemetry.gncConfig.cruise_speed_kn }} kn
-        </div>
-        <div class="rt-settings-badge">
-          Route (WP Route panel):
-          direction=<strong>{{ telemetry.wpRouteDirection }}</strong>,
-          completion=<strong>{{ telemetry.wpRouteCompletion }}</strong>
+          &gamma;={{ telemetry.gncConfig.gamma }}
         </div>
 
         <div class="launch-row" style="margin-top: 10px;">
@@ -255,14 +266,16 @@ const errorMsg = ref('')
 const successMsg = ref('')
 
 // RT Simulation state
+const rtStartMode = ref('first_wp')
+const rtCompletionMode = ref('one_way')
 const rtGnssMode = ref('rtk_fix')
 const rtTimeStep = ref(0.05)
 
-// RT vehicle / environment parameters (physics only — controller gains,
-// cruise speed, route direction and completion come from Settings tab and
-// the WP Route panel; waypoints come from the active mission).
+// RT vehicle / environment parameters (physics only — controller gains
+// come from the Settings tab, waypoints come from the active route).
 const defaultRtEnv = () => ({
   payload_kg: 25,
+  surge_force: 150,
   current_speed: 0.0,
   current_dir: 0.0,
 })
@@ -300,6 +313,8 @@ onMounted(() => {
       if (parsed.timeStep !== undefined) timeStep.value = parsed.timeStep
       if (parsed.startMode) startMode.value = parsed.startMode
       if (parsed.completionMode) completionMode.value = parsed.completionMode
+      if (parsed.rtStartMode) rtStartMode.value = parsed.rtStartMode
+      if (parsed.rtCompletionMode) rtCompletionMode.value = parsed.rtCompletionMode
       if (parsed.rtGnssMode) rtGnssMode.value = parsed.rtGnssMode
       if (parsed.rtTimeStep !== undefined) rtTimeStep.value = parsed.rtTimeStep
       if (parsed.simDefaultLat !== undefined) telemetry.simDefaultLat = parsed.simDefaultLat
@@ -311,6 +326,7 @@ onMounted(() => {
         const p0 = parsed.profiles[0]
         rtEnv.value = {
           payload_kg:    p0.payload_kg    ?? 25,
+          surge_force:   p0.surge_force   ?? 150,
           current_speed: p0.current_speed ?? 0.0,
           current_dir:   p0.current_dir   ?? 0.0,
         }
@@ -322,7 +338,7 @@ onMounted(() => {
 })
 
 watch(
-  [waypoints, profiles, rtEnv, totalTime, timeStep, startMode, completionMode, rtGnssMode, rtTimeStep],
+  [waypoints, profiles, rtEnv, totalTime, timeStep, startMode, completionMode, rtStartMode, rtCompletionMode, rtGnssMode, rtTimeStep],
   () => {
     const toSave = {
       waypoints: waypoints.value,
@@ -332,6 +348,8 @@ watch(
       timeStep: timeStep.value,
       startMode: startMode.value,
       completionMode: completionMode.value,
+      rtStartMode: rtStartMode.value,
+      rtCompletionMode: rtCompletionMode.value,
       rtGnssMode: rtGnssMode.value,
       rtTimeStep: rtTimeStep.value,
       simDefaultLat: telemetry.simDefaultLat,
@@ -434,21 +452,23 @@ async function launchSimulation() {
 function launchRTSim() {
   const startLat = telemetry.simStartWaypoint?.lat ?? telemetry.simDefaultLat
   const startLon = telemetry.simStartWaypoint?.lon ?? telemetry.simDefaultLon
-  // Backend RT sim ignores controller-tuning, start_mode and completion_mode
-  // (they come from Settings / WP Route panel respectively), and surge_force
-  // is shadowed by the cruise-speed slider, so only physics/environment and
-  // sensor parameters are forwarded here.
+  // Controller-tuning keys (wn_pid, zeta_pid, wn_ref, zeta_ref, delta, gamma)
+  // are intentionally omitted: the backend RT sim uses the live Settings
+  // values via gnc_config, so any value sent here would be ignored anyway.
   telemetry.startRTSim({
     current_lat:     startLat,
     current_lon:     startLon,
     current_heading: telemetry.heading,
     // Vehicle / environment (physics)
     payload_kg:    rtEnv.value.payload_kg    ?? 25,
+    surge_force:   rtEnv.value.surge_force   ?? 150,
     current_speed: rtEnv.value.current_speed ?? 0.0,
     current_dir:   rtEnv.value.current_dir   ?? 0.0,
-    // Sensor / runtime
-    gnss_mode: rtGnssMode.value,
-    time_step: rtTimeStep.value,
+    // RT-specific runtime / sensor
+    gnss_mode:       rtGnssMode.value,
+    time_step:       rtTimeStep.value,
+    completion_mode: rtCompletionMode.value,
+    start_mode:      rtStartMode.value,
   })
 }
 

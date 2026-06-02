@@ -829,7 +829,7 @@ These were excluded from R2 above.
 | B-22 | 🟡 | GNC self-loop on COMMAND_USER | ✅ FIXED |
 | B-23 | 🟡 | Wall clock for interval timers | ⚠️ MOSTLY FIXED (residual in esp32.py) |
 | B-24 | 🟡 | Dead `battery_voltage=12.6` | ✅ FIXED |
-| B-25 | 🟡 | Relays hard-coded ON | ❌ OPEN (raised to 🟠 in practice — disables hardware kill-switch) |
+| B-25 | 🟡 | Relays hard-coded ON | ✅ FIXED (Manager-owned `RelayConfig`, SET_RELAY / RESTART_RELAY / SET_RELAY_NAMES commands, idle driver heartbeat, Settings UI with confirm modal) |
 | B-26 | 🟡 | Hardware watchdog | ❌ OPEN |
 | B-27 | 🟡 | ZMQ HWM defaults | ✅ FIXED |
 | B-28 | 🟡 | Watchdog give-up no E-stop | ⚠️ MILDER (firmware WDT mitigates GNC case) |

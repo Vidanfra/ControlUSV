@@ -239,6 +239,13 @@ export const useTelemetryStore = defineStore('telemetry', {
     loggingConfig: { csv_loggers: [], json_broadcasters: [] },
     logFieldCatalog: null,        // { groups: [...], os: 'Windows'|'Linux'|... }
     loggerPreviews: {},           // id → latest preview payload
+
+    // Relays (ESP32 R1 / R2 / R3) — order MUST match firmware command order.
+    relayConfig: {
+      names:  ['Relay 1', 'Relay 2', 'Relay 3'],
+      states: [1, 1, 1],
+      restart_until: [0, 0, 0],
+    },
     systemMonitor: {
       timestamp: 0,
       cpu_percent: 0,
@@ -536,6 +543,17 @@ export const useTelemetryStore = defineStore('telemetry', {
       // Always send the full merged config so the backend never resets
       // unrelated parameters (wn, zeta, k_delta, …) to their defaults.
       this.sendCommand('SET_GNC_CONFIG', this.gncConfig)
+    },
+
+    // ─── Relay control (ESP32 R1 / R2 / R3) ──────────────────────────
+    setRelay(idx, state) {
+      this.sendCommand('SET_RELAY', { idx, state: state ? 1 : 0 })
+    },
+    restartRelay(idx) {
+      this.sendCommand('RESTART_RELAY', { idx })
+    },
+    setRelayNames(names) {
+      this.sendCommand('SET_RELAY_NAMES', { names })
     },
 
     // ─── Logs feature ────────────────────────────────────────────────
@@ -1096,6 +1114,15 @@ export const useTelemetryStore = defineStore('telemetry', {
              if (data.logging_config) {
                // Backend is authoritative for logging config.
                this.loggingConfig = data.logging_config
+             }
+             if (data.relay_config) {
+               // Backend is authoritative for relay state.
+               const rc = data.relay_config
+               this.relayConfig = {
+                 names:  Array.isArray(rc.names)  ? rc.names.slice(0, 3)  : this.relayConfig.names,
+                 states: Array.isArray(rc.states) ? rc.states.map(s => s ? 1 : 0) : this.relayConfig.states,
+                 restart_until: Array.isArray(rc.restart_until) ? rc.restart_until : [0, 0, 0],
+               }
              }
           }
           else if (topic === 'gnc/control_debug') {

@@ -85,6 +85,11 @@ class Esp32Node:
         self._baudrate = baudrate
         self.driver: ESP32Driver | None = None
         self._connected = False
+        # Latched relay state mirrored from Manager's heartbeat
+        # (Topics.SYSTEM_STATUS.relay_config.states). Default ALL CLOSED so
+        # behaviour before the first heartbeat matches the historical
+        # hard-coded `1, 1, 1`.
+        self._relay_states: list[int] = [1, 1, 1]
 
     def run(self):
         logger.info("[ESP32 Node] Starting (with auto-retry)...")
@@ -110,26 +115,59 @@ class Esp32Node:
                 time.sleep(self._RETRY_INTERVAL)
                 continue
 
-            # ── Inner loop: receive from ZMQ, send to serial ──────────────
-            sub = Subscriber([Topics.CONTROL_CMD])
+            # ── Inner loop: forward motor cmds + heartbeat relay state ────
+            # We poll TWO topics:
+            #   * gnc/control_output: real motor commands (drives M1/M2)
+            #   * system/status: Manager heartbeat (carries latched relay state)
+            # If no CONTROL_CMD arrives for 100 ms we still send a frame with
+            # M1=M2=0 so the firmware sees a live link and the latest relay
+            # state is applied even when the vehicle is disarmed.
+            sub  = Subscriber([Topics.CONTROL_CMD])
+            stat = Subscriber([Topics.SYSTEM_STATUS])
             _send_error_logged = False
+            last_send = 0.0
             try:
                 while True:
+                    # 1) Drain heartbeats to refresh the latched relay state
+                    for _ in range(10):
+                        smsg = stat.receive(timeout_ms=0)
+                        if smsg is None:
+                            break
+                        _, sdata = smsg
+                        rc = sdata.get('relay_config')
+                        if isinstance(rc, dict):
+                            states = rc.get('states')
+                            if isinstance(states, list) and len(states) >= 3:
+                                self._relay_states = [
+                                    1 if int(states[i]) else 0 for i in range(3)
+                                ]
+
+                    # 2) Wait briefly for a motor command
                     msg = sub.receive(timeout_ms=100)
-                    if msg is None:
+                    port_pct = 0.0
+                    stbd_pct = 0.0
+                    if msg is not None:
+                        _, payload = msg
+                        # Never forward simulation-sourced commands to real hardware
+                        if payload.get('source') == 'sim':
+                            continue
+                        port_pct = float(payload.get('port_pct', 0.0))
+                        stbd_pct = float(payload.get('starboard_pct', 0.0))
+
+                    # 3) Rate-limit idle heartbeats so we don't flood the bus
+                    #    when armed+silent. Real motor frames always send.
+                    now = time.monotonic()
+                    if msg is None and (now - last_send) < 0.2:
                         continue
-
-                    _, payload = msg
-
-                    # Never forward simulation-sourced commands to real hardware
-                    if payload.get('source') == 'sim':
-                        continue
-
-                    port_pct = float(payload.get('port_pct', 0.0))
-                    stbd_pct = float(payload.get('starboard_pct', 0.0))
+                    last_send = now
 
                     try:
-                        self.driver.send_command(port_pct, stbd_pct, 1, 1, 1)
+                        self.driver.send_command(
+                            port_pct, stbd_pct,
+                            self._relay_states[0],
+                            self._relay_states[1],
+                            self._relay_states[2],
+                        )
                         if _send_error_logged:
                             logger.info(
                                 f"[ESP32 Node] Communication restored on {self._port}"
@@ -152,6 +190,10 @@ class Esp32Node:
                 except Exception:
                     pass
                 sub.close()
+                try:
+                    stat.close()
+                except Exception:
+                    pass
 
             logger.info(f"[ESP32 Node] Reconnecting in {self._RETRY_INTERVAL}s...")
             time.sleep(self._RETRY_INTERVAL)

@@ -3,6 +3,75 @@
     <div class="settings-panel">
       <h2>System Settings</h2>
 
+      <!-- ESP32 Relays (R1 / R2 / R3) -->
+      <section class="settings-section">
+        <h3>ESP32 Relays</h3>
+        <p class="hint" style="margin-top:-10px; margin-bottom:15px">
+          Three latched relays on the ESP32 controller. Their order matches the
+          firmware command (R1, R2, R3); only the display names are editable.
+          Use <strong>Restart</strong> to power-cycle a subsystem (relay opens
+          for 5 s, then re-closes automatically).
+        </p>
+
+        <div
+          v-for="(name, i) in relayNamesDraft"
+          :key="i"
+          class="relay-row"
+        >
+          <div class="relay-index">R{{ i + 1 }}</div>
+          <input
+            class="relay-name"
+            v-model="relayNamesDraft[i]"
+            type="text"
+            maxlength="32"
+            :placeholder="`Relay ${i + 1}`"
+          />
+          <span
+            class="relay-status"
+            :class="relayStateLabel(i).cls"
+            :title="relayPulseHint(i)"
+          >
+            {{ relayStateLabel(i).text }}
+          </span>
+          <button
+            class="btn"
+            :class="relay.states[i] ? 'btn-danger' : 'btn-success'"
+            :disabled="relayBusy(i)"
+            @click="askToggleRelay(i)"
+          >
+            {{ relay.states[i] ? 'Open (OFF)' : 'Close (ON)' }}
+          </button>
+          <button
+            class="btn btn-warning"
+            :disabled="relayBusy(i) || !relay.states[i]"
+            :title="!relay.states[i] ? 'Relay already open' : 'Open relay for 5 s, then re-close'"
+            @click="askRestartRelay(i)"
+          >
+            Restart
+          </button>
+        </div>
+
+        <div class="setting-row" style="margin-top:18px">
+          <div class="input-group">
+            <button
+              class="btn btn-primary"
+              :disabled="!relayNamesChanged"
+              @click="saveRelayNames"
+            >
+              Save Relay Names
+            </button>
+            <button
+              class="btn btn-secondary"
+              :disabled="!relayNamesChanged"
+              @click="resetRelayNamesDraft"
+            >
+              Discard
+            </button>
+          </div>
+          <p class="hint">Names are persisted on the vehicle and survive reboots.</p>
+        </div>
+      </section>
+
       <!-- Battery / Power Section -->
       <section class="settings-section">
         <h3>Battery & Energy</h3>
@@ -346,12 +415,24 @@
           </div>
         </div>
       </div>
+
+      <!-- Relay Action Confirmation Dialog -->
+      <div v-if="relayConfirm" class="confirm-overlay" @click.self="relayConfirm = null">
+        <div class="confirm-dialog">
+          <h4>{{ relayConfirm.title }}</h4>
+          <p v-html="relayConfirm.body"></p>
+          <div class="confirm-actions">
+            <button class="btn btn-secondary" @click="relayConfirm = null">Cancel</button>
+            <button class="btn btn-danger" @click="confirmRelayAction">Confirm</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useTelemetryStore } from '../stores/telemetry'
 
 const telemetry = useTelemetryStore()
@@ -406,6 +487,82 @@ const mpForm = reactive({
   surveySpeed:  1.0,
 })
 
+// Relay names — local draft so the user can edit then commit with one click.
+// Restart pulse end-times are surfaced through a 1 Hz ticker so the
+// "X s left" hint counts down in the UI.
+const relayNamesDraft = ref(['Relay 1', 'Relay 2', 'Relay 3'])
+const relayConfirm    = ref(null)   // { title, body, action: () => void }
+const nowTs           = ref(Date.now() / 1000)
+let _nowTimer = null
+
+const relay = computed(() => telemetry.relayConfig)
+const relayNamesChanged = computed(() => {
+  const live = telemetry.relayConfig.names
+  return relayNamesDraft.value.some((n, i) => (n ?? '') !== (live[i] ?? ''))
+})
+
+function syncRelayNamesDraft() {
+  relayNamesDraft.value = (telemetry.relayConfig.names || ['Relay 1','Relay 2','Relay 3']).slice(0, 3)
+}
+function resetRelayNamesDraft() { syncRelayNamesDraft() }
+
+function relayBusy(i) {
+  const until = telemetry.relayConfig.restart_until?.[i] || 0
+  return until > nowTs.value
+}
+function relayStateLabel(i) {
+  if (relayBusy(i)) {
+    const secs = Math.max(0, Math.ceil(telemetry.relayConfig.restart_until[i] - nowTs.value))
+    return { text: `RESTARTING (${secs} s)`, cls: 'state-pulse' }
+  }
+  return telemetry.relayConfig.states[i]
+    ? { text: 'CLOSED (ON)',  cls: 'state-on'  }
+    : { text: 'OPEN (OFF)',   cls: 'state-off' }
+}
+function relayPulseHint(i) {
+  return relayBusy(i) ? 'Relay is in a 5 s restart pulse — wait for it to re-close' : ''
+}
+
+function askToggleRelay(i) {
+  const name = telemetry.relayConfig.names[i] || `R${i+1}`
+  const wasOn = !!telemetry.relayConfig.states[i]
+  const next = wasOn ? 0 : 1
+  relayConfirm.value = {
+    title: wasOn ? `Open relay "${name}"?` : `Close relay "${name}"?`,
+    body: wasOn
+      ? `This will <strong>cut power</strong> to <em>${escapeHtml(name)}</em> (R${i+1}). The subsystem will lose power until you close the relay again.`
+      : `This will <strong>restore power</strong> to <em>${escapeHtml(name)}</em> (R${i+1}).`,
+    action: () => telemetry.setRelay(i, next),
+  }
+}
+function askRestartRelay(i) {
+  const name = telemetry.relayConfig.names[i] || `R${i+1}`
+  relayConfirm.value = {
+    title: `Restart "${name}"?`,
+    body: `This will <strong>open</strong> relay R${i+1} (<em>${escapeHtml(name)}</em>) for <strong>5 seconds</strong> and then re-close it. Use this to power-cycle the connected subsystem.`,
+    action: () => telemetry.restartRelay(i),
+  }
+}
+function confirmRelayAction() {
+  const c = relayConfirm.value
+  relayConfirm.value = null
+  if (c && typeof c.action === 'function') c.action()
+}
+function saveRelayNames() {
+  telemetry.setRelayNames(relayNamesDraft.value.map((n, i) => (n || `Relay ${i+1}`).trim()))
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  })[c])
+}
+
+// Keep the draft in sync when backend ships new names (e.g. on first connect)
+// — but never clobber unsaved user edits.
+watch(() => telemetry.relayConfig.names, () => {
+  if (!relayNamesChanged.value) syncRelayNamesDraft()
+}, { deep: true })
+
 onMounted(() => {
   capacityInput.value = telemetry.batteryCapacityWh || 500
   // Load fail-safe config from store
@@ -445,6 +602,14 @@ onMounted(() => {
   mpForm.wpSpeed      = telemetry.missionDefaultWpSpeed
   mpForm.surveyRadius = telemetry.missionDefaultSurveyRadius
   mpForm.surveySpeed  = telemetry.missionDefaultSurveySpeed
+
+  // Seed relay-name draft and start 1 Hz ticker for the restart countdown
+  syncRelayNamesDraft()
+  _nowTimer = setInterval(() => { nowTs.value = Date.now() / 1000 }, 1000)
+})
+
+onBeforeUnmount(() => {
+  if (_nowTimer) { clearInterval(_nowTimer); _nowTimer = null }
 })
 
 const capacityChanged = computed(() => {
@@ -876,4 +1041,63 @@ select.text-input {
   color: #ccc;
   font-size: 0.95em;
 }
+
+/* ── Relay control ───────────────────────────────────────────────── */
+.btn-success {
+  background-color: #2a8a3f;
+  color: white;
+}
+.btn-success:hover:not(:disabled) {
+  background-color: #34a64d;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.relay-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 170px 130px 110px;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #2a2a2a;
+}
+.relay-row:last-child { border-bottom: none; }
+
+.relay-index {
+  font-weight: 700;
+  font-size: 1.05em;
+  color: #FFA500;
+  text-align: center;
+}
+
+.relay-name {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  color: #eee;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 0.95em;
+}
+.relay-name:focus {
+  outline: none;
+  border-color: #FFA500;
+}
+
+.relay-status {
+  display: inline-block;
+  text-align: center;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.9em;
+  letter-spacing: 0.5px;
+}
+.state-on    { background: #1d3a1d; color: #6ee06e; border: 1px solid #2a8a3f; }
+.state-off   { background: #3a1d1d; color: #ff8a8a; border: 1px solid #cc3333; }
+.state-pulse { background: #3a2f1d; color: #ffd166; border: 1px solid #cc7700; }
+
+/* Confirmation dialog (relay variant reuses .confirm-overlay/.confirm-dialog) */
+.confirm-dialog p em { color: #FFA500; font-style: normal; }
 </style>

@@ -27074,3 +27074,985 @@ s...
 2026-05-31 22:14:49.987 | INFO     | GNCService | GNC: RT simulation started
 2026-05-31 22:14:49.997 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
 2026-05-31 22:14:50.075 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-05-31 22:24:08.368 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=5586)
+2026-05-31 22:24:08.428 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-31 22:24:08.428 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-31 22:24:10.265 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=5587)
+2026-05-31 22:24:10.290 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-05-31 22:24:10.317 | INFO     | GNCService | GNC: WP Route started — 3 WPs, dir=forward, completion=stop
+2026-05-31 22:24:10.339 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-31 22:24:10.339 | INFO     | ManagerService | WP Route STARTED: 3 waypoints, dir=forward
+2026-05-31 22:24:39.357 | INFO     | CommsService | Command received and published: CommandType.STOP_WP_ROUTE (seq=5588)
+2026-05-31 22:24:39.386 | INFO     | GNCService | GNC: WP Route stopped
+2026-05-31 22:24:39.397 | INFO     | ManagerService | Manager received command: CommandType.STOP_WP_ROUTE
+2026-05-31 22:24:39.397 | INFO     | ManagerService | WP Route STOPPED
+2026-05-31 22:24:52.116 | INFO     | CommsService | Command received and published: CommandType.STOP_RT_SIM (seq=5589)
+2026-05-31 22:24:52.120 | INFO     | GNCService | GNC: RT simulation stopped after 593.8s
+2026-05-31 22:24:52.131 | INFO     | HALService | HAL: Sensors UNMUTED
+2026-05-31 22:24:52.165 | INFO     | ManagerService | Manager received command: CommandType.STOP_RT_SIM
+2026-05-31 22:24:52.165 | INFO     | ManagerService | Manager: RT Simulation STOPPED — back to REAL mode
+2026-05-31 22:24:52.165 | INFO     | ManagerService | Manager received command: CommandType.UNMUTE_SENSORS
+2026-05-31 22:25:03.059 | INFO     | CommsService | Command received and published: CommandType.START_RT_SIM (seq=5590)
+2026-05-31 22:25:03.075 | INFO     | GNCService | GNC: Starting RT simulation (Physics Engine Only)
+2026-05-31 22:25:03.075 | INFO     | GNCService | GNC: RT simulation started
+2026-05-31 22:25:03.088 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
+2026-05-31 22:25:03.119 | INFO     | ManagerService | Manager received command: CommandType.START_RT_SIM
+2026-05-31 22:25:03.120 | INFO     | ManagerService | Manager: RT Simulation STARTED — vehicle auto-DISARMED
+2026-05-31 22:25:03.120 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-05-31 22:25:13.723 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=5591)
+2026-05-31 22:25:13.776 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-31 22:25:13.777 | INFO     | ManagerService | WP Route STARTED: 3 waypoints, dir=forward
+2026-05-31 22:25:13.840 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-05-31 22:25:13.869 | INFO     | GNCService | GNC: WP Route started — 3 WPs, dir=forward, completion=stop
+2026-05-31 22:25:48.292 | INFO     | CommsService | Command received and published: CommandType.STOP_WP_ROUTE (seq=5592)
+2026-05-31 22:25:48.319 | INFO     | GNCService | GNC: WP Route stopped
+2026-05-31 22:25:48.363 | INFO     | ManagerService | Manager received command: CommandType.STOP_WP_ROUTE
+2026-05-31 22:25:48.363 | INFO     | ManagerService | WP Route STOPPED
+2026-05-31 22:25:49.750 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-31 22:25:50.100 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-31 22:25:52.290 | INFO     | CommsService | Command received and published: CommandType.STOP_RT_SIM (seq=1)
+2026-05-31 22:25:52.329 | INFO     | GNCService | GNC: RT simulation stopped after 48.4s
+2026-05-31 22:25:52.333 | INFO     | HALService | HAL: Sensors UNMUTED
+2026-05-31 22:25:52.385 | INFO     | ManagerService | Manager received command: CommandType.STOP_RT_SIM
+2026-05-31 22:25:52.385 | INFO     | ManagerService | Manager: RT Simulation STOPPED — back to REAL mode
+2026-05-31 22:25:52.385 | INFO     | ManagerService | Manager received command: CommandType.UNMUTE_SENSORS
+2026-05-31 22:25:53.679 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-31 22:25:54.014 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-31 22:25:55.117 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=1)
+2026-05-31 22:25:55.199 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-31 22:25:55.199 | INFO     | ManagerService | Mode changed to: MANUAL
+2026-05-31 22:25:58.830 | INFO     | CommsService | Command received and published: CommandType.START_RT_SIM (seq=2)
+2026-05-31 22:25:58.842 | INFO     | GNCService | GNC: Starting RT simulation (Physics Engine Only)
+2026-05-31 22:25:58.842 | INFO     | GNCService | GNC: RT simulation started
+2026-05-31 22:25:58.848 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
+2026-05-31 22:25:58.916 | INFO     | ManagerService | Manager received command: CommandType.START_RT_SIM
+2026-05-31 22:25:58.916 | INFO     | ManagerService | Manager: RT Simulation STARTED — vehicle auto-DISARMED
+2026-05-31 22:25:58.916 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-05-31 22:26:13.635 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=151)
+2026-05-31 22:26:13.701 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-31 22:26:13.701 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-31 22:26:19.291 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=153)
+2026-05-31 22:26:19.334 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-31 22:26:19.335 | INFO     | ManagerService | WP Route STARTED: 3 waypoints, dir=forward
+2026-05-31 22:26:19.391 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-05-31 22:26:19.419 | INFO     | GNCService | GNC: WP Route started — 3 WPs, dir=forward, completion=stop
+2026-05-31 22:26:45.229 | INFO     | CommsService | Command received and published: CommandType.SET_GNC_CONFIG (seq=154)
+2026-05-31 22:26:45.275 | INFO     | ManagerService | Manager received command: CommandType.SET_GNC_CONFIG
+2026-05-31 22:26:45.275 | INFO     | ManagerService | GNC config updated: wn=2.0 zeta=0.7 wn_ref=0.5 zeta_ref=0.8 k_delta=15.0 delta_min=5.0 gamma=0.0 cruise_speed_kn=2.7 e_x_threshold_deg=10.0 accel_ms2=0.3 vel_profiler_enabled=True
+2026-05-31 22:26:45.322 | INFO     | GNCService | GNC: Parameters updated: wn=2.0 zeta=0.7 wn_ref=0.5 zeta_ref=0.8 k_delta=15.0 delta_min=5.0 gamma=0.0 cruise_speed_kn=2.7 e_x_threshold_deg=10.0 accel_ms2=0.3 vel_profiler_enabled=True
+2026-05-31 22:26:46.961 | INFO     | CommsService | Command received and published: CommandType.SET_GNC_CONFIG (seq=155)
+2026-05-31 22:26:46.986 | INFO     | ManagerService | Manager received command: CommandType.SET_GNC_CONFIG
+2026-05-31 22:26:46.986 | INFO     | ManagerService | GNC config updated: wn=2.0 zeta=0.7 wn_ref=0.5 zeta_ref=0.8 k_delta=15.0 delta_min=5.0 gamma=0.0 cruise_speed_kn=2.2 e_x_threshold_deg=10.0 accel_ms2=0.3 vel_profiler_enabled=True
+2026-05-31 22:26:47.055 | INFO     | GNCService | GNC: Parameters updated: wn=2.0 zeta=0.7 wn_ref=0.5 zeta_ref=0.8 k_delta=15.0 delta_min=5.0 gamma=0.0 cruise_speed_kn=2.2 e_x_threshold_deg=10.0 accel_ms2=0.3 vel_profiler_enabled=True
+2026-05-31 22:26:50.537 | INFO     | CommsService | Command received and published: CommandType.STOP_WP_ROUTE (seq=156)
+2026-05-31 22:26:50.561 | INFO     | GNCService | GNC: WP Route stopped
+2026-05-31 22:26:50.606 | INFO     | ManagerService | Manager received command: CommandType.STOP_WP_ROUTE
+2026-05-31 22:26:50.606 | INFO     | ManagerService | WP Route STOPPED
+2026-05-31 22:26:57.188 | INFO     | CommsService | Command received and published: CommandType.STOP_RT_SIM (seq=157)
+2026-05-31 22:26:57.202 | INFO     | GNCService | GNC: RT simulation stopped after 57.4s
+2026-05-31 22:26:57.210 | INFO     | HALService | HAL: Sensors UNMUTED
+2026-05-31 22:26:57.241 | INFO     | ManagerService | Manager received command: CommandType.STOP_RT_SIM
+2026-05-31 22:26:57.241 | INFO     | ManagerService | Manager: RT Simulation STOPPED — back to REAL mode
+2026-05-31 22:26:57.241 | INFO     | ManagerService | Manager received command: CommandType.UNMUTE_SENSORS
+2026-05-31 22:27:01.516 | INFO     | CommsService | Command received and published: CommandType.START_RT_SIM (seq=158)
+2026-05-31 22:27:01.544 | INFO     | GNCService | GNC: Starting RT simulation (Physics Engine Only)
+2026-05-31 22:27:01.544 | INFO     | GNCService | GNC: RT simulation started
+2026-05-31 22:27:01.548 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
+2026-05-31 22:27:01.561 | INFO     | ManagerService | Manager received command: CommandType.START_RT_SIM
+2026-05-31 22:27:01.561 | INFO     | ManagerService | Manager: RT Simulation STARTED — vehicle auto-DISARMED
+2026-05-31 22:27:01.561 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-05-31 22:27:08.634 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=159)
+2026-05-31 22:27:08.701 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-31 22:27:08.702 | INFO     | ManagerService | WP Route STARTED: 3 waypoints, dir=forward
+2026-05-31 22:27:08.705 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-05-31 22:27:08.738 | INFO     | GNCService | GNC: WP Route started — 3 WPs, dir=forward, completion=stop
+2026-05-31 22:27:15.248 | INFO     | CommsService | Command received and published: CommandType.SET_GNC_CONFIG (seq=160)
+2026-05-31 22:27:15.339 | INFO     | ManagerService | Manager received command: CommandType.SET_GNC_CONFIG
+2026-05-31 22:27:15.339 | INFO     | ManagerService | GNC config updated: wn=2.0 zeta=0.7 wn_ref=0.5 zeta_ref=0.8 k_delta=15.0 delta_min=5.0 gamma=0.0 cruise_speed_kn=2.0 e_x_threshold_deg=10.0 accel_ms2=0.3 vel_profiler_enabled=True
+2026-05-31 22:27:15.340 | INFO     | GNCService | GNC: Parameters updated: wn=2.0 zeta=0.7 wn_ref=0.5 zeta_ref=0.8 k_delta=15.0 delta_min=5.0 gamma=0.0 cruise_speed_kn=2.0 e_x_threshold_deg=10.0 accel_ms2=0.3 vel_profiler_enabled=True
+2026-05-31 22:27:19.297 | INFO     | CommsService | Command received and published: CommandType.SET_GNC_CONFIG (seq=161)
+2026-05-31 22:27:19.359 | INFO     | ManagerService | Manager received command: CommandType.SET_GNC_CONFIG
+2026-05-31 22:27:19.359 | INFO     | ManagerService | GNC config updated: wn=2.0 zeta=0.7 wn_ref=0.5 zeta_ref=0.8 k_delta=15.0 delta_min=5.0 gamma=0.0 cruise_speed_kn=2.6 e_x_threshold_deg=10.0 accel_ms2=0.3 vel_profiler_enabled=True
+2026-05-31 22:27:19.360 | INFO     | GNCService | GNC: Parameters updated: wn=2.0 zeta=0.7 wn_ref=0.5 zeta_ref=0.8 k_delta=15.0 delta_min=5.0 gamma=0.0 cruise_speed_kn=2.6 e_x_threshold_deg=10.0 accel_ms2=0.3 vel_profiler_enabled=True
+2026-05-31 22:27:20.114 | INFO     | CommsService | Command received and published: CommandType.SET_GNC_CONFIG (seq=162)
+2026-05-31 22:27:20.163 | INFO     | ManagerService | Manager received command: CommandType.SET_GNC_CONFIG
+2026-05-31 22:27:20.163 | INFO     | ManagerService | GNC config updated: wn=2.0 zeta=0.7 wn_ref=0.5 zeta_ref=0.8 k_delta=15.0 delta_min=5.0 gamma=0.0 cruise_speed_kn=2.5 e_x_threshold_deg=10.0 accel_ms2=0.3 vel_profiler_enabled=True
+2026-05-31 22:27:20.184 | INFO     | GNCService | GNC: Parameters updated: wn=2.0 zeta=0.7 wn_ref=0.5 zeta_ref=0.8 k_delta=15.0 delta_min=5.0 gamma=0.0 cruise_speed_kn=2.5 e_x_threshold_deg=10.0 accel_ms2=0.3 vel_profiler_enabled=True
+2026-05-31 22:30:04.363 | INFO     | NavigationService | Process NavigationService received signal 2. Stopping...
+2026-05-31 22:30:04.365 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-05-31 22:30:04.365 | INFO     | SystemMonitorService | Process SystemMonitorService received signal 2. Stopping...
+2026-05-31 22:30:04.365 | INFO     | GNCService | Process GNCService received signal 2. Stopping...
+2026-05-31 22:30:04.365 | INFO     | LoggerService | Process LoggerService received signal 2. Stopping...
+2026-05-31 22:30:04.363 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-05-31 22:30:04.365 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-05-31 22:30:04.367 | INFO     | GNCService | Process GNCService stopped.
+2026-05-31 22:30:04.372 | INFO     | LoggerService | Process LoggerService stopped.
+2026-05-31 22:30:04.378 | INFO     | HALService | Process HALService stopped.
+2026-05-31 22:30:04.384 | INFO     | SystemMonitorService | Process SystemMonitorService stopped.
+2026-05-31 22:30:04.403 | INFO     | NavigationService | Process NavigationService stopped.
+2026-05-31 22:30:04.454 | INFO     | ManagerService | Process ManagerService stopped.
+2026-05-31 22:30:04.461 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-31 22:30:04.569 | INFO     | CommsService | [Web Server] ZMQ consumer task cancelled
+2026-05-31 22:30:04.570 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-05-31 22:30:04.583 | INFO     | CommsService | MAVLink bridge stopped.
+2026-05-31 22:30:04.653 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-05-31 22:30:10.497 | INFO     | MAIN | Starting USV Control System
+2026-05-31 22:30:10.497 | INFO     | MAIN | Mode: SIMULATION
+2026-05-31 22:30:11.000 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-05-31 22:30:11.553 | INFO     | GNCService | Process GNCService starting...
+2026-05-31 22:30:11.565 | INFO     | SystemMonitorService | Process SystemMonitorService starting...
+2026-05-31 22:30:11.566 | INFO     | LoggerService | Process LoggerService starting...
+2026-05-31 22:30:11.572 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-05-31 22:30:11.576 | INFO     | CommsService | Starting Web Server on port 8000
+2026-05-31 22:30:11.568 | INFO     | NavigationService | Process NavigationService starting...
+2026-05-31 22:30:11.577 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-05-31 22:30:11.580 | INFO     | HALService | Process HALService starting...
+2026-05-31 22:30:11.576 | INFO     | ManagerService | Process ManagerService starting...
+2026-05-31 22:30:11.589 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-31 22:30:11.590 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-31 22:30:11.591 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-05-31 22:30:11.591 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-05-31 22:30:11.591 | ERROR    | HALService | [GNSS Node] Cannot open /dev/gnss_um982: could not open port '/dev/gnss_um982': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-31 22:30:11.594 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-31 22:30:11.594 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-05-31 22:30:11.594 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-05-31 22:30:11.597 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-31 22:30:11.598 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-31 22:30:11.598 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-05-31 22:30:11.598 | ERROR    | HALService | [IMU Node] Cannot open /dev/serial0: could not open port '/dev/serial0': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-31 22:30:11.599 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-05-31 22:30:11.599 | ERROR    | HALService | [Power Node] Cannot open /dev/power_pzem: could not open port '/dev/power_pzem': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying...
+2026-05-31 22:30:11.599 | INFO     | HALService | [ESP32 Node] Starting (with auto-retry)...
+2026-05-31 22:30:11.599 | INFO     | HALService | ESP32 Node started on /dev/esp32
+2026-05-31 22:30:11.600 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-05-31 22:30:11.600 | ERROR    | HALService | [ESP32 Node] Cannot open /dev/esp32: could not open port '/dev/esp32': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying every 3.0s (this message will not repeat).
+2026-05-31 22:30:11.597 | INFO     | CommsService | Starting Web Server...
+2026-05-31 22:30:11.677 | INFO     | LoggerService | LoggerProcess initialized
+2026-05-31 22:30:11.677 | INFO     | LoggerService | Process LoggerService entering loop at 50.0 Hz
+2026-05-31 22:30:11.685 | INFO     | NavigationService | Navigation Process initialized (passthrough mode)
+2026-05-31 22:30:11.685 | INFO     | NavigationService | Process NavigationService entering loop at 20.0 Hz
+2026-05-31 22:30:11.716 | INFO     | SystemMonitorService | SystemMonitor initialized (host=IS-41112, os=Windows)
+2026-05-31 22:30:11.716 | INFO     | SystemMonitorService | Process SystemMonitorService entering loop at 1.0 Hz
+2026-05-31 22:30:11.810 | INFO     | CommsService | Command publisher connected to ZMQ broker
+2026-05-31 22:30:11.813 | INFO     | CommsService | [Web Server] ZMQ consumer subscribed on tcp://127.0.0.1:5556
+2026-05-31 22:30:11.897 | INFO     | ManagerService | Manager: settings loaded from c:\PYTHON\ControlUSV\src\manager\..\..\data\manager_settings.json
+2026-05-31 22:30:12.289 | INFO     | GNCService | GNC Process initialized (waiting for AUTO mode)
+2026-05-31 22:30:12.289 | INFO     | GNCService | Process GNCService entering loop at 20.0 Hz
+2026-05-31 22:30:12.397 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-05-31 22:30:12.397 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-05-31 22:30:12.410 | INFO     | LoggerService | LoggerProcess: applied config (csv=2, json=1)
+2026-05-31 22:30:12.411 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260531T223012Z.csv
+2026-05-31 22:30:12.411 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260531T223012Z.csv
+2026-05-31 22:30:13.105 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-31 22:30:18.750 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-31 22:30:19.123 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-31 22:30:27.583 | INFO     | CommsService | Command received and published: CommandType.START_RT_SIM (seq=1)
+2026-05-31 22:30:27.621 | INFO     | GNCService | GNC: Starting RT simulation (Physics Engine Only)
+2026-05-31 22:30:27.621 | INFO     | GNCService | GNC: RT simulation started
+2026-05-31 22:30:27.623 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
+2026-05-31 22:30:27.679 | INFO     | ManagerService | Manager received command: CommandType.START_RT_SIM
+2026-05-31 22:30:27.679 | INFO     | ManagerService | Manager: RT Simulation STARTED — vehicle auto-DISARMED
+2026-05-31 22:30:27.679 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-05-31 22:31:02.999 | INFO     | CommsService | Command received and published: CommandType.SET_RELAY (seq=355)
+2026-05-31 22:31:03.079 | INFO     | ManagerService | Manager received command: CommandType.SET_RELAY
+2026-05-31 22:31:03.080 | INFO     | ManagerService | Manager: relay R1 ('Relay 1') set to OPEN
+2026-05-31 22:31:46.102 | INFO     | CommsService | Command received and published: CommandType.STOP_RT_SIM (seq=787)
+2026-05-31 22:31:46.106 | INFO     | GNCService | GNC: RT simulation stopped after 77.4s
+2026-05-31 22:31:46.115 | INFO     | ManagerService | Manager received command: CommandType.STOP_RT_SIM
+2026-05-31 22:31:46.115 | INFO     | ManagerService | Manager: RT Simulation STOPPED — back to REAL mode
+2026-05-31 22:31:46.115 | INFO     | ManagerService | Manager received command: CommandType.UNMUTE_SENSORS
+2026-05-31 22:31:46.119 | INFO     | HALService | HAL: Sensors UNMUTED
+2026-05-31 22:32:14.385 | INFO     | CommsService | Command received and published: CommandType.SET_RELAY_NAMES (seq=789)
+2026-05-31 22:32:14.458 | INFO     | ManagerService | Manager received command: CommandType.SET_RELAY_NAMES
+2026-05-31 22:32:14.459 | INFO     | ManagerService | Manager: relay names updated -> ['Communiction Box', 'Payload 1', 'Payload 2']
+2026-05-31 22:32:20.633 | INFO     | CommsService | Command received and published: CommandType.SET_RELAY (seq=790)
+2026-05-31 22:32:20.690 | INFO     | ManagerService | Manager received command: CommandType.SET_RELAY
+2026-05-31 22:32:20.690 | INFO     | ManagerService | Manager: relay R1 ('Communiction Box') set to CLOSED
+2026-05-31 22:32:27.721 | INFO     | CommsService | Command received and published: CommandType.RESTART_RELAY (seq=791)
+2026-05-31 22:32:27.725 | INFO     | ManagerService | Manager received command: CommandType.RESTART_RELAY
+2026-05-31 22:32:27.725 | INFO     | ManagerService | Manager: relay R1 ('Communiction Box') RESTART pulse — OPEN for 5s
+2026-05-31 22:32:32.750 | INFO     | ManagerService | Manager: relay R1 ('Communiction Box') restart pulse complete — re-CLOSED
+2026-05-31 22:33:49.125 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-31 22:33:49.125 | WARNING  | CommsService | Failed to send to client, removing: 
+2026-05-31 22:34:02.249 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-31 22:34:31.714 | INFO     | NavigationService | Process NavigationService received signal 2. Stopping...
+2026-05-31 22:34:31.714 | INFO     | ManagerService | Process ManagerService received signal 2. Stopping...
+2026-05-31 22:34:31.714 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-05-31 22:34:31.716 | INFO     | SystemMonitorService | Process SystemMonitorService received signal 2. Stopping...
+2026-05-31 22:34:31.716 | INFO     | GNCService | Process GNCService received signal 2. Stopping...
+2026-05-31 22:34:31.716 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+2026-05-31 22:34:31.714 | INFO     | LoggerService | Process LoggerService received signal 2. Stopping...
+2026-05-31 22:34:31.717 | INFO     | LoggerService | Process LoggerService stopped.
+2026-05-31 22:34:31.733 | INFO     | HALService | Process HALService stopped.
+2026-05-31 22:34:31.737 | INFO     | NavigationService | Process NavigationService stopped.
+2026-05-31 22:34:31.740 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-31 22:34:31.755 | INFO     | ManagerService | Process ManagerService stopped.
+2026-05-31 22:34:31.758 | INFO     | GNCService | Process GNCService stopped.
+2026-05-31 22:34:31.846 | INFO     | CommsService | [Web Server] ZMQ consumer task cancelled
+2026-05-31 22:34:31.848 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-05-31 22:34:31.862 | INFO     | CommsService | MAVLink bridge stopped.
+2026-05-31 22:34:31.919 | INFO     | SystemMonitorService | Process SystemMonitorService stopped.
+2026-05-31 22:34:31.988 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-05-31 22:34:34.059 | INFO     | MAIN | Starting USV Control System
+2026-05-31 22:34:34.060 | INFO     | MAIN | Mode: SIMULATION
+2026-05-31 22:34:34.576 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-05-31 22:34:35.156 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-05-31 22:34:35.162 | INFO     | CommsService | Starting Web Server on port 8000
+2026-05-31 22:34:35.162 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-05-31 22:34:35.161 | INFO     | SystemMonitorService | Process SystemMonitorService starting...
+2026-05-31 22:34:35.161 | INFO     | LoggerService | Process LoggerService starting...
+2026-05-31 22:34:35.156 | INFO     | ManagerService | Process ManagerService starting...
+2026-05-31 22:34:35.164 | INFO     | HALService | Process HALService starting...
+2026-05-31 22:34:35.178 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-31 22:34:35.180 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-31 22:34:35.156 | INFO     | GNCService | Process GNCService starting...
+2026-05-31 22:34:35.162 | INFO     | NavigationService | Process NavigationService starting...
+2026-05-31 22:34:35.180 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-05-31 22:34:35.180 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-05-31 22:34:35.180 | ERROR    | HALService | [GNSS Node] Cannot open /dev/gnss_um982: could not open port '/dev/gnss_um982': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-31 22:34:35.184 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-31 22:34:35.182 | INFO     | CommsService | Starting Web Server...
+2026-05-31 22:34:35.185 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-05-31 22:34:35.185 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-05-31 22:34:35.187 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-31 22:34:35.188 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-31 22:34:35.189 | ERROR    | HALService | [IMU Node] Cannot open /dev/serial0: could not open port '/dev/serial0': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-31 22:34:35.189 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-05-31 22:34:35.189 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-05-31 22:34:35.189 | ERROR    | HALService | [Power Node] Cannot open /dev/power_pzem: could not open port '/dev/power_pzem': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying...
+2026-05-31 22:34:35.190 | INFO     | HALService | [ESP32 Node] Starting (with auto-retry)...
+2026-05-31 22:34:35.190 | INFO     | HALService | ESP32 Node started on /dev/esp32
+2026-05-31 22:34:35.190 | ERROR    | HALService | [ESP32 Node] Cannot open /dev/esp32: could not open port '/dev/esp32': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying every 3.0s (this message will not repeat).
+2026-05-31 22:34:35.190 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-05-31 22:34:35.273 | INFO     | LoggerService | LoggerProcess initialized
+2026-05-31 22:34:35.273 | INFO     | LoggerService | Process LoggerService entering loop at 50.0 Hz
+2026-05-31 22:34:35.282 | INFO     | NavigationService | Navigation Process initialized (passthrough mode)
+2026-05-31 22:34:35.282 | INFO     | NavigationService | Process NavigationService entering loop at 20.0 Hz
+2026-05-31 22:34:35.315 | INFO     | SystemMonitorService | SystemMonitor initialized (host=IS-41112, os=Windows)
+2026-05-31 22:34:35.315 | INFO     | SystemMonitorService | Process SystemMonitorService entering loop at 1.0 Hz
+2026-05-31 22:34:35.386 | INFO     | CommsService | Command publisher connected to ZMQ broker
+2026-05-31 22:34:35.389 | INFO     | CommsService | [Web Server] ZMQ consumer subscribed on tcp://127.0.0.1:5556
+2026-05-31 22:34:35.487 | INFO     | ManagerService | Manager: settings loaded from c:\PYTHON\ControlUSV\src\manager\..\..\data\manager_settings.json
+2026-05-31 22:34:35.569 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-31 22:34:35.900 | INFO     | GNCService | GNC Process initialized (waiting for AUTO mode)
+2026-05-31 22:34:35.900 | INFO     | GNCService | Process GNCService entering loop at 20.0 Hz
+2026-05-31 22:34:35.988 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-05-31 22:34:35.988 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-05-31 22:34:36.007 | INFO     | LoggerService | LoggerProcess: applied config (csv=2, json=1)
+2026-05-31 22:34:36.008 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260531T223436Z.csv
+2026-05-31 22:34:36.008 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260531T223436Z.csv
+2026-05-31 22:34:44.532 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-31 22:34:44.911 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-31 22:36:09.832 | INFO     | NavigationService | Process NavigationService received signal 2. Stopping...
+2026-05-31 22:36:09.833 | INFO     | GNCService | Process GNCService received signal 2. Stopping...
+2026-05-31 22:36:09.833 | WARNING  | MAIN | Main process received KeyboardInterrupt. Stopping services...
+
+2026-05-31 22:36:09.833 | INFO     | SystemMonitorService | Process SystemMonitorService received signal 2. Stopping...
+2026-05-31 22:36:09.833 | INFO     | LoggerService | Process LoggerService received signal 2. Stopping...
+2026-05-31 22:36:09.833 | INFO     | HALService | Process HALService received signal 2. Stopping...
+2026-05-31 22:36:09.834 | INFO     | LoggerService | Process LoggerService stopped.
+2026-05-31 22:36:09.848 | INFO     | HALService | Process HALService stopped.
+2026-05-31 22:36:09.855 | INFO     | GNCService | Process GNCService stopped.
+2026-05-31 22:36:09.855 | INFO     | NavigationService | Process NavigationService stopped.
+2026-05-31 22:36:09.856 | INFO     | ManagerService | Process ManagerService stopped.
+2026-05-31 22:36:09.856 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-31 22:36:09.963 | INFO     | CommsService | [Web Server] ZMQ consumer task cancelled
+2026-05-31 22:36:09.964 | INFO     | CommsService | Stopping MAVLink Bridge...
+2026-05-31 22:36:09.979 | INFO     | CommsService | MAVLink bridge stopped.
+2026-05-31 22:36:10.389 | INFO     | SystemMonitorService | Process SystemMonitorService stopped.
+2026-05-31 22:36:10.457 | SUCCESS  | MAIN | All services stopped. Exiting.
+2026-05-31 22:36:12.204 | INFO     | MAIN | Starting USV Control System
+2026-05-31 22:36:12.204 | INFO     | MAIN | Mode: SIMULATION
+2026-05-31 22:36:12.697 | INFO     | BROKER | Broker started. Publishers -> :5555 | Subscribers <- :5556
+2026-05-31 22:36:13.240 | INFO     | GNCService | Process GNCService starting...
+2026-05-31 22:36:13.254 | INFO     | SystemMonitorService | Process SystemMonitorService starting...
+2026-05-31 22:36:13.276 | INFO     | CommsService | Starting MAVLink Bridge thread...
+2026-05-31 22:36:13.269 | INFO     | HALService | Process HALService starting...
+2026-05-31 22:36:13.282 | INFO     | CommsService | Starting Web Server on port 8000
+2026-05-31 22:36:13.281 | INFO     | HALService | [GNSS Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-31 22:36:13.283 | INFO     | HALService | [GNSS Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-31 22:36:13.284 | INFO     | HALService | [GNSS Node] Starting (with auto-retry)...
+2026-05-31 22:36:13.286 | INFO     | CommsService | MAVLink bridge sending to udpout:127.0.0.1:14550
+2026-05-31 22:36:13.274 | INFO     | NavigationService | Process NavigationService starting...
+2026-05-31 22:36:13.284 | INFO     | HALService | GNSS Node (UM982) started on /dev/gnss_um982
+2026-05-31 22:36:13.277 | INFO     | LoggerService | Process LoggerService starting...
+2026-05-31 22:36:13.269 | INFO     | ManagerService | Process ManagerService starting...
+2026-05-31 22:36:13.284 | ERROR    | HALService | [GNSS Node] Cannot open /dev/gnss_um982: could not open port '/dev/gnss_um982': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-31 22:36:13.288 | INFO     | HALService | [IMU Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-31 22:36:13.289 | INFO     | HALService | [IMU Node] Starting (with auto-retry)...
+2026-05-31 22:36:13.289 | ERROR    | HALService | [IMU Node] Cannot open /dev/serial0: could not open port '/dev/serial0': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying in 5.0s...
+2026-05-31 22:36:13.289 | INFO     | HALService | IMU Node started on /dev/serial0
+2026-05-31 22:36:13.292 | INFO     | HALService | [Power Node] Publisher connected to ZMQ Bus: tcp://127.0.0.1:5555
+2026-05-31 22:36:13.292 | INFO     | HALService | [Power Node] Subscriber connected to tcp://127.0.0.1:5556 for commands
+2026-05-31 22:36:13.292 | INFO     | HALService | [Power Node] Starting (with auto-retry)...
+2026-05-31 22:36:13.292 | INFO     | HALService | Power Node (PZEM-017) started on /dev/power_pzem
+2026-05-31 22:36:13.293 | ERROR    | HALService | [Power Node] Cannot open /dev/power_pzem: could not open port '/dev/power_pzem': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying...
+2026-05-31 22:36:13.293 | INFO     | HALService | [ESP32 Node] Starting (with auto-retry)...
+2026-05-31 22:36:13.293 | INFO     | HALService | ESP32 Node started on /dev/esp32
+2026-05-31 22:36:13.293 | ERROR    | HALService | [ESP32 Node] Cannot open /dev/esp32: could not open port '/dev/esp32': FileNotFoundError(2, 'The system cannot find the path specified.', None, 3). Retrying every 3.0s (this message will not repeat).
+2026-05-31 22:36:13.294 | INFO     | HALService | Process HALService entering loop at 50.0 Hz
+2026-05-31 22:36:13.301 | INFO     | CommsService | Starting Web Server...
+2026-05-31 22:36:13.388 | INFO     | NavigationService | Navigation Process initialized (passthrough mode)
+2026-05-31 22:36:13.388 | INFO     | NavigationService | Process NavigationService entering loop at 20.0 Hz
+2026-05-31 22:36:13.390 | INFO     | LoggerService | LoggerProcess initialized
+2026-05-31 22:36:13.390 | INFO     | LoggerService | Process LoggerService entering loop at 50.0 Hz
+2026-05-31 22:36:13.405 | INFO     | SystemMonitorService | SystemMonitor initialized (host=IS-41112, os=Windows)
+2026-05-31 22:36:13.405 | INFO     | SystemMonitorService | Process SystemMonitorService entering loop at 1.0 Hz
+2026-05-31 22:36:13.508 | INFO     | CommsService | Command publisher connected to ZMQ broker
+2026-05-31 22:36:13.510 | INFO     | CommsService | [Web Server] ZMQ consumer subscribed on tcp://127.0.0.1:5556
+2026-05-31 22:36:13.596 | INFO     | ManagerService | Manager: settings loaded from c:\PYTHON\ControlUSV\src\manager\..\..\data\manager_settings.json
+2026-05-31 22:36:13.677 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-31 22:36:13.974 | INFO     | GNCService | GNC Process initialized (waiting for AUTO mode)
+2026-05-31 22:36:13.974 | INFO     | GNCService | Process GNCService entering loop at 20.0 Hz
+2026-05-31 22:36:14.097 | INFO     | ManagerService | Manager Process Initialized. Waiting for commands...
+2026-05-31 22:36:14.097 | INFO     | ManagerService | Process ManagerService entering loop at 10.0 Hz
+2026-05-31 22:36:14.105 | INFO     | LoggerService | LoggerProcess: applied config (csv=2, json=1)
+2026-05-31 22:36:14.106 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260531T223614Z.csv
+2026-05-31 22:36:14.107 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260531T223614Z.csv
+2026-05-31 22:36:20.000 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-05-31 22:36:20.380 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-05-31 22:36:22.348 | INFO     | CommsService | Command received and published: CommandType.START_RT_SIM (seq=1)
+2026-05-31 22:36:22.396 | INFO     | GNCService | GNC: Starting RT simulation (Physics Engine Only)
+2026-05-31 22:36:22.397 | INFO     | GNCService | GNC: RT simulation started
+2026-05-31 22:36:22.409 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
+2026-05-31 22:36:22.442 | INFO     | ManagerService | Manager received command: CommandType.START_RT_SIM
+2026-05-31 22:36:22.442 | INFO     | ManagerService | Manager: RT Simulation STARTED — vehicle auto-DISARMED
+2026-05-31 22:36:22.442 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-05-31 22:36:24.253 | INFO     | CommsService | Command received and published: CommandType.STOP_RT_SIM (seq=20)
+2026-05-31 22:36:24.274 | INFO     | GNCService | GNC: RT simulation stopped after 1.9s
+2026-05-31 22:36:24.287 | INFO     | HALService | HAL: Sensors UNMUTED
+2026-05-31 22:36:24.354 | INFO     | ManagerService | Manager received command: CommandType.STOP_RT_SIM
+2026-05-31 22:36:24.354 | INFO     | ManagerService | Manager: RT Simulation STOPPED — back to REAL mode
+2026-05-31 22:36:24.354 | INFO     | ManagerService | Manager received command: CommandType.UNMUTE_SENSORS
+2026-05-31 22:36:34.265 | INFO     | CommsService | Command received and published: CommandType.ARM (seq=22)
+2026-05-31 22:36:34.304 | INFO     | ManagerService | Manager received command: CommandType.ARM
+2026-05-31 22:36:34.304 | WARNING  | ManagerService | >>> VEHICLE ARMED <<<
+2026-05-31 22:36:34.314 | INFO     | GNCService | GNC: Armed
+2026-05-31 22:36:42.673 | INFO     | CommsService | Command received and published: CommandType.DISARM (seq=107)
+2026-05-31 22:36:42.704 | INFO     | GNCService | GNC: Disarmed — controller reset
+2026-05-31 22:36:42.749 | INFO     | ManagerService | Manager received command: CommandType.DISARM
+2026-05-31 22:36:42.749 | WARNING  | ManagerService | >>> VEHICLE DISARMED <<<
+2026-05-31 22:36:46.491 | INFO     | CommsService | Command received and published: CommandType.ARM (seq=109)
+2026-05-31 22:36:46.542 | INFO     | GNCService | GNC: Armed
+2026-05-31 22:36:46.570 | INFO     | ManagerService | Manager received command: CommandType.ARM
+2026-05-31 22:36:46.570 | WARNING  | ManagerService | >>> VEHICLE ARMED <<<
+2026-05-31 22:36:58.535 | INFO     | CommsService | Command received and published: CommandType.DISARM (seq=229)
+2026-05-31 22:36:58.536 | INFO     | CommsService | Command received and published: CommandType.START_RT_SIM (seq=230)
+2026-05-31 22:36:58.538 | INFO     | ManagerService | Manager received command: CommandType.DISARM
+2026-05-31 22:36:58.539 | WARNING  | ManagerService | >>> VEHICLE DISARMED <<<
+2026-05-31 22:36:58.539 | INFO     | ManagerService | Manager received command: CommandType.START_RT_SIM
+2026-05-31 22:36:58.539 | INFO     | ManagerService | Manager: RT Simulation STARTED — vehicle auto-DISARMED
+2026-05-31 22:36:58.566 | INFO     | GNCService | GNC: Disarmed — controller reset
+2026-05-31 22:36:58.566 | INFO     | GNCService | GNC: Starting RT simulation (Physics Engine Only)
+2026-05-31 22:36:58.567 | INFO     | GNCService | GNC: RT simulation started
+2026-05-31 22:36:58.579 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
+2026-05-31 22:36:58.639 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-05-31 22:37:07.955 | INFO     | CommsService | Command received and published: CommandType.SET_MODE (seq=325)
+2026-05-31 22:37:07.992 | INFO     | ManagerService | Manager received command: CommandType.SET_MODE
+2026-05-31 22:37:07.992 | INFO     | ManagerService | Mode changed to: WP_ROUTE
+2026-05-31 22:37:10.273 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=326)
+2026-05-31 22:37:10.283 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-05-31 22:37:10.306 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-05-31 22:37:10.307 | INFO     | ManagerService | WP Route STARTED: 3 waypoints, dir=forward
+2026-05-31 22:37:10.312 | INFO     | GNCService | GNC: WP Route started — 3 WPs, dir=forward, completion=stop
+2026-05-31 22:40:19.954 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-05-31 22:46:24.252 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-05-31 22:50:15.633 | INFO     | GNCService | PathFollower: mission complete!
+2026-05-31 22:50:15.633 | INFO     | GNCService | GNC: WP Route completed — stopping
+2026-05-31 22:50:15.633 | INFO     | GNCService | GNC: WP Route stopped
+2026-05-31 23:36:14.111 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260531T233614Z.csv
+2026-05-31 23:36:14.112 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260531T233614Z.csv
+2026-06-01 00:36:14.119 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T003614Z.csv
+2026-06-01 00:36:14.210 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T003614Z.csv
+2026-06-01 01:36:14.307 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T013614Z.csv
+2026-06-01 01:36:15.117 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T013615Z.csv
+2026-06-01 02:36:14.394 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T023614Z.csv
+2026-06-01 02:36:16.122 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T023616Z.csv
+2026-06-01 03:36:14.499 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T033614Z.csv
+2026-06-01 03:36:17.116 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T033617Z.csv
+2026-06-01 04:36:14.595 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T043614Z.csv
+2026-06-01 04:36:17.121 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T043617Z.csv
+2026-06-01 05:36:14.693 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T053614Z.csv
+2026-06-01 05:36:17.123 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T053617Z.csv
+2026-06-01 06:36:14.782 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T063614Z.csv
+2026-06-01 06:36:18.114 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T063618Z.csv
+2026-06-01 07:36:14.890 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T073614Z.csv
+2026-06-01 07:36:18.122 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T073618Z.csv
+2026-06-01 08:36:14.976 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T083614Z.csv
+2026-06-01 08:36:19.117 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T083619Z.csv
+2026-06-01 09:36:14.982 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T093614Z.csv
+2026-06-01 09:36:20.117 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T093620Z.csv
+2026-06-01 10:36:15.078 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T103615Z.csv
+2026-06-01 10:36:21.116 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T103621Z.csv
+2026-06-01 11:36:15.172 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T113615Z.csv
+2026-06-01 11:36:21.118 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T113621Z.csv
+2026-06-01 12:36:15.266 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T123615Z.csv
+2026-06-01 12:36:22.119 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T123622Z.csv
+2026-06-01 13:36:15.366 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T133615Z.csv
+2026-06-01 13:36:23.108 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T133623Z.csv
+2026-06-01 14:36:15.465 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T143615Z.csv
+2026-06-01 14:36:23.118 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T143623Z.csv
+2026-06-01 15:36:15.558 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T153615Z.csv
+2026-06-01 15:36:24.108 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T153624Z.csv
+2026-06-01 16:36:15.658 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T163615Z.csv
+2026-06-01 16:36:24.120 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T163624Z.csv
+2026-06-01 17:36:15.745 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T173615Z.csv
+2026-06-01 17:36:25.119 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T173625Z.csv
+2026-06-01 17:52:48.268 | INFO     | CommsService | Command received and published: CommandType.STOP_WP_ROUTE (seq=327)
+2026-06-01 17:52:48.325 | INFO     | ManagerService | Manager received command: CommandType.STOP_WP_ROUTE
+2026-06-01 17:52:48.325 | INFO     | ManagerService | WP Route STOPPED
+2026-06-01 17:52:56.300 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=328)
+2026-06-01 17:52:56.369 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-06-01 17:52:56.370 | INFO     | ManagerService | WP Route STARTED: 3 waypoints, dir=forward
+2026-06-01 17:52:56.394 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 17:52:56.426 | INFO     | GNCService | GNC: WP Route started — 3 WPs, dir=forward, completion=loop
+2026-06-01 17:53:03.763 | INFO     | CommsService | Command received and published: CommandType.STOP_WP_ROUTE (seq=329)
+2026-06-01 17:53:03.792 | INFO     | GNCService | GNC: WP Route stopped
+2026-06-01 17:53:03.812 | INFO     | ManagerService | Manager received command: CommandType.STOP_WP_ROUTE
+2026-06-01 17:53:03.812 | INFO     | ManagerService | WP Route STOPPED
+2026-06-01 17:53:05.748 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-06-01 17:53:06.116 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-06-01 17:53:11.675 | INFO     | CommsService | Command received and published: CommandType.STOP_RT_SIM (seq=1)
+2026-06-01 17:53:11.701 | INFO     | GNCService | GNC: RT simulation stopped after 68428.6s
+2026-06-01 17:53:11.707 | INFO     | HALService | HAL: Sensors UNMUTED
+2026-06-01 17:53:11.759 | INFO     | ManagerService | Manager received command: CommandType.STOP_RT_SIM
+2026-06-01 17:53:11.759 | INFO     | ManagerService | Manager: RT Simulation STOPPED — back to REAL mode
+2026-06-01 17:53:11.759 | INFO     | ManagerService | Manager received command: CommandType.UNMUTE_SENSORS
+2026-06-01 17:53:12.320 | INFO     | CommsService | Command received and published: CommandType.START_RT_SIM (seq=2)
+2026-06-01 17:53:12.357 | INFO     | GNCService | GNC: Starting RT simulation (Physics Engine Only)
+2026-06-01 17:53:12.358 | INFO     | GNCService | GNC: RT simulation started
+2026-06-01 17:53:12.362 | INFO     | HALService | HAL: Sensors MUTED (RT simulation active)
+2026-06-01 17:53:12.362 | INFO     | ManagerService | Manager received command: CommandType.START_RT_SIM
+2026-06-01 17:53:12.362 | INFO     | ManagerService | Manager: RT Simulation STARTED — vehicle auto-DISARMED
+2026-06-01 17:53:12.363 | INFO     | ManagerService | Manager received command: CommandType.MUTE_SENSORS
+2026-06-01 17:53:23.503 | INFO     | CommsService | Command received and published: CommandType.START_WP_ROUTE (seq=3)
+2026-06-01 17:53:23.524 | INFO     | ManagerService | Manager received command: CommandType.START_WP_ROUTE
+2026-06-01 17:53:23.526 | INFO     | ManagerService | WP Route STARTED: 3 waypoints, dir=forward
+2026-06-01 17:53:23.571 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 17:53:23.600 | INFO     | GNCService | GNC: WP Route started — 3 WPs, dir=forward, completion=loop
+2026-06-01 17:56:32.794 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 18:02:36.049 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 18:06:26.753 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 18:06:26.753 | INFO     | GNCService | GNC: WP Route loop #1, restarting
+2026-06-01 18:06:26.753 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 18:11:02.318 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 18:17:04.462 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 18:20:55.390 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 18:20:55.390 | INFO     | GNCService | GNC: WP Route loop #2, restarting
+2026-06-01 18:20:55.390 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 18:25:31.399 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 18:31:33.831 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 18:35:24.877 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 18:35:24.877 | INFO     | GNCService | GNC: WP Route loop #3, restarting
+2026-06-01 18:35:24.877 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 18:36:15.850 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T183615Z.csv
+2026-06-01 18:36:26.117 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T183626Z.csv
+2026-06-01 18:40:00.705 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 18:46:03.282 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 18:49:54.354 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 18:49:54.355 | INFO     | GNCService | GNC: WP Route loop #4, restarting
+2026-06-01 18:49:54.355 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 18:54:30.428 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 19:00:32.545 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 19:04:23.659 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 19:04:23.660 | INFO     | GNCService | GNC: WP Route loop #5, restarting
+2026-06-01 19:04:23.660 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 19:08:59.797 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 19:15:02.373 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 19:18:53.569 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 19:18:53.570 | INFO     | GNCService | GNC: WP Route loop #6, restarting
+2026-06-01 19:18:53.570 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 19:23:29.533 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 19:29:31.431 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 19:33:22.117 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 19:33:22.118 | INFO     | GNCService | GNC: WP Route loop #7, restarting
+2026-06-01 19:33:22.118 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 19:36:15.949 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T193615Z.csv
+2026-06-01 19:36:27.118 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T193627Z.csv
+2026-06-01 19:37:57.648 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 19:43:59.608 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 19:47:50.299 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 19:47:50.299 | INFO     | GNCService | GNC: WP Route loop #8, restarting
+2026-06-01 19:47:50.299 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 19:52:25.905 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 19:58:27.817 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 20:02:18.454 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 20:02:18.455 | INFO     | GNCService | GNC: WP Route loop #9, restarting
+2026-06-01 20:02:18.455 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 20:06:54.150 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 20:12:56.148 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 20:16:46.905 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 20:16:46.905 | INFO     | GNCService | GNC: WP Route loop #10, restarting
+2026-06-01 20:16:46.905 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 20:21:22.497 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 20:27:24.394 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 20:31:15.190 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 20:31:15.191 | INFO     | GNCService | GNC: WP Route loop #11, restarting
+2026-06-01 20:31:15.191 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 20:35:50.768 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 20:36:16.047 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T203616Z.csv
+2026-06-01 20:36:28.116 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T203628Z.csv
+2026-06-01 20:41:52.912 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 20:45:44.128 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 20:45:44.129 | INFO     | GNCService | GNC: WP Route loop #12, restarting
+2026-06-01 20:45:44.129 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 20:50:20.483 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 20:56:23.333 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 21:00:14.659 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 21:00:14.660 | INFO     | GNCService | GNC: WP Route loop #13, restarting
+2026-06-01 21:00:14.660 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 21:04:50.953 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 21:10:53.879 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 21:14:45.218 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 21:14:45.219 | INFO     | GNCService | GNC: WP Route loop #14, restarting
+2026-06-01 21:14:45.219 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 21:19:21.467 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 21:25:24.287 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 21:29:15.673 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 21:29:15.673 | INFO     | GNCService | GNC: WP Route loop #15, restarting
+2026-06-01 21:29:15.674 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 21:33:52.029 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 21:36:16.140 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T213616Z.csv
+2026-06-01 21:36:29.109 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T213629Z.csv
+2026-06-01 21:39:54.888 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 21:43:46.267 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 21:43:46.268 | INFO     | GNCService | GNC: WP Route loop #16, restarting
+2026-06-01 21:43:46.268 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 21:48:22.576 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 21:54:25.453 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 21:58:16.729 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 21:58:16.729 | INFO     | GNCService | GNC: WP Route loop #17, restarting
+2026-06-01 21:58:16.730 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 22:02:53.094 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 22:08:55.931 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 22:12:47.185 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 22:12:47.186 | INFO     | GNCService | GNC: WP Route loop #18, restarting
+2026-06-01 22:12:47.186 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 22:17:23.516 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 22:23:26.478 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 22:27:17.807 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 22:27:17.807 | INFO     | GNCService | GNC: WP Route loop #19, restarting
+2026-06-01 22:27:17.808 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 22:31:54.067 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 22:36:16.231 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T223616Z.csv
+2026-06-01 22:36:29.121 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T223629Z.csv
+2026-06-01 22:37:56.891 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 22:41:48.261 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 22:41:48.261 | INFO     | GNCService | GNC: WP Route loop #20, restarting
+2026-06-01 22:41:48.261 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 22:46:24.680 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 22:52:27.515 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 22:56:18.833 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 22:56:18.834 | INFO     | GNCService | GNC: WP Route loop #21, restarting
+2026-06-01 22:56:18.834 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 23:00:55.157 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 23:06:58.006 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 23:10:49.319 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 23:10:49.320 | INFO     | GNCService | GNC: WP Route loop #22, restarting
+2026-06-01 23:10:49.320 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 23:15:25.621 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 23:21:28.464 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 23:25:19.724 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 23:25:19.724 | INFO     | GNCService | GNC: WP Route loop #23, restarting
+2026-06-01 23:25:19.724 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 23:29:56.077 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 23:35:58.947 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 23:36:16.322 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260601T233616Z.csv
+2026-06-01 23:36:30.120 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260601T233630Z.csv
+2026-06-01 23:39:50.383 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 23:39:50.383 | INFO     | GNCService | GNC: WP Route loop #24, restarting
+2026-06-01 23:39:50.383 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 23:44:26.661 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-01 23:50:29.519 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-01 23:54:20.826 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-01 23:54:20.827 | INFO     | GNCService | GNC: WP Route loop #25, restarting
+2026-06-01 23:54:20.827 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-01 23:58:57.158 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 00:04:59.902 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 00:08:51.197 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 00:08:51.198 | INFO     | GNCService | GNC: WP Route loop #26, restarting
+2026-06-02 00:08:51.198 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 00:13:27.596 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 00:19:30.378 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 00:23:21.644 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 00:23:21.645 | INFO     | GNCService | GNC: WP Route loop #27, restarting
+2026-06-02 00:23:21.645 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 00:27:57.960 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 00:34:00.855 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 00:36:16.427 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260602T003616Z.csv
+2026-06-02 00:36:31.121 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260602T003631Z.csv
+2026-06-02 00:37:52.199 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 00:37:52.200 | INFO     | GNCService | GNC: WP Route loop #28, restarting
+2026-06-02 00:37:52.200 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 00:42:28.571 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 00:48:31.525 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 00:52:22.904 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 00:52:22.905 | INFO     | GNCService | GNC: WP Route loop #29, restarting
+2026-06-02 00:52:22.905 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 00:56:59.236 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 01:03:02.087 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 01:06:53.446 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 01:06:53.447 | INFO     | GNCService | GNC: WP Route loop #30, restarting
+2026-06-02 01:06:53.447 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 01:11:29.820 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 01:17:32.719 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 01:21:24.100 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 01:21:24.101 | INFO     | GNCService | GNC: WP Route loop #31, restarting
+2026-06-02 01:21:24.101 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 01:26:00.449 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 01:32:03.285 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 01:35:54.631 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 01:35:54.632 | INFO     | GNCService | GNC: WP Route loop #32, restarting
+2026-06-02 01:35:54.632 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 01:36:16.515 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260602T013616Z.csv
+2026-06-02 01:36:32.116 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260602T013632Z.csv
+2026-06-02 01:40:31.008 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 01:46:33.916 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 01:50:25.271 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 01:50:25.272 | INFO     | GNCService | GNC: WP Route loop #33, restarting
+2026-06-02 01:50:25.272 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 01:55:01.544 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 02:01:04.438 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 02:04:55.758 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 02:04:55.759 | INFO     | GNCService | GNC: WP Route loop #34, restarting
+2026-06-02 02:04:55.759 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 02:09:32.116 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 02:15:35.013 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 02:19:26.328 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 02:19:26.329 | INFO     | GNCService | GNC: WP Route loop #35, restarting
+2026-06-02 02:19:26.329 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 02:24:02.630 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 02:30:05.484 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 02:33:56.803 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 02:33:56.803 | INFO     | GNCService | GNC: WP Route loop #36, restarting
+2026-06-02 02:33:56.805 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 02:36:16.525 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260602T023616Z.csv
+2026-06-02 02:36:33.122 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260602T023633Z.csv
+2026-06-02 02:38:33.161 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 02:44:36.087 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 02:48:27.366 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 02:48:27.366 | INFO     | GNCService | GNC: WP Route loop #37, restarting
+2026-06-02 02:48:27.366 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 02:53:03.724 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 02:59:06.617 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 03:02:57.934 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 03:02:57.935 | INFO     | GNCService | GNC: WP Route loop #38, restarting
+2026-06-02 03:02:57.935 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 03:07:34.202 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 03:13:37.051 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 03:17:28.387 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 03:17:28.388 | INFO     | GNCService | GNC: WP Route loop #39, restarting
+2026-06-02 03:17:28.388 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 03:22:04.727 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 03:28:07.601 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 03:31:58.927 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 03:31:58.927 | INFO     | GNCService | GNC: WP Route loop #40, restarting
+2026-06-02 03:31:58.927 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 03:36:16.615 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260602T033616Z.csv
+2026-06-02 03:36:34.110 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260602T033634Z.csv
+2026-06-02 03:36:35.229 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 03:42:38.008 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 03:46:29.334 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 03:46:29.334 | INFO     | GNCService | GNC: WP Route loop #41, restarting
+2026-06-02 03:46:29.334 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 03:51:05.661 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 03:57:08.602 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 04:00:59.883 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 04:00:59.883 | INFO     | GNCService | GNC: WP Route loop #42, restarting
+2026-06-02 04:00:59.884 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 04:05:36.277 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 04:11:39.188 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 04:15:30.551 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 04:15:30.551 | INFO     | GNCService | GNC: WP Route loop #43, restarting
+2026-06-02 04:15:30.551 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 04:20:06.804 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 04:26:09.620 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 04:30:00.912 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 04:30:00.912 | INFO     | GNCService | GNC: WP Route loop #44, restarting
+2026-06-02 04:30:00.912 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 04:34:37.267 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 04:36:16.617 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260602T043616Z.csv
+2026-06-02 04:36:34.115 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260602T043634Z.csv
+2026-06-02 04:40:40.123 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 04:44:31.440 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 04:44:31.441 | INFO     | GNCService | GNC: WP Route loop #45, restarting
+2026-06-02 04:44:31.441 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 04:49:07.813 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 04:55:10.687 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 04:59:02.003 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 04:59:02.004 | INFO     | GNCService | GNC: WP Route loop #46, restarting
+2026-06-02 04:59:02.004 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 05:03:38.329 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 05:09:41.169 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 05:13:32.454 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 05:13:32.454 | INFO     | GNCService | GNC: WP Route loop #47, restarting
+2026-06-02 05:13:32.454 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 05:18:08.774 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 05:24:11.805 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 05:28:03.161 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 05:28:03.161 | INFO     | GNCService | GNC: WP Route loop #48, restarting
+2026-06-02 05:28:03.162 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 05:32:39.551 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 05:36:16.707 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260602T053616Z.csv
+2026-06-02 05:36:35.107 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260602T053635Z.csv
+2026-06-02 05:38:42.490 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 05:42:33.785 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 05:42:33.786 | INFO     | GNCService | GNC: WP Route loop #49, restarting
+2026-06-02 05:42:33.786 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 05:47:10.175 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 05:53:12.991 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 05:57:04.291 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 05:57:04.292 | INFO     | GNCService | GNC: WP Route loop #50, restarting
+2026-06-02 05:57:04.292 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 06:01:40.627 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 06:07:43.570 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 06:11:34.859 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 06:11:34.860 | INFO     | GNCService | GNC: WP Route loop #51, restarting
+2026-06-02 06:11:34.860 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 06:16:11.292 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 06:22:14.134 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 06:26:05.434 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 06:26:05.435 | INFO     | GNCService | GNC: WP Route loop #52, restarting
+2026-06-02 06:26:05.435 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 06:30:41.767 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 06:36:16.811 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260602T063616Z.csv
+2026-06-02 06:36:35.117 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260602T063635Z.csv
+2026-06-02 06:36:44.657 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 06:40:36.005 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 06:40:36.005 | INFO     | GNCService | GNC: WP Route loop #53, restarting
+2026-06-02 06:40:36.005 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 06:45:12.330 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 06:51:15.196 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 06:55:06.579 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 06:55:06.579 | INFO     | GNCService | GNC: WP Route loop #54, restarting
+2026-06-02 06:55:06.580 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 06:59:42.902 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 07:05:45.747 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 07:09:37.026 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 07:09:37.026 | INFO     | GNCService | GNC: WP Route loop #55, restarting
+2026-06-02 07:09:37.027 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 07:14:13.379 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 07:20:16.358 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 07:24:07.779 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 07:24:07.779 | INFO     | GNCService | GNC: WP Route loop #56, restarting
+2026-06-02 07:24:07.779 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 07:28:44.234 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 07:34:47.114 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 07:36:16.907 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260602T073616Z.csv
+2026-06-02 07:36:35.119 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260602T073635Z.csv
+2026-06-02 07:38:38.419 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 07:38:38.419 | INFO     | GNCService | GNC: WP Route loop #57, restarting
+2026-06-02 07:38:38.420 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 07:43:14.798 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 07:49:17.710 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 07:53:09.067 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 07:53:09.068 | INFO     | GNCService | GNC: WP Route loop #58, restarting
+2026-06-02 07:53:09.068 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 07:57:45.395 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 08:03:48.252 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 08:07:39.589 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 08:07:39.589 | INFO     | GNCService | GNC: WP Route loop #59, restarting
+2026-06-02 08:07:39.589 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 08:12:15.869 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 08:18:18.694 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 08:22:09.981 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 08:22:09.981 | INFO     | GNCService | GNC: WP Route loop #60, restarting
+2026-06-02 08:22:09.981 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 08:26:46.279 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 08:32:49.131 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 08:32:55.180 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-06-02 08:32:59.338 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-06-02 08:36:16.996 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260602T083616Z.csv
+2026-06-02 08:36:36.121 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260602T083636Z.csv
+2026-06-02 08:36:40.499 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 08:36:40.499 | INFO     | GNCService | GNC: WP Route loop #61, restarting
+2026-06-02 08:36:40.500 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 08:41:16.792 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 08:47:19.740 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 08:51:11.150 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 08:51:11.150 | INFO     | GNCService | GNC: WP Route loop #62, restarting
+2026-06-02 08:51:11.150 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 08:55:47.508 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 09:01:50.332 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 09:05:41.732 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 09:05:41.732 | INFO     | GNCService | GNC: WP Route loop #63, restarting
+2026-06-02 09:05:41.732 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 09:10:18.090 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 09:16:20.976 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 09:20:12.309 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 09:20:12.309 | INFO     | GNCService | GNC: WP Route loop #64, restarting
+2026-06-02 09:20:12.310 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 09:24:48.692 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 09:30:51.589 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 09:34:42.898 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 09:34:42.899 | INFO     | GNCService | GNC: WP Route loop #65, restarting
+2026-06-02 09:34:42.899 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 09:36:16.999 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260602T093616Z.csv
+2026-06-02 09:36:37.108 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260602T093637Z.csv
+2026-06-02 09:39:19.262 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 09:45:22.124 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 09:49:13.453 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 09:49:13.454 | INFO     | GNCService | GNC: WP Route loop #66, restarting
+2026-06-02 09:49:13.454 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 09:53:49.818 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 09:59:52.756 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 10:03:44.154 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 10:03:44.154 | INFO     | GNCService | GNC: WP Route loop #67, restarting
+2026-06-02 10:03:44.154 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 10:08:20.460 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 10:14:23.429 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 10:18:14.714 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 10:18:14.714 | INFO     | GNCService | GNC: WP Route loop #68, restarting
+2026-06-02 10:18:14.714 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 10:22:51.058 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 10:28:53.917 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 10:30:01.833 | WARNING  | CommsService | Failed to send to client, removing: 
+2026-06-02 10:30:01.833 | INFO     | CommsService | WebSocket client disconnected. Total: 0
+2026-06-02 10:30:02.208 | INFO     | CommsService | WebSocket client connected. Total: 1
+2026-06-02 10:32:44.866 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 10:32:44.867 | INFO     | GNCService | GNC: WP Route loop #69, restarting
+2026-06-02 10:32:44.867 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 10:36:17.099 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260602T103617Z.csv
+2026-06-02 10:36:37.108 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260602T103637Z.csv
+2026-06-02 10:37:21.091 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 10:43:23.944 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 10:47:15.340 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 10:47:15.340 | INFO     | GNCService | GNC: WP Route loop #70, restarting
+2026-06-02 10:47:15.340 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 10:51:51.747 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 10:57:54.682 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 11:01:46.076 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 11:01:46.077 | INFO     | GNCService | GNC: WP Route loop #71, restarting
+2026-06-02 11:01:46.077 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 11:06:22.376 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 11:12:25.286 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 11:16:16.598 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 11:16:16.598 | INFO     | GNCService | GNC: WP Route loop #72, restarting
+2026-06-02 11:16:16.599 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 11:20:52.950 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 11:26:56.053 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 11:30:47.661 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 11:30:47.661 | INFO     | GNCService | GNC: WP Route loop #73, restarting
+2026-06-02 11:30:47.661 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 11:35:24.247 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 11:36:17.190 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260602T113617Z.csv
+2026-06-02 11:36:37.109 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260602T113637Z.csv
+2026-06-02 11:41:27.460 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 11:45:19.112 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 11:45:19.113 | INFO     | GNCService | GNC: WP Route loop #74, restarting
+2026-06-02 11:45:19.113 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 11:49:55.788 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 11:55:59.152 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 11:59:50.776 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 11:59:50.777 | INFO     | GNCService | GNC: WP Route loop #75, restarting
+2026-06-02 11:59:50.777 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 12:04:27.372 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 12:10:30.607 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 12:14:22.172 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 12:14:22.173 | INFO     | GNCService | GNC: WP Route loop #76, restarting
+2026-06-02 12:14:22.173 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 12:18:58.858 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 12:25:02.178 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 12:28:53.729 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 12:28:53.729 | INFO     | GNCService | GNC: WP Route loop #77, restarting
+2026-06-02 12:28:53.730 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 12:33:30.382 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 12:36:17.282 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260602T123617Z.csv
+2026-06-02 12:36:37.112 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260602T123637Z.csv
+2026-06-02 12:39:33.628 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 12:43:25.241 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 12:43:25.241 | INFO     | GNCService | GNC: WP Route loop #78, restarting
+2026-06-02 12:43:25.241 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 12:48:01.909 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 12:54:05.220 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 12:57:56.832 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 12:57:56.832 | INFO     | GNCService | GNC: WP Route loop #79, restarting
+2026-06-02 12:57:56.832 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 13:02:33.489 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 13:08:36.762 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 13:12:28.353 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 13:12:28.353 | INFO     | GNCService | GNC: WP Route loop #80, restarting
+2026-06-02 13:12:28.353 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 13:17:04.965 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 13:23:08.387 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 13:27:00.004 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 13:27:00.004 | INFO     | GNCService | GNC: WP Route loop #81, restarting
+2026-06-02 13:27:00.006 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 13:31:36.636 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 13:36:17.283 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260602T133617Z.csv
+2026-06-02 13:36:37.114 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260602T133637Z.csv
+2026-06-02 13:37:39.938 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 13:41:31.599 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 13:41:31.599 | INFO     | GNCService | GNC: WP Route loop #82, restarting
+2026-06-02 13:41:31.599 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 13:46:08.213 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 13:52:11.510 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 13:56:03.087 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 13:56:03.087 | INFO     | GNCService | GNC: WP Route loop #83, restarting
+2026-06-02 13:56:03.087 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 14:00:39.730 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 14:06:42.986 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 14:10:34.633 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 14:10:34.634 | INFO     | GNCService | GNC: WP Route loop #84, restarting
+2026-06-02 14:10:34.634 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 14:15:11.284 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 14:21:14.519 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 14:25:06.111 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 14:25:06.111 | INFO     | GNCService | GNC: WP Route loop #85, restarting
+2026-06-02 14:25:06.111 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 14:29:42.713 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 14:35:45.973 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 14:36:17.284 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260602T143617Z.csv
+2026-06-02 14:36:37.121 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260602T143637Z.csv
+2026-06-02 14:39:37.571 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 14:39:37.572 | INFO     | GNCService | GNC: WP Route loop #86, restarting
+2026-06-02 14:39:37.572 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 14:44:14.155 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 14:50:17.417 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 14:54:08.938 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 14:54:08.938 | INFO     | GNCService | GNC: WP Route loop #87, restarting
+2026-06-02 14:54:08.938 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 14:58:45.626 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 15:04:48.880 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 15:08:40.468 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 15:08:40.469 | INFO     | GNCService | GNC: WP Route loop #88, restarting
+2026-06-02 15:08:40.469 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 15:13:17.118 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 15:19:20.336 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 15:23:11.864 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 15:23:11.864 | INFO     | GNCService | GNC: WP Route loop #89, restarting
+2026-06-02 15:23:11.864 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 15:27:48.449 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 15:33:51.697 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 15:36:17.369 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260602T153617Z.csv
+2026-06-02 15:36:38.116 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260602T153638Z.csv
+2026-06-02 15:37:43.236 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 15:37:43.237 | INFO     | GNCService | GNC: WP Route loop #90, restarting
+2026-06-02 15:37:43.237 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 15:42:19.865 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 15:48:23.006 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 15:52:14.619 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 15:52:14.620 | INFO     | GNCService | GNC: WP Route loop #91, restarting
+2026-06-02 15:52:14.620 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 15:56:51.222 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 16:02:54.450 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 16:06:46.090 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 16:06:46.090 | INFO     | GNCService | GNC: WP Route loop #92, restarting
+2026-06-02 16:06:46.090 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 16:11:22.589 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 16:17:25.845 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 16:21:17.395 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 16:21:17.395 | INFO     | GNCService | GNC: WP Route loop #93, restarting
+2026-06-02 16:21:17.397 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 16:25:53.996 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 16:31:57.220 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 16:35:48.766 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 16:35:48.766 | INFO     | GNCService | GNC: WP Route loop #94, restarting
+2026-06-02 16:35:48.766 | INFO     | GNCService | PathFollower: loaded 4 waypoints
+2026-06-02 16:36:17.372 | INFO     | LoggerService | [Logger NAV] opened C:\PYTHON\ControlUSV\logs\DATA\NAV_20260602T163617Z.csv
+2026-06-02 16:36:39.112 | INFO     | LoggerService | [Logger ALLIN] opened C:\PYTHON\ControlUSV\logs\DATA\ALLIN_20260602T163639Z.csv
+2026-06-02 16:40:25.423 | INFO     | GNCService | PathFollower: switched to WP 2/4
+2026-06-02 16:46:28.699 | INFO     | GNCService | PathFollower: switched to WP 3/4
+2026-06-02 16:50:20.223 | INFO     | GNCService | PathFollower: mission complete!
+2026-06-02 16:50:20.223 | INFO     | GNCService | GNC: WP Route loop #95, restarting
+2026-06-02 16:50:20.225 | INFO     | GNCService | PathFollower: loaded 4 waypoints

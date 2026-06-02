@@ -46,10 +46,33 @@
         @click="store.setSimMode('SIMULATION')"
       >SIM</button>
     </div>
+
+    <!-- ARM / DISARM Confirmation Dialog (teleported to body so it
+         centers over the viewport regardless of any transformed
+         ancestor of the control panel) -->
+    <Teleport to="body">
+      <div v-if="armConfirm" class="confirm-overlay" @click.self="armConfirm = null">
+        <div class="confirm-dialog">
+          <h4>{{ armConfirm.title }}</h4>
+          <p v-html="armConfirm.body"></p>
+          <div class="confirm-actions">
+            <button class="btn btn-secondary" @click="armConfirm = null">Cancel</button>
+            <button
+              class="btn"
+              :class="armConfirm.danger ? 'btn-danger' : 'btn-success'"
+              @click="confirmArmAction"
+            >
+              {{ armConfirm.confirmLabel }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { useTelemetryStore } from '../stores/telemetry'
 import { storeToRefs } from 'pinia'
 
@@ -62,16 +85,33 @@ const modes = [
   { value: 'WP_ROUTE', label: 'WP ROUTE' },
 ]
 
+// { title, body, confirmLabel, danger, action }
+const armConfirm = ref(null)
+
 const handleArm = () => {
-  if (confirm('Are you sure you want to ARM the vehicle? Motors will receive power.')) {
-    store.armVehicle()
+  armConfirm.value = {
+    title: 'ARM vehicle?',
+    body: 'The motors will be <strong>powered on</strong> and will respond to control commands. Make sure the area around the propellers is clear.',
+    confirmLabel: 'ARM',
+    danger: false,
+    action: () => store.armVehicle(),
   }
 }
 
 const handleDisarm = () => {
-  if (confirm('Are you sure you want to DISARM?')) {
-    store.disarmVehicle()
+  armConfirm.value = {
+    title: 'DISARM vehicle?',
+    body: 'This will <strong>cut motor commands</strong> immediately. Any active mission or station-keeping will stop.',
+    confirmLabel: 'DISARM',
+    danger: true,
+    action: () => store.disarmVehicle(),
   }
+}
+
+const confirmArmAction = () => {
+  const c = armConfirm.value
+  armConfirm.value = null
+  if (c && typeof c.action === 'function') c.action()
 }
 
 const changeMode = (mode) => {
@@ -200,4 +240,54 @@ const changeMode = (mode) => {
   background: #444;
   color: #fff;
 }
+
+/* ── Confirmation modal (matches Settings view) ────────────────── */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.confirm-dialog {
+  background: #1e1e1e;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 20px 24px;
+  max-width: 420px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+  color: #eee;
+}
+.confirm-dialog h4 {
+  margin: 0 0 10px 0;
+  color: #FFA500;
+  font-size: 1.1em;
+}
+.confirm-dialog p {
+  margin: 0 0 18px 0;
+  line-height: 1.45;
+  color: #ccc;
+}
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.btn-secondary {
+  background-color: #444;
+  color: #ccc;
+}
+.btn-secondary:hover { background-color: #555; }
+.btn-danger {
+  background-color: #cc3333;
+  color: white;
+}
+.btn-danger:hover { background-color: #ee4444; }
+.btn-success {
+  background-color: #2a8a3f;
+  color: white;
+}
+.btn-success:hover { background-color: #34a64d; }
 </style>

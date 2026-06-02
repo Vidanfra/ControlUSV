@@ -50,6 +50,9 @@ class CommandType(str, Enum):
     SET_LOGGING_CONFIG = "SET_LOGGING_CONFIG"
     LOGGER_START_PREVIEW = "LOGGER_START_PREVIEW"
     LOGGER_STOP_PREVIEW = "LOGGER_STOP_PREVIEW"
+    SET_RELAY = "SET_RELAY"               # payload: {idx: 0|1|2, state: 0|1}
+    RESTART_RELAY = "RESTART_RELAY"       # payload: {idx: 0|1|2}  (open 5 s, then close)
+    SET_RELAY_NAMES = "SET_RELAY_NAMES"   # payload: {names: [str, str, str]}
 
 class Waypoint(BaseModel):
     lat: float
@@ -374,3 +377,30 @@ class LoggingConfig(BaseModel):
     """All loggers + broadcasters managed by LoggerProcess."""
     csv_loggers: List[CsvLoggerConfig] = Field(default_factory=list)
     json_broadcasters: List[JsonBroadcasterConfig] = Field(default_factory=list)
+
+
+# ============================================================================
+# RELAYS (ESP32 R1 / R2 / R3 — power-cycle of internal subsystems)
+# ============================================================================
+
+class RelayConfig(BaseModel):
+    """Persistent relay state for the three ESP32 relays.
+
+    Index order MUST match the firmware command order (R1, R2, R3).
+    The relays power the internal comms router and two sensor payloads;
+    their main purpose is hard-restarting those subsystems.
+    """
+    names: List[str] = Field(
+        default_factory=lambda: ["Relay 1", "Relay 2", "Relay 3"],
+        description="Display names — order is fixed (idx 0 = R1, 1 = R2, 2 = R3).",
+    )
+    states: List[int] = Field(
+        default_factory=lambda: [1, 1, 1],
+        description="Latched state for each relay (1 = closed/ON, 0 = open/OFF).",
+    )
+    # Per-index Unix timestamp until which the relay is held in the
+    # 'restart' (open) pulse. 0 = no restart pending. Not editable directly.
+    restart_until: List[float] = Field(
+        default_factory=lambda: [0.0, 0.0, 0.0],
+        description="Internal: timestamp at which the 5-second restart pulse ends.",
+    )
