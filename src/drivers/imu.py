@@ -309,14 +309,17 @@ class ImuNode:
                         if self._connected:
                             self._publish_status(SensorStatus.OK, "Receiving data")
                         else:
-                            self._publish_status(SensorStatus.DISCONNECTED, "No data")
+                            # Serial port is open but no frames are arriving — this
+                            # is an ERROR (cable/wiring/sensor fault), not a
+                            # DISCONNECT (which means the bus is unavailable).
+                            self._publish_status(SensorStatus.ERROR, "No data from IMU sensor")
                         self._last_status_publish_time = now
 
                     # Check for data timeout — break to trigger reconnect
                     if self._connected and self._last_data_time > 0:
                         if time.time() - self._last_data_time > self._STATUS_TIMEOUT:
                             self._connected = False
-                            self._publish_status(SensorStatus.DISCONNECTED, "No data received (timeout)")
+                            self._publish_status(SensorStatus.ERROR, "No data received from IMU (timeout)")
                             logger.warning("[IMU Node] No data timeout — reconnecting...")
                             break
                     time.sleep(0.5)

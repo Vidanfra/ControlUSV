@@ -114,6 +114,7 @@ class Esp32Node:
     """
 
     _RETRY_INTERVAL = 3.0  # seconds between reconnect attempts
+    _STATUS_HEARTBEAT_INTERVAL = 5.0  # seconds between OK status republishes
 
     def __init__(self, port: str = "/dev/esp32", baudrate: int = 115200):
         self._port = port
@@ -184,8 +185,16 @@ class Esp32Node:
             stat = Subscriber([Topics.SYSTEM_STATUS])
             _send_error_logged = False
             last_send = 0.0
+            last_status_publish = time.monotonic()
             try:
                 while True:
+                    # 0) Periodic status heartbeat so late-joining WS clients
+                    #    (frontend opened after we connected) still see us as OK.
+                    now_mono = time.monotonic()
+                    if now_mono - last_status_publish > self._STATUS_HEARTBEAT_INTERVAL:
+                        self._publish_status(SensorStatus.OK, f"Connected on {self._port}")
+                        last_status_publish = now_mono
+
                     # 1) Drain heartbeats to refresh the latched relay state
                     for _ in range(10):
                         smsg = stat.receive(timeout_ms=0)

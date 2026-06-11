@@ -1032,8 +1032,9 @@ export const useTelemetryStore = defineStore('telemetry', {
             const cutoffGnss = nowMs - 120000
             if (this.gnssHistory.length > 0 && this.gnssHistory[0].timeMs < cutoffGnss)
               this.gnssHistory = this.gnssHistory.filter(p => p.timeMs > cutoffGnss)
-            // Zero-value detection: warn if lat/lon are both zero while connected
-            this.sensorZeroValues.gnss = (data.lat === 0 && data.lon === 0)
+            // Degraded-quality detection: orange whenever the fix is not RTK Fixed (4).
+            // Covers "acquiring fix" (fix_type=0/lat=lon=0), GPS-only, DGPS, and RTK Float.
+            this.sensorZeroValues.gnss = (data.fix_type !== 4)
           } 
           else if (topic === 'gnc/ekf_state') {
             this.lat = data.lat

@@ -313,7 +313,10 @@ class PowerNode:
                         if self._connected:
                             self._publish_status(SensorStatus.OK, "Receiving data")
                         else:
-                            self._publish_status(SensorStatus.DISCONNECTED, "No data")
+                            # Port is open but the device isn't answering — this is
+                            # an ERROR (sensor fault / battery off), not a DISCONNECT
+                            # (which means USB unplugged / port can't be opened).
+                            self._publish_status(SensorStatus.ERROR, "No response from PZEM (check power/wiring)")
                         self._last_status_publish_time = now
                     # Check if the read loop died (device unplugged)
                     if not self.driver.running:
@@ -322,13 +325,15 @@ class PowerNode:
                             logger.warning("[Power Node] Driver disconnected — retrying...")
                             self._disconnection_logged = True
                         self._connected = False
-                        self._publish_status(SensorStatus.DISCONNECTED, "Device disconnected (I/O errors)")
+                        # Serial port stays open here; the read loop stopped because
+                        # the PZEM device itself did not answer. Report as ERROR.
+                        self._publish_status(SensorStatus.ERROR, "No response from PZEM (I/O errors)")
                         break
                     # Check for data timeout — break to trigger reconnect
                     if self._connected and self._last_data_time > 0:
                         if time.time() - self._last_data_time > self._STATUS_TIMEOUT:
                             self._connected = False
-                            self._publish_status(SensorStatus.DISCONNECTED, "No data received (timeout)")
+                            self._publish_status(SensorStatus.ERROR, "No data received from PZEM (timeout)")
                             logger.warning("[Power Node] No data timeout — reconnecting...")
                             break
                     time.sleep(0.2)

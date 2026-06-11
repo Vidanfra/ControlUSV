@@ -537,13 +537,16 @@ class GnssNode:
                         if self._connected:
                             self._publish_status(SensorStatus.OK, "Receiving data")
                         else:
-                            self._publish_status(SensorStatus.DISCONNECTED, "No data")
+                            # Serial port is open but no NMEA frames are arriving —
+                            # this is an ERROR (cable/wiring/receiver fault), not a
+                            # DISCONNECT (which means the USB cable is unplugged).
+                            self._publish_status(SensorStatus.ERROR, "No data from GNSS receiver")
                         self._last_status_publish_time = now
                     # Check for data timeout — break out to trigger reconnect
                     if self._connected and self._last_data_time > 0:
                         if time.time() - self._last_data_time > self._STATUS_TIMEOUT:
                             self._connected = False
-                            self._publish_status(SensorStatus.DISCONNECTED, "No data received (timeout)")
+                            self._publish_status(SensorStatus.ERROR, "No data received from GNSS (timeout)")
                             logger.warning("[GNSS Node] No data timeout — reconnecting...")
                             break
                     time.sleep(0.2)

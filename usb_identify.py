@@ -68,6 +68,17 @@ def discover_serial_devices():
         if serial_str:
             _attrs['serial'] = serial_str
 
+        # Determine the physical USB port (e.g. "1-1.4"). This is the only
+        # reliable way to distinguish multiple identical adapters (same
+        # VID/PID/serial), such as several CH340 (1a86:7523) devices.
+        usb_port = None
+        try:
+            usb_parent = dev.find_parent('usb', 'usb_device')
+            if usb_parent is not None:
+                usb_port = usb_parent.sys_name  # e.g. "1-1.4"
+        except Exception:
+            usb_port = None
+
         info = {
             "device_node": node,
             "id_vendor": props.get("ID_VENDOR_ID"),
@@ -75,6 +86,7 @@ def discover_serial_devices():
             "id_vendor_str": props.get("ID_VENDOR"),
             "id_model_str": props.get("ID_MODEL"),
             "id_serial_short": props.get("ID_SERIAL_SHORT") or props.get("ID_SERIAL") or serial_str,
+            "id_usb_port": usb_port,
             "devpath": props.get("DEVPATH") or getattr(dev, "device_path", None),
             "_attrs": _attrs,
             "udev_device": dev,
@@ -91,6 +103,7 @@ def pretty_print_device(i, d):
     print(f"     Vendor:    {d['id_vendor']}  ({d['id_vendor_str']})")
     print(f"     Product:   {d['id_product']}  ({d['id_model_str']})")
     print(f"     Serial:    {d['id_serial_short']}")
+    print(f"     USB port:  {d.get('id_usb_port')}")
     print(f"     Devpath:   {d['devpath']}")
     print()
 
@@ -103,12 +116,18 @@ def build_udev_rule(device_info, symlink_name):
     vid = device_info.get("id_vendor")
     pid = device_info.get("id_product")
     serial = device_info.get("id_serial_short")
+    usb_port = device_info.get("id_usb_port")
 
     match_parts = []
     if vid:
         match_parts.append(f'ATTRS{{idVendor}}==\"{vid}\"')
     if pid:
         match_parts.append(f'ATTRS{{idProduct}}==\"{pid}\"')
+    # Bind to the physical USB port. Without this, multiple identical adapters
+    # (same VID/PID, e.g. CH340 1a86:7523) cannot be told apart and would all
+    # match the same rule. Requires each device to stay in its dedicated port.
+    if usb_port:
+        match_parts.append(f'KERNELS==\"{usb_port}\"')
 
     if not match_parts:
         raise ValueError("No usable attributes to match for device: " + str(device_info))
@@ -192,23 +211,32 @@ def write_rules_file(assignments, outpath: Path, source_path: Path = None):
         except Exception as e:
             print(f"Warning: could not read existing rules from {read_from}: {e}")
 
-    # Build map of new device fingerprints (vendor+product)
-    new_fingerprints = set()
+    # Identify what we're (re)assigning: physical USB ports and symlink names.
+    # We key retention on the physical port (not VID/PID) so that adding a
+    # second identical adapter (same VID/PID) no longer clobbers the existing
+    # rule for the first one.
+    new_ports = set()
+    new_names = set()
     for dev, name in assignments:
-        vid = dev.get("id_vendor")
-        pid = dev.get("id_product")
-        fingerprint = (vid, pid)
-        new_fingerprints.add(fingerprint)
-    
-    # Filter out old rules for devices we're updating
+        port = dev.get("id_usb_port")
+        if port:
+            new_ports.add(port)
+        new_names.add(name.lstrip("/"))
+
+    # Drop existing rules only if they target the same physical port or reuse a
+    # symlink name we're about to write; keep everything else untouched.
     retained_rules = []
     for rule in existing_rules:
-        # Check if this rule matches any of our new devices
         to_skip = False
-        for vid, pid in new_fingerprints:
-            if f'ATTRS{{idVendor}}==\"{vid}\"' in rule and f'ATTRS{{idProduct}}==\"{pid}\"' in rule:
+        for port in new_ports:
+            if f'KERNELS==\"{port}\"' in rule:
                 to_skip = True
                 break
+        if not to_skip:
+            for name in new_names:
+                if f'SYMLINK+=\"{name}\"' in rule:
+                    to_skip = True
+                    break
         if not to_skip:
             retained_rules.append(rule)
     

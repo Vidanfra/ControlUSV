@@ -24,7 +24,7 @@
             'status-error': telemetry.sensorStatus[s.key].status === 'error',
             'status-disconnected': telemetry.sensorStatus[s.key].status !== 'ok' && telemetry.sensorStatus[s.key].status !== 'error'
           }"
-          :title="s.label + ': ' + telemetry.sensorStatus[s.key].status + (telemetry.sensorZeroValues[s.key] ? ' (zero values)' : '') + ' — ' + telemetry.sensorStatus[s.key].message"
+          :title="s.label + ': ' + telemetry.sensorStatus[s.key].status + (telemetry.sensorZeroValues[s.key] ? ' (degraded)' : '') + ' — ' + telemetry.sensorStatus[s.key].message"
         >{{ s.label }}</span>
       </div>
       <div class="nav-status" :class="{ connected: telemetry.isConnected }">
