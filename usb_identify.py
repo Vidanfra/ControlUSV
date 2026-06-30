@@ -173,23 +173,25 @@ def interactive_assign(devices):
     return assignments
 
 
-def write_rules_file(assignments, outpath: Path):
+def write_rules_file(assignments, outpath: Path, source_path: Path = None):
     """
     Write udev rules, preserving existing rules for devices not being updated.
+    Reads existing rules from source_path if provided, otherwise from outpath.
     """
     existing_rules = []
-    
+    read_from = source_path if source_path is not None else outpath
+
     # Read existing rules if file exists
-    if outpath.exists():
+    if read_from.exists():
         try:
-            content = outpath.read_text()
+            content = read_from.read_text()
             existing_rules = [
                 line for line in content.splitlines()
                 if line.strip() and not line.strip().startswith("#")
             ]
         except Exception as e:
-            print(f"Warning: could not read existing rules: {e}")
-    
+            print(f"Warning: could not read existing rules from {read_from}: {e}")
+
     # Build map of new device fingerprints (vendor+product)
     new_fingerprints = set()
     for dev, name in assignments:
@@ -275,8 +277,9 @@ def main():
     dest = Path("/etc/udev/rules.d") / RULES_FILENAME
     if os.geteuid() != 0:
         # not root: write local file and instruct how to install
+        # Read existing installed rules for merging so prior rules are preserved on mv
         local_out = Path.cwd() / RULES_FILENAME
-        write_rules_file(assignments, local_out)
+        write_rules_file(assignments, local_out, source_path=dest)
         print("\nYou are not root. To install the rules run:")
         print(f"  sudo mv {local_out} {dest}")
         print("Then reload udev rules with:")

@@ -19,11 +19,12 @@
           :key="s.key"
           class="sensor-dot"
           :class="{
-            'status-ok': telemetry.sensorStatus[s.key].status === 'ok',
+            'status-ok': telemetry.sensorStatus[s.key].status === 'ok' && !telemetry.sensorZeroValues[s.key],
+            'status-zero': telemetry.sensorStatus[s.key].status === 'ok' && telemetry.sensorZeroValues[s.key],
             'status-error': telemetry.sensorStatus[s.key].status === 'error',
             'status-disconnected': telemetry.sensorStatus[s.key].status !== 'ok' && telemetry.sensorStatus[s.key].status !== 'error'
           }"
-          :title="s.label + ': ' + telemetry.sensorStatus[s.key].status + ' — ' + telemetry.sensorStatus[s.key].message"
+          :title="s.label + ': ' + telemetry.sensorStatus[s.key].status + (telemetry.sensorZeroValues[s.key] ? ' (zero values)' : '') + ' — ' + telemetry.sensorStatus[s.key].message"
         >{{ s.label }}</span>
       </div>
       <div class="nav-status" :class="{ connected: telemetry.isConnected }">
@@ -61,6 +62,7 @@ const sensors = [
   { key: 'gnss',  label: 'GNSS' },
   { key: 'imu',   label: 'IMU' },
   { key: 'power', label: 'PWR' },
+  { key: 'esp32', label: 'ESP32' },
 ]
 
 // Tabs Configuration
@@ -187,6 +189,11 @@ body, html {
 
 .sensor-dot.status-ok {
   background-color: #00C851;
+  color: #000;
+}
+
+.sensor-dot.status-zero {
+  background-color: #FFA500;
   color: #000;
 }
 

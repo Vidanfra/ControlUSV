@@ -288,6 +288,7 @@ class JsonBroadcasterTask(threading.Thread):
         try:
             if self.cfg.protocol == "udp":
                 self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             elif self.cfg.protocol == "tcp":
                 self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

@@ -2,7 +2,8 @@ import serial
 import json
 import time
 from loguru import logger
-from src.core.messaging import Subscriber, Topics
+from src.core.messaging import Publisher, Subscriber, Topics
+from src.core.models import SensorStatusMessage, SensorStatus
 
 '''
 ESP32 pinout:
@@ -90,6 +91,20 @@ class Esp32Node:
         # behaviour before the first heartbeat matches the historical
         # hard-coded `1, 1, 1`.
         self._relay_states: list[int] = [1, 1, 1]
+        self._status_pub = Publisher(Topics.SENSOR_STATUS)
+
+    def _publish_status(self, status: SensorStatus, message: str = ""):
+        """Publish ESP32 connection status on the sensor/status bus topic."""
+        try:
+            msg = SensorStatusMessage(
+                timestamp=time.time(),
+                sensor="esp32",
+                status=status,
+                message=message,
+            )
+            self._status_pub.publish(msg.model_dump())
+        except Exception as e:
+            logger.error(f"[ESP32 Node] Failed to publish status: {e}")
 
     def run(self):
         logger.info("[ESP32 Node] Starting (with auto-retry)...")
@@ -104,6 +119,7 @@ class Esp32Node:
                 logger.info(
                     f"[ESP32 Node] Connected on {self._port} — ready for motor commands"
                 )
+                self._publish_status(SensorStatus.OK, f"Connected on {self._port}")
             except Exception as e:
                 self._connected = False
                 if not _start_error_logged:
@@ -111,6 +127,7 @@ class Esp32Node:
                         f"[ESP32 Node] Cannot open {self._port}: {e}. "
                         f"Retrying every {self._RETRY_INTERVAL}s (this message will not repeat)."
                     )
+                    self._publish_status(SensorStatus.DISCONNECTED, f"Cannot open {self._port}")
                     _start_error_logged = True
                 time.sleep(self._RETRY_INTERVAL)
                 continue
@@ -185,6 +202,7 @@ class Esp32Node:
                 return
             finally:
                 self._connected = False
+                self._publish_status(SensorStatus.DISCONNECTED, "Serial connection lost")
                 try:
                     self.driver.close()
                 except Exception:

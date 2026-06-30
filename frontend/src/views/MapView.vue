@@ -65,7 +65,7 @@ import { useManualControl } from '../composables/useManualControl'
 const store = useTelemetryStore()
 const { vehicleMode, isArmed, rtSimActive, manualThrottle, manualSteering, alertBanners } = storeToRefs(store)
 
-// Activate manual control keyboard listeners
+// Activate manual control keyboard + gamepad (PS4) listeners
 useManualControl()
 
 // HUD bar styles (center-origin for bipolar values)

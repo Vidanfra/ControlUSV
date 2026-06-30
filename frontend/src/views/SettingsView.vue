@@ -3,6 +3,176 @@
     <div class="settings-panel">
       <h2>System Settings</h2>
 
+      <!-- Manual Control / Joystick (PS4 etc.) -->
+      <section class="settings-section">
+        <h3>Manual Control — Joystick</h3>
+        <p class="hint" style="margin-top:-10px; margin-bottom:15px">
+          The web browser reads the gamepad directly from this PC (Web Gamepad
+          API). Plug in or pair a PS4 / Xbox controller, then press any button
+          to wake it up. The left stick drives <strong>throttle</strong>
+          (vertical) and <strong>steering</strong> (horizontal) when the
+          vehicle is in <strong>MANUAL</strong> mode and armed.
+        </p>
+
+        <div class="setting-row">
+          <label>Connected Device</label>
+          <div class="input-group">
+            <span
+              class="gp-status-pill"
+              :class="{ connected: gpConnected }"
+            >
+              <span class="gp-status-dot"></span>
+              {{ gpConnected ? 'Connected' : 'Not detected' }}
+            </span>
+            <span class="status-text" style="font-family: monospace;">
+              {{ gpConnected ? (gpName || 'Gamepad') : '—' }}
+            </span>
+          </div>
+          <p v-if="gpConnected" class="hint">
+            Mapping: <code>{{ gpMapping || 'non-standard' }}</code>
+            &nbsp;·&nbsp;
+            Index: <code>{{ gpIndex }}</code>
+          </p>
+          <p v-else class="hint">
+            No controller seen yet. In Chrome / Edge the device only appears
+            after you press any button on it inside this tab.
+          </p>
+        </div>
+
+        <!-- Live left-stick visualization -->
+        <div class="setting-row">
+          <label>Left Stick (live test)</label>
+          <div class="gp-test-grid">
+            <div class="gp-stick-box" :class="{ disabled: !gpConnected }">
+              <div class="gp-stick-frame">
+                <div class="gp-stick-crosshair-h"></div>
+                <div class="gp-stick-crosshair-v"></div>
+                <div
+                  class="gp-stick-dot raw"
+                  :style="rawDotStyle"
+                  title="Raw stick position"
+                ></div>
+                <div
+                  class="gp-stick-dot processed"
+                  :style="procDotStyle"
+                  title="After deadzone + expo (sent to vehicle)"
+                ></div>
+                <div
+                  class="gp-stick-deadzone"
+                  :style="{ width: (gp.settings.deadzone * 100) + '%', height: (gp.settings.deadzone * 100) + '%' }"
+                ></div>
+              </div>
+              <div class="gp-stick-legend">
+                <span><span class="sw-raw"></span> Raw</span>
+                <span><span class="sw-proc"></span> Processed</span>
+                <span><span class="sw-dz"></span> Deadzone</span>
+              </div>
+            </div>
+
+            <div class="gp-readouts">
+              <div class="gp-readout">
+                <span class="gp-readout-label">Throttle (Y→)</span>
+                <div class="gp-bar">
+                  <div class="gp-bar-fill thr" :style="thrBarStyle"></div>
+                </div>
+                <span class="gp-readout-val">{{ procThrottle.toFixed(2) }}</span>
+              </div>
+              <div class="gp-readout">
+                <span class="gp-readout-label">Steering (X→)</span>
+                <div class="gp-bar">
+                  <div class="gp-bar-fill str" :style="strBarStyle"></div>
+                </div>
+                <span class="gp-readout-val">{{ procSteering.toFixed(2) }}</span>
+              </div>
+              <div class="gp-readout small">
+                <span class="gp-readout-label">Raw axes</span>
+                <span class="gp-axes-raw">
+                  LX:{{ fmtAxis(gp.axes[0]) }}
+                  LY:{{ fmtAxis(gp.axes[1]) }}
+                  RX:{{ fmtAxis(gp.axes[2]) }}
+                  RY:{{ fmtAxis(gp.axes[3]) }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Buttons activity -->
+        <div class="setting-row" v-if="gpConnected && gp.buttons.length">
+          <label>Buttons</label>
+          <div class="gp-buttons-grid">
+            <span
+              v-for="(b, i) in gp.buttons"
+              :key="i"
+              class="gp-button"
+              :class="{ pressed: b.pressed }"
+              :title="'Button ' + i + (b.pressed ? ' (pressed)' : '')"
+            >{{ i }}</span>
+          </div>
+          <p class="hint">Press any button on the controller to confirm input is reaching the browser.</p>
+        </div>
+
+        <!-- Tuning -->
+        <div class="setting-row">
+          <label for="gpDeadzone">Stick Deadzone</label>
+          <div class="input-group">
+            <input
+              id="gpDeadzone"
+              type="range" min="0" max="0.5" step="0.01"
+              :value="gp.settings.deadzone"
+              @input="gp.setDeadzone($event.target.value)"
+              class="gp-slider"
+            />
+            <span class="status-text" style="width:60px; text-align:right;">{{ gp.settings.deadzone.toFixed(2) }}</span>
+          </div>
+          <p class="hint">Filters out resting drift on the stick. 0.10–0.15 is typical for PS4 controllers.</p>
+        </div>
+
+        <div class="setting-row">
+          <label for="gpExpo">Expo (low-speed sensitivity)</label>
+          <div class="input-group">
+            <input
+              id="gpExpo"
+              type="range" min="0" max="1" step="0.01"
+              :value="gp.settings.expo"
+              @input="gp.setExpo($event.target.value)"
+              class="gp-slider"
+            />
+            <span class="status-text" style="width:60px; text-align:right;">{{ gp.settings.expo.toFixed(2) }}</span>
+          </div>
+          <p class="hint">0 = linear (1:1). Higher values give finer control near the centre and full power at the edges.</p>
+        </div>
+
+        <div class="setting-row">
+          <label>Invert Throttle Axis</label>
+          <div class="input-group">
+            <label class="toggle-label">
+              <input
+                type="checkbox"
+                class="toggle-checkbox"
+                :checked="gp.settings.invertY"
+                @change="gp.setInvertY($event.target.checked)"
+              />
+              <span class="toggle-text">
+                {{ gp.settings.invertY
+                  ? 'Inverted — stick down = forward'
+                  : 'Default — stick up = forward' }}
+              </span>
+            </label>
+          </div>
+          <p class="hint">Enable if the throttle direction feels reversed on your controller.</p>
+        </div>
+
+        <div class="setting-row">
+          <div class="input-group">
+            <button class="btn btn-secondary" @click="gp.resetSettings()">
+              Reset to Defaults
+            </button>
+          </div>
+          <p class="hint">Settings are stored in this browser only (localStorage).</p>
+        </div>
+      </section>
+
       <!-- ESP32 Relays (R1 / R2 / R3) -->
       <section class="settings-section">
         <h3>ESP32 Relays</h3>
@@ -434,8 +604,52 @@
 <script setup>
 import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useTelemetryStore } from '../stores/telemetry'
+import { useGamepad } from '../composables/useGamepad'
 
 const telemetry = useTelemetryStore()
+
+// ── Joystick / gamepad (shared state) ──────────────────────────────
+const gp = useGamepad()
+const gpConnected = gp.connected
+const gpName      = gp.name
+const gpMapping   = gp.mapping
+const gpIndex     = gp.index
+
+function fmtAxis(v) {
+  const n = Number(v) || 0
+  return (n >= 0 ? '+' : '') + n.toFixed(2)
+}
+
+// Processed (after deadzone + expo + invert) command preview
+const processed = computed(() => gp.leftStickCommand())
+const procThrottle = computed(() => processed.value.throttle)
+const procSteering = computed(() => processed.value.steering)
+
+// Stick visualization positions (center = 50%/50%, edges = 0%/100%)
+function stickPos(axX, axY) {
+  const x = Math.min(1, Math.max(-1, Number(axX) || 0))
+  const y = Math.min(1, Math.max(-1, Number(axY) || 0))
+  return {
+    left: `calc(${50 + x * 50}% - 6px)`,
+    top:  `calc(${50 + y * 50}% - 6px)`,
+  }
+}
+const rawDotStyle = computed(() => stickPos(gp.axes[0], gp.axes[1]))
+const procDotStyle = computed(() => {
+  // Map processed throttle/steering back to a stick-space dot. Throttle
+  // is positive-up in the vehicle frame, so flip sign for the visualization
+  // so it tracks the raw dot.
+  const yDir = gp.settings.invertY ? 1 : -1
+  return stickPos(procSteering.value, yDir * procThrottle.value)
+})
+
+function barStyle(v) {
+  const x = Math.min(1, Math.max(-1, Number(v) || 0))
+  if (x >= 0) return { left: '50%', width: (x * 50) + '%' }
+  return { left: (50 + x * 50) + '%', width: (-x * 50) + '%' }
+}
+const thrBarStyle = computed(() => barStyle(procThrottle.value))
+const strBarStyle = computed(() => barStyle(procSteering.value))
 
 const capacityInput = ref(500)
 const showResetConfirm = ref(false)
@@ -1020,6 +1234,191 @@ select.text-input {
   color: #888;
   font-size: 0.9em;
   white-space: nowrap;
+}
+
+/* ── Joystick / gamepad test panel ─────────────────────────────────── */
+.gp-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 14px;
+  border: 1px solid #555;
+  background: #2a2a2a;
+  color: #aaa;
+  font-weight: 600;
+  font-size: 0.85em;
+}
+.gp-status-pill.connected {
+  border-color: #2a8a3f;
+  background: #142a14;
+  color: #6ee06e;
+}
+.gp-status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #555;
+}
+.gp-status-pill.connected .gp-status-dot {
+  background: #00C851;
+  box-shadow: 0 0 6px rgba(0, 200, 81, 0.9);
+}
+
+.gp-test-grid {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.gp-stick-box.disabled { opacity: 0.45; }
+.gp-stick-frame {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: #161616;
+  border: 1px solid #444;
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+.gp-stick-crosshair-h,
+.gp-stick-crosshair-v {
+  position: absolute;
+  background: #2a2a2a;
+}
+.gp-stick-crosshair-h { left: 0; right: 0; top: 50%; height: 1px; }
+.gp-stick-crosshair-v { top: 0; bottom: 0; left: 50%; width: 1px; }
+.gp-stick-deadzone {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px dashed #555;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.gp-stick-dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  transition: left 0.04s linear, top 0.04s linear;
+}
+.gp-stick-dot.raw {
+  background: rgba(255, 165, 0, 0.55);
+  border: 1px solid #FFA500;
+}
+.gp-stick-dot.processed {
+  background: #00C851;
+  border: 1px solid #00C851;
+  box-shadow: 0 0 6px rgba(0, 200, 81, 0.8);
+}
+.gp-stick-legend {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 0.75em;
+  color: #888;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.gp-stick-legend > span { display: inline-flex; align-items: center; gap: 5px; }
+.gp-stick-legend .sw-raw,
+.gp-stick-legend .sw-proc,
+.gp-stick-legend .sw-dz {
+  display: inline-block;
+  width: 10px; height: 10px; border-radius: 50%;
+}
+.gp-stick-legend .sw-raw  { background: rgba(255,165,0,0.55); border: 1px solid #FFA500; }
+.gp-stick-legend .sw-proc { background: #00C851; }
+.gp-stick-legend .sw-dz   { background: transparent; border: 1px dashed #777; }
+
+.gp-readouts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.gp-readout {
+  display: grid;
+  grid-template-columns: 110px 1fr 60px;
+  gap: 10px;
+  align-items: center;
+}
+.gp-readout.small {
+  grid-template-columns: 110px 1fr;
+}
+.gp-readout-label {
+  color: #aaa;
+  font-size: 0.85em;
+}
+.gp-readout-val {
+  font-family: monospace;
+  color: #eee;
+  text-align: right;
+  font-size: 0.9em;
+}
+.gp-bar {
+  position: relative;
+  height: 12px;
+  background: #222;
+  border: 1px solid #333;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.gp-bar::before {
+  content: '';
+  position: absolute;
+  left: 50%; top: 0; bottom: 0;
+  width: 1px;
+  background: #555;
+}
+.gp-bar-fill {
+  position: absolute;
+  top: 0; bottom: 0;
+  border-radius: 2px;
+}
+.gp-bar-fill.thr { background: #00C851; }
+.gp-bar-fill.str { background: #FFA500; }
+.gp-axes-raw {
+  font-family: monospace;
+  color: #aaa;
+  font-size: 0.85em;
+  letter-spacing: 0.5px;
+}
+
+.gp-buttons-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.gp-button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  color: #888;
+  font-family: monospace;
+  font-size: 0.8em;
+  transition: background 0.08s, color 0.08s, border-color 0.08s;
+}
+.gp-button.pressed {
+  background: #00C851;
+  border-color: #00C851;
+  color: #0c2a14;
+  font-weight: 700;
+  box-shadow: 0 0 6px rgba(0, 200, 81, 0.6);
+}
+
+.gp-slider {
+  flex: 1;
+  min-width: 200px;
+  accent-color: #FFA500;
 }
 
 .toggle-label {

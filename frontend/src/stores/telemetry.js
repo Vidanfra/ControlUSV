@@ -152,6 +152,14 @@ export const useTelemetryStore = defineStore('telemetry', {
       gnss:  { status: 'disconnected', message: 'Waiting...', timestamp: 0 },
       imu:   { status: 'disconnected', message: 'Waiting...', timestamp: 0 },
       power: { status: 'disconnected', message: 'Waiting...', timestamp: 0 },
+      esp32: { status: 'disconnected', message: 'Waiting...', timestamp: 0 },
+    },
+
+    // Zero-value warning: sensor is connected/ok but transmitting all-zero data
+    sensorZeroValues: {
+      gnss:  false,
+      imu:   false,
+      power: false,
     },
 
     // UI navigation state (shared across components)
@@ -1010,6 +1018,8 @@ export const useTelemetryStore = defineStore('telemetry', {
             const cutoffGnss = nowMs - 120000
             if (this.gnssHistory.length > 0 && this.gnssHistory[0].timeMs < cutoffGnss)
               this.gnssHistory = this.gnssHistory.filter(p => p.timeMs > cutoffGnss)
+            // Zero-value detection: warn if lat/lon are both zero while connected
+            this.sensorZeroValues.gnss = (data.lat === 0 && data.lon === 0)
           } 
           else if (topic === 'gnc/ekf_state') {
             this.lat = data.lat
@@ -1205,6 +1215,8 @@ export const useTelemetryStore = defineStore('telemetry', {
              const cutoffPwr = nowPwr - 120000
              if (this.powerHistory.length > 0 && this.powerHistory[0].timeMs < cutoffPwr)
                this.powerHistory = this.powerHistory.filter(p => p.timeMs > cutoffPwr)
+             // Zero-value detection: warn if voltage is zero while connected
+             this.sensorZeroValues.power = (data.voltage === 0)
           }
           else if (topic === 'sensor/imu') {
              this.imuRoll = data.roll
@@ -1229,6 +1241,11 @@ export const useTelemetryStore = defineStore('telemetry', {
              const cutoffImu = nowMs - 120000
              if (this.imuHistory.length > 0 && this.imuHistory[0].timeMs < cutoffImu)
                this.imuHistory = this.imuHistory.filter(p => p.timeMs > cutoffImu)
+             // Zero-value detection: warn if all motion values are zero while connected
+             this.sensorZeroValues.imu = (
+               data.roll === 0 && data.pitch === 0 && data.yaw === 0 &&
+               data.ax === 0 && data.ay === 0 && data.az === 0
+             )
           }
           else if (topic === 'sensor/status') {
              const sensor = data.sensor  // 'gnss', 'imu', or 'power'
@@ -1238,6 +1255,10 @@ export const useTelemetryStore = defineStore('telemetry', {
                this.sensorStatus[sensor].message = data.message || ''
                this.sensorStatus[sensor].timestamp = data.timestamp
                console.log(`[Telemetry] Updated ${sensor} status to:`, this.sensorStatus[sensor])
+               // Clear zero-value flag when sensor goes offline
+               if (data.status !== 'ok' && this.sensorZeroValues[sensor] !== undefined) {
+                 this.sensorZeroValues[sensor] = false
+               }
              } else {
                console.warn(`[Telemetry] Unknown sensor: ${sensor}`)
              }

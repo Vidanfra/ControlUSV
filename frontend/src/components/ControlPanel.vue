@@ -1,12 +1,24 @@
 <template>
   <div class="control-panel">
+    <!-- Joystick connection indicator (always visible, independent of mode) -->
+    <span
+      class="gamepad-indicator"
+      :class="{ connected: gamepadConnected }"
+      :title="gamepadConnected
+        ? ('Gamepad connected: ' + gamepadName + ' \u2014 configure in Settings')
+        : 'No gamepad detected \u2014 plug in / pair a controller and press any button. Settings \u2192 Manual Control to test.'"
+    >
+      <span class="gamepad-dot"></span>
+      <span class="gamepad-text">{{ gamepadConnected ? 'JOY' : 'NO JOY' }}</span>
+    </span>
+
     <!-- ARM / DISARM Toggle -->
     <button 
       v-if="!isArmed"
       class="btn arm-btn"
       @click="handleArm"
       :disabled="!isConnected || rtSimActive"
-      :title="rtSimActive ? 'ARM disabled — simulation is active' : 'ARM vehicle'"
+      :title="rtSimActive ? 'ARM disabled \u2014 simulation is active' : 'ARM vehicle'"
     >
       ARM
     </button>
@@ -75,9 +87,13 @@
 import { ref } from 'vue'
 import { useTelemetryStore } from '../stores/telemetry'
 import { storeToRefs } from 'pinia'
+import { useGamepad } from '../composables/useGamepad'
 
 const store = useTelemetryStore()
 const { isArmed, isConnected, vehicleMode, simMode, rtSimActive } = storeToRefs(store)
+
+// Shared gamepad state (singleton across the app)
+const { connected: gamepadConnected, name: gamepadName } = useGamepad()
 
 const modes = [
   { value: 'MANUAL', label: 'MANUAL' },
@@ -129,6 +145,50 @@ const changeMode = (mode) => {
   padding: 8px 12px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+/* Joystick indicator (left of ARM) */
+.gamepad-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  background: #1e1e1e;
+  border: 1px solid #555;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-family: monospace;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #888;
+  cursor: default;
+  user-select: none;
+  transition: color 0.2s, border-color 0.2s, background-color 0.2s;
+}
+
+.gamepad-indicator.connected {
+  color: #6ee06e;
+  border-color: #2a8a3f;
+  background: #142a14;
+}
+
+.gamepad-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #555;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4) inset;
+}
+
+.gamepad-indicator.connected .gamepad-dot {
+  background: #00C851;
+  box-shadow: 0 0 6px rgba(0, 200, 81, 0.9);
+  animation: gp-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes gp-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(0, 200, 81, 0.6); }
+  50%      { box-shadow: 0 0 10px rgba(0, 200, 81, 1.0); }
 }
 
 .btn {
