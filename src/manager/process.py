@@ -2,7 +2,7 @@ from src.core.process import ServiceProcess
 from src.core.messaging import PubSubBroker, Publisher, Subscriber, Topics
 from src.core.models import (
     CommandMessage, CommandType, USVState, VehicleMode,
-    FailsafeConfig, GncConfig, LoggingConfig, RelayConfig,
+    FailsafeConfig, GncConfig, LoggingConfig, RelayConfig, MotorConfig,
 )
 
 _RELAY_RESTART_SECONDS = 5.0   # pulse width for the "Restart" button
@@ -51,6 +51,7 @@ class ManagerProcess(ServiceProcess):
         self.gnc_config = GncConfig()
         self.logging_config = LoggingConfig()
         self.relay_config = RelayConfig()
+        self.motor_config = MotorConfig()
         self.gnss_fix_type = 0
 
         # Load previously saved user settings (overrides defaults above)
@@ -120,6 +121,7 @@ class ManagerProcess(ServiceProcess):
             "gnc_config": self.gnc_config.model_dump(),
             "logging_config": self.logging_config.model_dump(),
             "relay_config": self.relay_config.model_dump(),
+            "motor_config": self.motor_config.model_dump(),
             "system_status": "ACTIVE"
         }
         self.status_pub.publish(status_payload)
@@ -280,6 +282,14 @@ class ManagerProcess(ServiceProcess):
             elif cmd.type == CommandType.SET_RELAY_NAMES:
                 self._apply_set_relay_names(cmd.payload or {})
 
+            elif cmd.type == CommandType.SET_MOTOR_CONFIG:
+                try:
+                    self.motor_config = MotorConfig(**(cmd.payload or {}))
+                    logger.info(f"Motor config updated: {self.motor_config}")
+                    self._save_settings()
+                except Exception as e:
+                    logger.error(f"Invalid motor config: {e}")
+
         except Exception as e:
             logger.error(f"Failed to handle command: {e}")
 
@@ -430,6 +440,11 @@ class ManagerProcess(ServiceProcess):
                         self.relay_config = rc
                     except Exception as e:
                         logger.warning(f"Manager: invalid stored relay_config ({e})")
+                if 'motor_config' in data:
+                    try:
+                        self.motor_config = MotorConfig(**data['motor_config'])
+                    except Exception as e:
+                        logger.warning(f"Manager: invalid stored motor_config ({e})")
                 logger.info(f"Manager: settings loaded from {_SETTINGS_FILE}")
         except Exception as e:
             logger.warning(f"Manager: could not load settings ({e}), using defaults")
@@ -456,6 +471,7 @@ class ManagerProcess(ServiceProcess):
                         # 'restart_until' is intentionally not persisted —
                         # pending pulses should not survive a reboot.
                     },
+                    'motor_config': self.motor_config.model_dump(),
                 }, f, indent=2)
         except Exception as e:
             logger.warning(f"Manager: could not save settings: {e}")

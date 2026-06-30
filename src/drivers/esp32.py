@@ -16,6 +16,40 @@ const int PIN_R3 = 40;  // Payload Relay [YELLOW]
 '''
 
 
+def apply_motor_calibration(
+    pct: float,
+    fwd_deadzone: float, fwd_saturation: float,
+    bwd_deadzone: float, bwd_saturation: float,
+) -> float:
+    """Remap a logical motor command onto the physical thrust band.
+
+    The ESC/propeller has a dead band near zero (no thrust until a minimum
+    command) and an effective saturation point (no extra thrust above a
+    maximum command). These differ forward vs. reverse, so each direction is
+    compensated independently.
+
+    A logical command ``pct`` in [-100, 100] is mapped so that any non-zero
+    value clears the dead band and full command reaches the saturation point:
+
+        forward (pct > 0):  out =  dz_f + (pct/100)  * (sat_f - dz_f)
+        reverse (pct < 0):  out = -dz_b - (|pct|/100) * (sat_b - dz_b)
+        pct == 0:           out =  0   (motor off)
+
+    With the defaults (dz=0, sat=100) this is an identity pass-through.
+    """
+    if pct > 0:
+        lo = max(0.0, min(100.0, fwd_deadzone))
+        hi = max(0.0, min(100.0, fwd_saturation))
+        mag = min(abs(pct), 100.0)
+        return lo + (mag / 100.0) * (hi - lo)
+    if pct < 0:
+        lo = max(0.0, min(100.0, bwd_deadzone))
+        hi = max(0.0, min(100.0, bwd_saturation))
+        mag = min(abs(pct), 100.0)
+        return -(lo + (mag / 100.0) * (hi - lo))
+    return 0.0
+
+
 class ESP32Driver:
     def __init__(self, port, baudrate=115200):
         self.ser = serial.Serial(port, baudrate, timeout=0.1)
@@ -91,6 +125,13 @@ class Esp32Node:
         # behaviour before the first heartbeat matches the historical
         # hard-coded `1, 1, 1`.
         self._relay_states: list[int] = [1, 1, 1]
+        # Latched motor calibration mirrored from the Manager's heartbeat
+        # (Topics.SYSTEM_STATUS.motor_config). Defaults are a pass-through
+        # (no dead-zone / saturation compensation).
+        self._motor_cal = {
+            'fwd_deadzone': 0.0, 'fwd_saturation': 100.0,
+            'bwd_deadzone': 0.0, 'bwd_saturation': 100.0,
+        }
         self._status_pub = Publisher(Topics.SENSOR_STATUS)
 
     def _publish_status(self, status: SensorStatus, message: str = ""):
@@ -158,6 +199,14 @@ class Esp32Node:
                                 self._relay_states = [
                                     1 if int(states[i]) else 0 for i in range(3)
                                 ]
+                        mc = sdata.get('motor_config')
+                        if isinstance(mc, dict):
+                            for key in self._motor_cal:
+                                if key in mc:
+                                    try:
+                                        self._motor_cal[key] = float(mc[key])
+                                    except (TypeError, ValueError):
+                                        pass
 
                     # 2) Wait briefly for a motor command
                     msg = sub.receive(timeout_ms=100)
@@ -177,6 +226,20 @@ class Esp32Node:
                     if msg is None and (now - last_send) < 0.2:
                         continue
                     last_send = now
+
+                    # Apply per-direction dead-zone / saturation compensation
+                    # before the command reaches the physical ESCs.
+                    cal = self._motor_cal
+                    port_pct = apply_motor_calibration(
+                        port_pct,
+                        cal['fwd_deadzone'], cal['fwd_saturation'],
+                        cal['bwd_deadzone'], cal['bwd_saturation'],
+                    )
+                    stbd_pct = apply_motor_calibration(
+                        stbd_pct,
+                        cal['fwd_deadzone'], cal['fwd_saturation'],
+                        cal['bwd_deadzone'], cal['bwd_saturation'],
+                    )
 
                     try:
                         self.driver.send_command(

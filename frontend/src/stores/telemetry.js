@@ -254,6 +254,14 @@ export const useTelemetryStore = defineStore('telemetry', {
       states: [1, 1, 1],
       restart_until: [0, 0, 0],
     },
+    // Motor calibration (per-direction dead-zone / saturation, %). Backend is
+    // authoritative; this mirrors the system/status heartbeat.
+    motorConfig: {
+      fwd_deadzone: 0.0,
+      fwd_saturation: 100.0,
+      bwd_deadzone: 0.0,
+      bwd_saturation: 100.0,
+    },
     systemMonitor: {
       timestamp: 0,
       cpu_percent: 0,
@@ -562,6 +570,12 @@ export const useTelemetryStore = defineStore('telemetry', {
     },
     setRelayNames(names) {
       this.sendCommand('SET_RELAY_NAMES', { names })
+    },
+
+    // ─── Motor calibration (ESP32 thrusters) ─────────────────────────
+    setMotorConfig(config) {
+      this.motorConfig = { ...this.motorConfig, ...config }
+      this.sendCommand('SET_MOTOR_CONFIG', this.motorConfig)
     },
 
     // ─── Logs feature ────────────────────────────────────────────────
@@ -1133,6 +1147,10 @@ export const useTelemetryStore = defineStore('telemetry', {
                  states: Array.isArray(rc.states) ? rc.states.map(s => s ? 1 : 0) : this.relayConfig.states,
                  restart_until: Array.isArray(rc.restart_until) ? rc.restart_until : [0, 0, 0],
                }
+             }
+             if (data.motor_config) {
+               // Backend is authoritative for motor calibration.
+               this.motorConfig = { ...this.motorConfig, ...data.motor_config }
              }
           }
           else if (topic === 'gnc/control_debug') {

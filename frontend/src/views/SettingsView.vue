@@ -242,6 +242,81 @@
         </div>
       </section>
 
+      <!-- Motor Calibration (ESP32 thrusters) -->
+      <section class="settings-section">
+        <h3>Motor Calibration</h3>
+        <p class="hint" style="margin-top:-10px; margin-bottom:15px">
+          Compensate the brushless thrusters' non-linearities. Every command is
+          remapped onto the physical band <strong>[dead&nbsp;zone&nbsp;→&nbsp;saturation]</strong>
+          so any non-zero command clears the dead band and full command reaches
+          saturation. Forward and reverse are tuned independently because the
+          propellers behave differently in each direction. Applied to real
+          hardware only (not the simulation). Defaults 0&nbsp;/&nbsp;100&nbsp;% =
+          no compensation.
+        </p>
+
+        <div class="motor-cal-grid">
+          <!-- Forward column -->
+          <div class="motor-cal-col">
+            <h4 class="motor-cal-title fwd">Forward (ahead)</h4>
+            <div class="setting-row">
+              <label for="motFwdDz">Dead Zone (%)</label>
+              <div class="input-group">
+                <input id="motFwdDz" v-model.number="motorForm.fwd_deadzone" type="number" min="0" max="100" step="1" class="text-input" />
+                <span class="unit">%</span>
+              </div>
+              <p class="hint">Below this command the motor produces no forward thrust.</p>
+            </div>
+            <div class="setting-row">
+              <label for="motFwdSat">Saturation (%)</label>
+              <div class="input-group">
+                <input id="motFwdSat" v-model.number="motorForm.fwd_saturation" type="number" min="0" max="100" step="1" class="text-input" />
+                <span class="unit">%</span>
+              </div>
+              <p class="hint">Full forward command maps to this output. No extra thrust above it.</p>
+            </div>
+          </div>
+
+          <!-- Reverse column -->
+          <div class="motor-cal-col">
+            <h4 class="motor-cal-title bwd">Reverse (astern)</h4>
+            <div class="setting-row">
+              <label for="motBwdDz">Dead Zone (%)</label>
+              <div class="input-group">
+                <input id="motBwdDz" v-model.number="motorForm.bwd_deadzone" type="number" min="0" max="100" step="1" class="text-input" />
+                <span class="unit">%</span>
+              </div>
+              <p class="hint">Below this command the motor produces no reverse thrust.</p>
+            </div>
+            <div class="setting-row">
+              <label for="motBwdSat">Saturation (%)</label>
+              <div class="input-group">
+                <input id="motBwdSat" v-model.number="motorForm.bwd_saturation" type="number" min="0" max="100" step="1" class="text-input" />
+                <span class="unit">%</span>
+              </div>
+              <p class="hint">Full reverse command maps to this output. No extra thrust above it.</p>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="motorError" class="validation-error">
+          <span>&#9888; {{ motorError }}</span>
+          <button class="close-error" @click="motorError = null">&#x2715;</button>
+        </div>
+
+        <div class="setting-row">
+          <div class="input-group">
+            <button class="btn btn-primary" @click="saveMotorConfig" :disabled="!motorConfigChanged">
+              Save Motor Calibration
+            </button>
+            <button class="btn btn-secondary" @click="resetMotorForm" :disabled="!motorConfigChanged">
+              Discard
+            </button>
+          </div>
+          <p class="hint">Persisted on the vehicle and applied immediately to the ESP32 thrusters.</p>
+        </div>
+      </section>
+
       <!-- Battery / Power Section -->
       <section class="settings-section">
         <h3>Battery & Energy</h3>
@@ -701,6 +776,15 @@ const mpForm = reactive({
   surveySpeed:  1.0,
 })
 
+// Motor calibration form (per-direction dead-zone / saturation, %)
+const motorError = ref(null)
+const motorForm = ref({
+  fwd_deadzone: 0,
+  fwd_saturation: 100,
+  bwd_deadzone: 0,
+  bwd_saturation: 100,
+})
+
 // Relay names — local draft so the user can edit then commit with one click.
 // Restart pulse end-times are surfaced through a 1 Hz ticker so the
 // "X s left" hint counts down in the UI.
@@ -816,6 +900,9 @@ onMounted(() => {
   mpForm.wpSpeed      = telemetry.missionDefaultWpSpeed
   mpForm.surveyRadius = telemetry.missionDefaultSurveyRadius
   mpForm.surveySpeed  = telemetry.missionDefaultSurveySpeed
+
+  // Load motor calibration from store
+  syncMotorForm()
 
   // Seed relay-name draft and start 1 Hz ticker for the restart countdown
   syncRelayNamesDraft()
@@ -964,6 +1051,57 @@ const mpChanged = computed(() => {
 function saveMissionDefaults() {
   telemetry.setMissionPlanDefaults({ ...mpForm })
 }
+
+// ─── Motor calibration ─────────────────────────────────────
+function syncMotorForm() {
+  const mc = telemetry.motorConfig || {}
+  motorForm.value = {
+    fwd_deadzone:   mc.fwd_deadzone   ?? 0,
+    fwd_saturation: mc.fwd_saturation ?? 100,
+    bwd_deadzone:   mc.bwd_deadzone   ?? 0,
+    bwd_saturation: mc.bwd_saturation ?? 100,
+  }
+}
+function resetMotorForm() { syncMotorForm() }
+
+const motorConfigChanged = computed(() => {
+  const mc = telemetry.motorConfig || {}
+  const f = motorForm.value
+  return (
+    f.fwd_deadzone   !== (mc.fwd_deadzone   ?? 0)   ||
+    f.fwd_saturation !== (mc.fwd_saturation ?? 100) ||
+    f.bwd_deadzone   !== (mc.bwd_deadzone   ?? 0)   ||
+    f.bwd_saturation !== (mc.bwd_saturation ?? 100)
+  )
+})
+
+// Clear the error whenever the user edits a field.
+watch(motorForm, () => { motorError.value = null }, { deep: true })
+
+// Sync the form from the backend heartbeat, but never clobber unsaved edits.
+watch(() => telemetry.motorConfig, () => {
+  if (!motorConfigChanged.value) syncMotorForm()
+}, { deep: true })
+
+function saveMotorConfig() {
+  const f = motorForm.value
+  const errors = []
+  const inRange = (v) => Number.isFinite(v) && v >= 0 && v <= 100
+  if (!inRange(f.fwd_deadzone))   errors.push('Forward dead zone must be 0–100%')
+  if (!inRange(f.fwd_saturation)) errors.push('Forward saturation must be 0–100%')
+  if (!inRange(f.bwd_deadzone))   errors.push('Reverse dead zone must be 0–100%')
+  if (!inRange(f.bwd_saturation)) errors.push('Reverse saturation must be 0–100%')
+  if (inRange(f.fwd_deadzone) && inRange(f.fwd_saturation) && f.fwd_deadzone >= f.fwd_saturation)
+    errors.push('Forward dead zone must be below saturation')
+  if (inRange(f.bwd_deadzone) && inRange(f.bwd_saturation) && f.bwd_deadzone >= f.bwd_saturation)
+    errors.push('Reverse dead zone must be below saturation')
+  if (errors.length > 0) {
+    motorError.value = errors.join('; ') + '.'
+    return
+  }
+  motorError.value = null
+  telemetry.setMotorConfig({ ...f })
+}
 </script>
 
 <style scoped>
@@ -994,6 +1132,26 @@ function saveMissionDefaults() {
   border-radius: 10px;
   padding: 25px;
   margin-bottom: 25px;
+}
+
+.motor-cal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.motor-cal-col {
+  min-width: 0;
+}
+.motor-cal-title {
+  margin: 0 0 12px;
+  font-size: 0.95em;
+  border-bottom: 1px solid #333;
+  padding-bottom: 6px;
+}
+.motor-cal-title.fwd { color: #4caf50; }
+.motor-cal-title.bwd { color: #ff9800; }
+@media (max-width: 600px) {
+  .motor-cal-grid { grid-template-columns: 1fr; }
 }
 
 .settings-section h3 {

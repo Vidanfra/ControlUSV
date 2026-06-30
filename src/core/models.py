@@ -53,6 +53,7 @@ class CommandType(str, Enum):
     SET_RELAY = "SET_RELAY"               # payload: {idx: 0|1|2, state: 0|1}
     RESTART_RELAY = "RESTART_RELAY"       # payload: {idx: 0|1|2}  (open 5 s, then close)
     SET_RELAY_NAMES = "SET_RELAY_NAMES"   # payload: {names: [str, str, str]}
+    SET_MOTOR_CONFIG = "SET_MOTOR_CONFIG" # payload: MotorConfig fields
 
 class Waypoint(BaseModel):
     lat: float
@@ -403,4 +404,42 @@ class RelayConfig(BaseModel):
     restart_until: List[float] = Field(
         default_factory=lambda: [0.0, 0.0, 0.0],
         description="Internal: timestamp at which the 5-second restart pulse ends.",
+    )
+
+
+# ============================================================================
+# MOTOR CALIBRATION (per-direction dead-zone / saturation compensation)
+# ============================================================================
+
+class MotorConfig(BaseModel):
+    """Per-direction motor non-linearity compensation for the ESP32 thrusters.
+
+    Brushless ESC + propeller combinations have a dead band near zero throttle
+    (no thrust until a minimum command) and an effective saturation point
+    (no extra thrust above a maximum command). These limits differ between
+    forward and reverse, so each direction is configured independently.
+
+    The logical command in [0, 100]%% (per direction) is remapped onto the
+    physical band [dead_zone, saturation]%% so that:
+      * any non-zero command clears the dead band, and
+      * full command never exceeds the saturation point.
+    A command of exactly 0 always maps to 0 (motor off).
+
+    Defaults (dz=0, sat=100) are a pass-through: no compensation applied.
+    """
+    fwd_deadzone: float = Field(
+        0.0, ge=0, le=100,
+        description="Forward dead-zone [%]: minimum command that produces thrust ahead.",
+    )
+    fwd_saturation: float = Field(
+        100.0, ge=0, le=100,
+        description="Forward saturation [%]: command above which no extra thrust is produced ahead.",
+    )
+    bwd_deadzone: float = Field(
+        0.0, ge=0, le=100,
+        description="Reverse dead-zone [%]: minimum command that produces thrust astern.",
+    )
+    bwd_saturation: float = Field(
+        100.0, ge=0, le=100,
+        description="Reverse saturation [%]: command above which no extra thrust is produced astern.",
     )
