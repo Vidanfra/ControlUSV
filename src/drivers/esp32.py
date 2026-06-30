@@ -285,7 +285,7 @@ if __name__ == "__main__":
     import math
 
     try:
-        driver = ESP32Driver("/dev/esp32")
+        driver = ESP32Driver("COM3")
         logger.info("Driver started. Sending sine wave (Ctrl+C to stop)...")
         t = 0
         while True:

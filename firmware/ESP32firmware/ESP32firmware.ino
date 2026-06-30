@@ -2,17 +2,18 @@
 #include <ESP32Servo.h>
 #include <ArduinoJson.h>
 
-// --- CONFIGURACIÓN ---
-const int PIN_M1 = 20;  // Babor (Port)
-const int PIN_M2 = 21;  // Estribor (Starboard)
-const int PIN_R1 = 38;  // Motor Relay
-const int PIN_R2 = 39;  // Comms Relay (Default ON)
-const int PIN_R3 = 40;  // Payload Relay
+// --- CONFIGURACIÓN (ESP32 WROOM - Freenove) ---
+// NOTA: GPIO34..39 son SOLO ENTRADA en el ESP32 WROOM original, por lo que
+// los pines del firmware original (S3: 20,21,38,39,40) se han reasignado a
+// pines válidos de salida. Cámbialos si tu cableado es distinto.
+const int PIN_M1 = 15;  // Babor (Port)
+const int PIN_M2 = 0;  // Estribor (Starboard)
+const int PIN_R1 = 18;  // Motor Relay
+const int PIN_R2 = 19;  // Comms Relay (Default ON)
+const int PIN_R3 = 21;  // Payload Relay
 
-// LED RGB (GPIO 48 is standard for ESP32-S3-DevKitC-1)
-#ifndef RGB_BUILTIN
-  #define RGB_BUILTIN 48
-#endif
+// LED integrado de un solo color del Freenove ESP32 WROOM (GPIO 2)
+const int PIN_LED = 2;
 
 const unsigned long TIMEOUT_MS = 250; // 0.25 segundos failsafe
 const long BAUDRATE = 115200;
@@ -34,8 +35,9 @@ void setup() {
   // Inicializar Serial
   Serial.begin(BAUDRATE);
 
-  // Initial RGB (Off)
-  neopixelWrite(RGB_BUILTIN, 0, 0, 0);
+  // LED integrado apagado al inicio
+  pinMode(PIN_LED, OUTPUT);
+  digitalWrite(PIN_LED, LOW);
 
   // Configurar Pines de Relés
   pinMode(PIN_R1, OUTPUT);
@@ -155,25 +157,18 @@ void setRelays(int v1, int v2, int v3) {
 void updateLed(bool isFailsafe) {
   static unsigned long lastBlink = 0;
   static bool ledState = false;
-  // Blink Faster for Failsafe (200ms) vs Normal (500ms)
-  int interval = isFailsafe ? 200 : 500; 
-  
-  if (millis() - lastBlink > interval) {
-    lastBlink = millis();
-    ledState = !ledState;
-    
-    if (ledState) {
-      if (isFailsafe) {
-        // Red
-        neopixelWrite(RGB_BUILTIN, 64, 0, 0); 
-      } else {
-        // Green
-        neopixelWrite(RGB_BUILTIN, 0, 64, 0); 
-      }
-    } else {
-      // Off
-      neopixelWrite(RGB_BUILTIN, 0, 0, 0);
+
+  if (isFailsafe) {
+    // Error / sin conexión con la Raspberry -> parpadeo rápido (100 ms)
+    if (millis() - lastBlink > 100) {
+      lastBlink = millis();
+      ledState = !ledState;
+      digitalWrite(PIN_LED, ledState ? HIGH : LOW);
     }
+  } else {
+    // Conexión correcta con la Raspberry -> LED fijo encendido
+    ledState = true;
+    digitalWrite(PIN_LED, HIGH);
   }
 }
 void activateFailsafe() {
