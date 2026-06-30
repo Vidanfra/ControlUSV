@@ -3,8 +3,21 @@
     <div class="settings-panel">
       <h2>System Settings</h2>
 
+      <!-- Sub-tab navigation -->
+      <nav class="settings-tabs">
+        <button
+          v-for="t in settingsTabs"
+          :key="t.key"
+          class="settings-tab"
+          :class="{ active: activeTab === t.key }"
+          @click="activeTab = t.key"
+        >
+          {{ t.label }}
+        </button>
+      </nav>
+
       <!-- Manual Control / Joystick (PS4 etc.) -->
-      <section class="settings-section">
+      <section v-show="activeTab === 'motors'" class="settings-section">
         <h3>Manual Control — Joystick</h3>
         <p class="hint" style="margin-top:-10px; margin-bottom:15px">
           The web browser reads the gamepad directly from this PC (Web Gamepad
@@ -174,7 +187,7 @@
       </section>
 
       <!-- ESP32 Relays (R1 / R2 / R3) -->
-      <section class="settings-section">
+      <section v-show="activeTab === 'energy'" class="settings-section">
         <h3>ESP32 Relays</h3>
         <p class="hint" style="margin-top:-10px; margin-bottom:15px">
           Three latched relays on the ESP32 controller. Their order matches the
@@ -243,7 +256,7 @@
       </section>
 
       <!-- Motor Calibration (ESP32 thrusters) -->
-      <section class="settings-section">
+      <section v-show="activeTab === 'motors'" class="settings-section">
         <h3>Motor Calibration</h3>
         <p class="hint" style="margin-top:-10px; margin-bottom:15px">
           Compensate the brushless thrusters' non-linearities. Every command is
@@ -318,7 +331,7 @@
       </section>
 
       <!-- Battery / Power Section -->
-      <section class="settings-section">
+      <section v-show="activeTab === 'energy'" class="settings-section">
         <h3>Battery & Energy</h3>
 
         <div class="setting-row">
@@ -356,7 +369,7 @@
       </section>
 
       <!-- GNSS / NTRIP Section -->
-      <section class="settings-section">
+      <section v-show="activeTab === 'sensors'" class="settings-section">
         <h3>GNSS / NTRIP Configuration</h3>
 
         <div class="setting-row">
@@ -433,7 +446,7 @@
       </section>
 
       <!-- Fail-Safe (Auto Mode) Section -->
-      <section class="settings-section">
+      <section v-show="activeTab === 'safety'" class="settings-section">
         <h3>Fail-Safe (Auto Mode)</h3>
 
         <div class="setting-row">
@@ -502,7 +515,7 @@
       </section>
 
       <!-- GNC Controller Config Section -->
-      <section class="settings-section">
+      <section v-show="activeTab === 'mission'" class="settings-section">
         <h3>GNC Controller Settings</h3>
         <p class="hint" style="margin-top:-10px; margin-bottom:15px">
           These settings tune the path-following and heading PID controllers. They apply immediately to both real hardware and the physics simulation drift.
@@ -602,7 +615,7 @@
       </section>
 
       <!-- Mission Plan Defaults Section -->
-      <section class="settings-section">
+      <section v-show="activeTab === 'mission'" class="settings-section">
         <h3>Mission Plan</h3>
         <p class="hint" style="margin-top:-10px; margin-bottom:15px">
           Default values applied to newly created waypoints and survey patterns. Existing items are not affected.
@@ -682,6 +695,18 @@ import { useTelemetryStore } from '../stores/telemetry'
 import { useGamepad } from '../composables/useGamepad'
 
 const telemetry = useTelemetryStore()
+
+// ── Settings sub-tabs ──────────────────────────────────────────────
+const settingsTabs = [
+  { key: 'motors',  label: 'Motors' },
+  { key: 'sensors', label: 'Sensors' },
+  { key: 'energy',  label: 'Energy' },
+  { key: 'safety',  label: 'Safety' },
+  { key: 'mission', label: 'Mission' },
+]
+const _savedTab = localStorage.getItem('settingsActiveTab')
+const activeTab = ref(settingsTabs.some(t => t.key === _savedTab) ? _savedTab : 'motors')
+watch(activeTab, (t) => localStorage.setItem('settingsActiveTab', t))
 
 // ── Joystick / gamepad (shared state) ──────────────────────────────
 const gp = useGamepad()
@@ -1125,6 +1150,40 @@ function saveMotorConfig() {
   color: #FFA500;
   margin-bottom: 30px;
   font-size: 1.5em;
+}
+
+/* Sub-tab navigation */
+.settings-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 25px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #121212;
+  padding: 6px 0;
+  border-bottom: 1px solid #2a2a2a;
+}
+.settings-tab {
+  background-color: #1e1e1e;
+  color: #bbb;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+.settings-tab:hover {
+  background-color: #2a2a2a;
+  color: #fff;
+}
+.settings-tab.active {
+  background-color: #FFA500;
+  color: #121212;
+  border-color: #FFA500;
+  font-weight: 600;
 }
 
 .settings-section {
