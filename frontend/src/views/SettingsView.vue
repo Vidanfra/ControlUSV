@@ -445,6 +445,79 @@
         </div>
       </section>
 
+      <!-- Sensor Offsets (CRP lever-arm) Section -->
+      <section v-show="activeTab === 'offsets'" class="settings-section">
+        <h3>Sensor Offsets (CRP Lever-Arm)</h3>
+        <p class="hint" style="margin-top:-10px; margin-bottom:15px">
+          Position of each sensor relative to the vessel <strong>CRP</strong>
+          (Common Reference Point / centre of gravity). Body-frame convention:
+          <strong>X</strong> forward (+bow), <strong>Y</strong> starboard
+          (+right), <strong>Z</strong> down (+below), in metres. Navigation uses
+          these to translate the GNSS antenna fix to the CRP (lever-arm
+          compensation rotated by the vessel attitude). The CRP itself is the
+          origin (0, 0, 0).
+        </p>
+
+        <div class="offsets-table">
+          <div class="offsets-head">
+            <span>Sensor</span>
+            <span>X — Forward (m)</span>
+            <span>Y — Starboard (m)</span>
+            <span>Z — Down (m)</span>
+          </div>
+
+          <div class="offsets-row crp">
+            <span class="offset-name">CRP (CG)</span>
+            <span class="offset-fixed">0.000</span>
+            <span class="offset-fixed">0.000</span>
+            <span class="offset-fixed">0.000</span>
+          </div>
+
+          <div
+            v-for="s in offsetSensors"
+            :key="s.key"
+            class="offsets-row"
+          >
+            <span class="offset-name">{{ s.label }}</span>
+            <input v-model.number="offsetsForm[s.key].x" type="number" step="0.001" class="offset-input" />
+            <input v-model.number="offsetsForm[s.key].y" type="number" step="0.001" class="offset-input" />
+            <input v-model.number="offsetsForm[s.key].z" type="number" step="0.001" class="offset-input" />
+          </div>
+        </div>
+
+        <div class="setting-row" style="margin-top:20px">
+          <label for="offPosSource">Position Source Antenna</label>
+          <div class="input-group">
+            <select id="offPosSource" v-model="offsetsForm.position_source" class="text-input">
+              <option value="stern">Stern (aft) antenna</option>
+              <option value="bow">Bow (forward) antenna</option>
+            </select>
+          </div>
+          <p class="hint">
+            Antenna whose fix provides the vessel position. The lever arm of
+            this antenna is used to compute the CRP. The other antenna is used
+            only for heading. Default: stern.
+          </p>
+        </div>
+
+        <div v-if="offsetsError" class="validation-error">
+          <span>&#9888; {{ offsetsError }}</span>
+          <button class="close-error" @click="offsetsError = null">&#x2715;</button>
+        </div>
+
+        <div class="setting-row">
+          <div class="input-group">
+            <button class="btn btn-primary" @click="saveOffsetsConfig" :disabled="!offsetsConfigChanged">
+              Save Offsets
+            </button>
+            <button class="btn btn-secondary" @click="resetOffsetsForm" :disabled="!offsetsConfigChanged">
+              Discard
+            </button>
+          </div>
+          <p class="hint">Persisted on the vehicle and applied immediately to the navigation solution.</p>
+        </div>
+      </section>
+
       <!-- Fail-Safe (Auto Mode) Section -->
       <section v-show="activeTab === 'safety'" class="settings-section">
         <h3>Fail-Safe (Auto Mode)</h3>
@@ -700,6 +773,7 @@ const telemetry = useTelemetryStore()
 const settingsTabs = [
   { key: 'motors',  label: 'Motors' },
   { key: 'sensors', label: 'Sensors' },
+  { key: 'offsets', label: 'Offsets' },
   { key: 'energy',  label: 'Energy' },
   { key: 'safety',  label: 'Safety' },
   { key: 'mission', label: 'Mission' },
@@ -929,6 +1003,9 @@ onMounted(() => {
   // Load motor calibration from store
   syncMotorForm()
 
+  // Load sensor offsets from store
+  syncOffsetsForm()
+
   // Seed relay-name draft and start 1 Hz ticker for the restart countdown
   syncRelayNamesDraft()
   _nowTimer = setInterval(() => { nowTs.value = Date.now() / 1000 }, 1000)
@@ -1126,6 +1203,82 @@ function saveMotorConfig() {
   }
   motorError.value = null
   telemetry.setMotorConfig({ ...f })
+}
+
+// ─── Sensor offsets (CRP lever-arm) ────────────────────────
+const offsetSensors = [
+  { key: 'imu',        label: 'IMU WT901C' },
+  { key: 'gnss_bow',   label: 'GNSS Antenna Bow (Proa)' },
+  { key: 'gnss_stern', label: 'GNSS Antenna Stern (Popa)' },
+]
+
+const offsetsError = ref(null)
+const offsetsForm = ref({
+  imu:        { x: -0.545, y: 0.135, z: -0.233 },
+  gnss_bow:   { x: 0.802,  y: 0.0,   z: -0.293 },
+  gnss_stern: { x: -0.657, y: 0.0,   z: -0.293 },
+  position_source: 'stern',
+})
+
+function syncOffsetsForm() {
+  const oc = telemetry.offsetsConfig || {}
+  const pick = (s, dx, dy, dz) => ({
+    x: s?.x ?? dx, y: s?.y ?? dy, z: s?.z ?? dz,
+  })
+  offsetsForm.value = {
+    imu:        pick(oc.imu,        -0.545, 0.135, -0.233),
+    gnss_bow:   pick(oc.gnss_bow,    0.802, 0.0,   -0.293),
+    gnss_stern: pick(oc.gnss_stern, -0.657, 0.0,   -0.293),
+    position_source: oc.position_source ?? 'stern',
+  }
+}
+function resetOffsetsForm() { syncOffsetsForm() }
+
+const offsetsConfigChanged = computed(() => {
+  const oc = telemetry.offsetsConfig || {}
+  const f = offsetsForm.value
+  const diff = (a, b, dx, dy, dz) =>
+    (a.x !== (b?.x ?? dx)) || (a.y !== (b?.y ?? dy)) || (a.z !== (b?.z ?? dz))
+  return (
+    diff(f.imu,        oc.imu,        -0.545, 0.135, -0.233) ||
+    diff(f.gnss_bow,   oc.gnss_bow,    0.802, 0.0,   -0.293) ||
+    diff(f.gnss_stern, oc.gnss_stern, -0.657, 0.0,   -0.293) ||
+    f.position_source !== (oc.position_source ?? 'stern')
+  )
+})
+
+// Clear the error whenever the user edits a field.
+watch(offsetsForm, () => { offsetsError.value = null }, { deep: true })
+
+// Sync the form from the backend heartbeat, but never clobber unsaved edits.
+watch(() => telemetry.offsetsConfig, () => {
+  if (!offsetsConfigChanged.value) syncOffsetsForm()
+}, { deep: true })
+
+function saveOffsetsConfig() {
+  const f = offsetsForm.value
+  const errors = []
+  const finite = (v) => Number.isFinite(v)
+  for (const s of offsetSensors) {
+    const o = f[s.key]
+    if (!finite(o.x) || !finite(o.y) || !finite(o.z)) {
+      errors.push(`${s.label}: all axes must be numbers`)
+    }
+  }
+  if (!['stern', 'bow'].includes(f.position_source)) {
+    errors.push('Position source must be stern or bow')
+  }
+  if (errors.length > 0) {
+    offsetsError.value = errors.join('; ') + '.'
+    return
+  }
+  offsetsError.value = null
+  telemetry.setOffsetsConfig({
+    imu:        { ...f.imu },
+    gnss_bow:   { ...f.gnss_bow },
+    gnss_stern: { ...f.gnss_stern },
+    position_source: f.position_source,
+  })
 }
 </script>
 
@@ -1716,4 +1869,65 @@ select.text-input {
 
 /* Confirmation dialog (relay variant reuses .confirm-overlay/.confirm-dialog) */
 .confirm-dialog p em { color: #FFA500; font-style: normal; }
+
+/* ── Sensor offsets (CRP lever-arm) ─────────────────────────────── */
+.offsets-table {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.offsets-head,
+.offsets-row {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1fr;
+  gap: 10px;
+  align-items: center;
+}
+.offsets-head {
+  color: #888;
+  font-size: 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 0 8px;
+  border-bottom: 1px solid #333;
+}
+.offsets-row {
+  padding: 8px 0;
+  border-bottom: 1px solid #2a2a2a;
+}
+.offsets-row:last-child { border-bottom: none; }
+.offsets-row.crp { color: #FFA500; }
+.offset-name {
+  color: #ccc;
+  font-weight: 600;
+  font-size: 0.9em;
+}
+.offset-fixed {
+  font-family: monospace;
+  color: #888;
+  padding: 8px 10px;
+}
+.offset-input {
+  background-color: #2a2a2a;
+  color: white;
+  border: 1px solid #555;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 0.95em;
+  font-family: monospace;
+  width: 100%;
+  box-sizing: border-box;
+}
+.offset-input:focus {
+  outline: none;
+  border-color: #FFA500;
+}
+@media (max-width: 600px) {
+  .offsets-head { display: none; }
+  .offsets-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 12px 0;
+  }
+}
 </style>

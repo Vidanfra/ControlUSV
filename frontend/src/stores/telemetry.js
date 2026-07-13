@@ -262,6 +262,15 @@ export const useTelemetryStore = defineStore('telemetry', {
       bwd_deadzone: 0.0,
       bwd_saturation: 100.0,
     },
+    // Sensor lever-arm offsets referenced to the CRP (centre of gravity).
+    // Body frame: x forward, y starboard, z down [m]. Backend is authoritative;
+    // this mirrors the system/status heartbeat.
+    offsetsConfig: {
+      imu:        { x: -0.545, y: 0.135, z: -0.233 },
+      gnss_bow:   { x: 0.802,  y: 0.0,   z: -0.293 },
+      gnss_stern: { x: -0.657, y: 0.0,   z: -0.293 },
+      position_source: 'stern',
+    },
     systemMonitor: {
       timestamp: 0,
       cpu_percent: 0,
@@ -576,6 +585,12 @@ export const useTelemetryStore = defineStore('telemetry', {
     setMotorConfig(config) {
       this.motorConfig = { ...this.motorConfig, ...config }
       this.sendCommand('SET_MOTOR_CONFIG', this.motorConfig)
+    },
+
+    // ─── Sensor lever-arm offsets (CRP compensation) ─────────────────
+    setOffsetsConfig(config) {
+      this.offsetsConfig = { ...this.offsetsConfig, ...config }
+      this.sendCommand('SET_OFFSETS_CONFIG', this.offsetsConfig)
     },
 
     // ─── Logs feature ────────────────────────────────────────────────
@@ -1152,6 +1167,10 @@ export const useTelemetryStore = defineStore('telemetry', {
              if (data.motor_config) {
                // Backend is authoritative for motor calibration.
                this.motorConfig = { ...this.motorConfig, ...data.motor_config }
+             }
+             if (data.offsets_config) {
+               // Backend is authoritative for sensor lever-arm offsets.
+               this.offsetsConfig = { ...this.offsetsConfig, ...data.offsets_config }
              }
           }
           else if (topic === 'gnc/control_debug') {

@@ -3,6 +3,7 @@ from src.core.messaging import PubSubBroker, Publisher, Subscriber, Topics
 from src.core.models import (
     CommandMessage, CommandType, USVState, VehicleMode,
     FailsafeConfig, GncConfig, LoggingConfig, RelayConfig, MotorConfig,
+    OffsetsConfig,
 )
 
 _RELAY_RESTART_SECONDS = 5.0   # pulse width for the "Restart" button
@@ -52,6 +53,7 @@ class ManagerProcess(ServiceProcess):
         self.logging_config = LoggingConfig()
         self.relay_config = RelayConfig()
         self.motor_config = MotorConfig()
+        self.offsets_config = OffsetsConfig()
         self.gnss_fix_type = 0
 
         # Load previously saved user settings (overrides defaults above)
@@ -122,6 +124,7 @@ class ManagerProcess(ServiceProcess):
             "logging_config": self.logging_config.model_dump(),
             "relay_config": self.relay_config.model_dump(),
             "motor_config": self.motor_config.model_dump(),
+            "offsets_config": self.offsets_config.model_dump(),
             "system_status": "ACTIVE"
         }
         self.status_pub.publish(status_payload)
@@ -290,6 +293,14 @@ class ManagerProcess(ServiceProcess):
                 except Exception as e:
                     logger.error(f"Invalid motor config: {e}")
 
+            elif cmd.type == CommandType.SET_OFFSETS_CONFIG:
+                try:
+                    self.offsets_config = OffsetsConfig(**(cmd.payload or {}))
+                    logger.info(f"Offsets config updated: {self.offsets_config}")
+                    self._save_settings()
+                except Exception as e:
+                    logger.error(f"Invalid offsets config: {e}")
+
         except Exception as e:
             logger.error(f"Failed to handle command: {e}")
 
@@ -445,6 +456,11 @@ class ManagerProcess(ServiceProcess):
                         self.motor_config = MotorConfig(**data['motor_config'])
                     except Exception as e:
                         logger.warning(f"Manager: invalid stored motor_config ({e})")
+                if 'offsets_config' in data:
+                    try:
+                        self.offsets_config = OffsetsConfig(**data['offsets_config'])
+                    except Exception as e:
+                        logger.warning(f"Manager: invalid stored offsets_config ({e})")
                 logger.info(f"Manager: settings loaded from {_SETTINGS_FILE}")
         except Exception as e:
             logger.warning(f"Manager: could not load settings ({e}), using defaults")
@@ -472,6 +488,7 @@ class ManagerProcess(ServiceProcess):
                         # pending pulses should not survive a reboot.
                     },
                     'motor_config': self.motor_config.model_dump(),
+                    'offsets_config': self.offsets_config.model_dump(),
                 }, f, indent=2)
         except Exception as e:
             logger.warning(f"Manager: could not save settings: {e}")

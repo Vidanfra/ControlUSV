@@ -54,6 +54,7 @@ class CommandType(str, Enum):
     RESTART_RELAY = "RESTART_RELAY"       # payload: {idx: 0|1|2}  (open 5 s, then close)
     SET_RELAY_NAMES = "SET_RELAY_NAMES"   # payload: {names: [str, str, str]}
     SET_MOTOR_CONFIG = "SET_MOTOR_CONFIG" # payload: MotorConfig fields
+    SET_OFFSETS_CONFIG = "SET_OFFSETS_CONFIG" # payload: OffsetsConfig fields
 
 class Waypoint(BaseModel):
     lat: float
@@ -442,4 +443,50 @@ class MotorConfig(BaseModel):
     bwd_saturation: float = Field(
         100.0, ge=0, le=100,
         description="Reverse saturation [%]: command above which no extra thrust is produced astern.",
+    )
+
+
+# ============================================================================
+# SENSOR LEVER-ARM OFFSETS (referenced to the CRP / centre of gravity)
+# ============================================================================
+
+class SensorOffset(BaseModel):
+    """Position of a sensor relative to the CRP (Common Reference Point / CG).
+
+    Body-frame convention (right-handed, standard marine/aeronautical):
+      * x — forward (towards the bow), positive ahead of the CRP
+      * y — starboard (towards the right), positive to starboard of the CRP
+      * z — down, positive below the CRP
+
+    All values are lever-arm distances in metres. The CRP itself is (0, 0, 0).
+    """
+    x: float = Field(0.0, description="Forward offset from CRP [m] (+bow)")
+    y: float = Field(0.0, description="Starboard offset from CRP [m] (+right)")
+    z: float = Field(0.0, description="Down offset from CRP [m] (+below)")
+
+
+class OffsetsConfig(BaseModel):
+    """Sensor lever-arm offsets used to translate raw sensor measurements to
+    the vessel CRP (Common Reference Point / centre of gravity).
+
+    Navigation uses these to correct the GNSS antenna position to the CRP
+    (lever-arm compensation, rotated by the vessel attitude). By default the
+    position is taken from the stern antenna; the bow antenna is only used to
+    derive heading.
+    """
+    imu: SensorOffset = Field(
+        default_factory=lambda: SensorOffset(x=-0.545, y=0.135, z=-0.233),
+        description="IMU (WT901C) position relative to CRP.",
+    )
+    gnss_bow: SensorOffset = Field(
+        default_factory=lambda: SensorOffset(x=0.802, y=0.0, z=-0.293),
+        description="Bow (forward) GNSS antenna position relative to CRP.",
+    )
+    gnss_stern: SensorOffset = Field(
+        default_factory=lambda: SensorOffset(x=-0.657, y=0.0, z=-0.293),
+        description="Stern (aft) GNSS antenna position relative to CRP.",
+    )
+    position_source: str = Field(
+        "stern",
+        description="Antenna providing the fix used for position: 'stern' or 'bow'.",
     )
