@@ -647,10 +647,124 @@ async def get_app_log(lines: int = 50, offset: int = 0):
         return {"status": "error", "message": str(e), "lines": []}
 
 
+# --- Map Tile Cache (server-side, disk-backed) ---
+# Tiles requested by the frontend are proxied through these endpoints and
+# stored on the server's disk. This makes the offline map cache persistent
+# across browser reloads and server restarts, and shared across all connected
+# client devices. When there is no internet, previously cached tiles are still
+# served straight from disk.
+import urllib.request
+import urllib.error
+from fastapi import Response
+from fastapi.responses import JSONResponse
+
+TILE_PROVIDERS = {
+    "osm": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    "satellite": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    "dark": "https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+    "nautical": "https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png",
+}
+
+# Content type served for each provider's tiles.
+TILE_CONTENT_TYPE = {
+    "osm": "image/png",
+    "satellite": "image/jpeg",
+    "dark": "image/png",
+    "nautical": "image/png",
+}
+
+TILE_CACHE_DIR = os.path.join(os.getcwd(), "data", "tile_cache")
+_TILE_USER_AGENT = "ControlUSV/1.0 (offline map tile cache)"
+
+
+def _tile_path(provider: str, z: int, x: int, y: int) -> str:
+    return os.path.join(TILE_CACHE_DIR, provider, str(z), str(x), str(y))
+
+
+def _fetch_tile_sync(url: str) -> bytes:
+    """Blocking upstream tile fetch (run in a threadpool)."""
+    req = urllib.request.Request(url, headers={"User-Agent": _TILE_USER_AGENT})
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        return resp.read()
+
+
+@app.get("/tiles/stats")
+async def tiles_stats():
+    """Return the number of cached tiles and their total size in bytes."""
+    count = 0
+    total = 0
+    if os.path.isdir(TILE_CACHE_DIR):
+        for root, _dirs, files in os.walk(TILE_CACHE_DIR):
+            for name in files:
+                try:
+                    total += os.path.getsize(os.path.join(root, name))
+                    count += 1
+                except OSError:
+                    pass
+    return {"count": count, "bytes": total}
+
+
+@app.post("/tiles/clear")
+async def tiles_clear():
+    """Delete every cached tile from disk."""
+    import shutil
+    removed = 0
+    if os.path.isdir(TILE_CACHE_DIR):
+        for root, _dirs, files in os.walk(TILE_CACHE_DIR):
+            removed += len(files)
+        shutil.rmtree(TILE_CACHE_DIR, ignore_errors=True)
+    return {"removed": removed}
+
+
+@app.get("/tiles/{provider}/{z}/{x}/{y}")
+async def get_tile(provider: str, z: int, x: int, y: int):
+    """
+    Serve a map tile, using the on-disk cache when available and falling back
+    to the upstream provider (which is then cached). Returns 404 when a tile
+    is neither cached nor fetchable (e.g. offline and never downloaded).
+    """
+    if provider not in TILE_PROVIDERS:
+        return JSONResponse({"error": "unknown provider"}, status_code=404)
+
+    # z/x/y are already coerced to ints by FastAPI, so no path-traversal risk.
+    content_type = TILE_CONTENT_TYPE.get(provider, "image/png")
+    path = _tile_path(provider, z, x, y)
+
+    # 1. Serve from disk if cached.
+    if os.path.isfile(path):
+        return FileResponse(
+            path,
+            media_type=content_type,
+            headers={"Cache-Control": "public, max-age=604800", "X-Tile-Cache": "HIT"},
+        )
+
+    # 2. Cache miss — fetch from upstream and persist to disk.
+    url = TILE_PROVIDERS[provider].format(z=z, x=x, y=y)
+    try:
+        data = await asyncio.to_thread(_fetch_tile_sync, url)
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError) as e:
+        logger.debug(f"[Tiles] fetch failed for {url}: {e}")
+        return JSONResponse({"error": "tile unavailable"}, status_code=404)
+
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        tmp = f"{path}.{os.getpid()}.tmp"
+        with open(tmp, "wb") as f:
+            f.write(data)
+        os.replace(tmp, path)
+    except OSError as e:
+        logger.warning(f"[Tiles] failed to cache {path}: {e}")
+
+    return Response(
+        content=data,
+        media_type=content_type,
+        headers={"Cache-Control": "public, max-age=604800", "X-Tile-Cache": "MISS"},
+    )
+
+
 # --- Static Files ---
 # Mount the Vue build output directory
 frontend_dist_path = os.path.join(os.getcwd(), "frontend", "dist")
-
 if os.path.exists(frontend_dist_path):
     _index_html_path = os.path.join(frontend_dist_path, "index.html")
 

@@ -14,6 +14,9 @@ __pycache__/
 # Node modules (frontend)
 node_modules/
 
+# Map tiles cache
+data/tile_cache/
+
 # Logs
 logs/
 

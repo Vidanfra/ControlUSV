@@ -22,7 +22,77 @@
       >
         {{ telemetry.simulationOverlayVisible ? 'HIDE SIM' : 'SHOW SIM' }}
       </button>
+      <button class="ctrl-btn cache-btn" :class="{ active: showCachePanel }" @click="toggleCachePanel">
+        CACHE ▾
+      </button>
     </div>
+
+    <!-- Offline tile cache panel -->
+    <div v-if="showCachePanel" class="cache-panel">
+      <div class="cache-row cache-title">
+        <span>Offline Map Cache</span>
+        <button class="cache-close" @click="showCachePanel = false">&times;</button>
+      </div>
+      <div class="cache-row cache-info">
+        <span>{{ cachedTileCount }} tiles stored ({{ cachedSizeMB }} MB)</span>
+      </div>
+
+      <template v-if="cacheableTheme">
+        <div class="cache-row">
+          <label class="cache-label">Extra zoom levels</label>
+          <input
+            type="number"
+            class="cache-input"
+            min="0"
+            max="8"
+            v-model.number="dlZoomExtra"
+            :disabled="dlBusy"
+            @change="updateDownloadEstimate"
+          />
+        </div>
+        <div class="cache-row cache-hint">
+          Downloads the current view (~{{ dlEstimate }} tiles).
+        </div>
+
+        <div v-if="dlBusy" class="cache-row cache-progress">
+          <div class="cache-progbar">
+            <div
+              class="cache-progfill"
+              :style="{ width: dlProgress.total ? (dlProgress.done / dlProgress.total * 100) + '%' : '0%' }"
+            ></div>
+          </div>
+          <span class="cache-progtext">{{ dlProgress.done }}/{{ dlProgress.total }}</span>
+        </div>
+
+        <div class="cache-row cache-actions">
+          <button
+            v-if="!dlBusy"
+            class="cache-action dl"
+            @mouseenter="updateDownloadEstimate"
+            @click="startPredownload"
+          >
+            Download this area
+          </button>
+          <button v-else class="cache-action cancel" @click="cancelPredownload">
+            Cancel
+          </button>
+          <button class="cache-action clear" :disabled="dlBusy" @click="onClearCache">
+            Clear cache
+          </button>
+        </div>
+      </template>
+      <template v-else>
+        <div class="cache-row cache-hint">
+          The current layer (Windy) can't be cached. Switch to a map layer to download tiles.
+        </div>
+        <div class="cache-row cache-actions">
+          <button class="cache-action clear" :disabled="dlBusy" @click="onClearCache">
+            Clear cache
+          </button>
+        </div>
+      </template>
+    </div>
+
 
     <!-- Simulation Legend -->
     <div
@@ -82,6 +152,13 @@ import { useTelemetryStore } from '../stores/telemetry'
 import { storeToRefs } from 'pinia'
 import ThrustIndicator from './ThrustIndicator.vue'
 import { generateLawnmower, polygonCentroid, angleHandlePosition, spacingHandlePosition } from '../composables/useSurveyGenerator.js'
+import {
+  tileSourceUrl,
+  clearTileCache,
+  getCacheStats,
+  countPredownloadTiles,
+  predownloadTiles,
+} from '../composables/useMapTileCache.js'
 
 const telemetry = useTelemetryStore()
 const { lat, lon, missionWaypoints, missionItems, pathHistory, simulationResults, simulationOverlayVisible, stationWaypoint, stationRadius, stationReachingRadius, homeWaypoint, simStartWaypoint } = storeToRefs(telemetry)
@@ -105,6 +182,15 @@ const themeOptions = [
 
 const isWindyView = computed(() => currentThemeName.value === 'wind' || currentThemeName.value === 'radar')
 
+// Which backend tile providers make up each selectable theme
+// (nautical = osm base + seamark overlay). Windy themes are not cacheable.
+const THEME_PROVIDERS = {
+  satellite: ['satellite'],
+  osm: ['osm'],
+  dark: ['dark'],
+  nautical: ['osm', 'nautical'],
+}
+
 const windyUrl = computed(() => {
   const overlay = currentThemeName.value === 'radar' ? 'radar' : 'wind'
   const product = currentThemeName.value === 'radar' ? 'radar' : 'ecmwf'
@@ -117,6 +203,91 @@ function resetNorth() {
   if (map) {
     map.easeTo({ bearing: 0, pitch: 0 })
   }
+}
+
+// --- Offline tile cache management -----------------------------------------
+const showCachePanel = ref(false)
+const cachedTileCount = ref(0)
+const cachedTileBytes = ref(0)
+const dlZoomExtra = ref(3)          // download current zoom .. current+extra
+const dlBusy = ref(false)
+const dlProgress = ref({ done: 0, total: 0, downloaded: 0, skipped: 0, failed: 0 })
+const dlEstimate = ref(0)
+let dlAbort = null
+
+const cachedSizeMB = computed(() => (cachedTileBytes.value / (1024 * 1024)).toFixed(1))
+
+async function refreshCacheCount() {
+  const stats = await getCacheStats()
+  cachedTileCount.value = stats.count
+  cachedTileBytes.value = stats.bytes
+}
+
+// Themes that consist of cacheable raster tiles (Windy views cannot be cached).
+const cacheableTheme = computed(() => !!THEME_PROVIDERS[currentThemeName.value])
+
+function currentDownloadPlan() {
+  if (!map || !cacheableTheme.value) return null
+  const b = map.getBounds()
+  const bounds = {
+    west: b.getWest(),
+    south: b.getSouth(),
+    east: b.getEast(),
+    north: b.getNorth(),
+  }
+  const minZoom = Math.max(0, Math.round(map.getZoom()))
+  const maxZoom = Math.min(19, minZoom + Math.max(0, Math.round(dlZoomExtra.value)))
+  const providers = THEME_PROVIDERS[currentThemeName.value]
+  return { bounds, minZoom, maxZoom, providers }
+}
+
+function updateDownloadEstimate() {
+  const plan = currentDownloadPlan()
+  dlEstimate.value = plan
+    ? countPredownloadTiles(plan.bounds, plan.minZoom, plan.maxZoom, plan.providers.length)
+    : 0
+}
+
+async function toggleCachePanel() {
+  showCachePanel.value = !showCachePanel.value
+  showMapMenu.value = false
+  if (showCachePanel.value) {
+    await refreshCacheCount()
+    updateDownloadEstimate()
+  }
+}
+
+async function startPredownload() {
+  const plan = currentDownloadPlan()
+  if (!plan || dlBusy.value) return
+  dlBusy.value = true
+  dlAbort = new AbortController()
+  dlProgress.value = { done: 0, total: 0, downloaded: 0, skipped: 0, failed: 0 }
+  try {
+    await predownloadTiles({
+      bounds: plan.bounds,
+      minZoom: plan.minZoom,
+      maxZoom: plan.maxZoom,
+      providers: plan.providers,
+      signal: dlAbort.signal,
+      onProgress: (p) => { dlProgress.value = p },
+    })
+  } finally {
+    dlBusy.value = false
+    dlAbort = null
+    await refreshCacheCount()
+  }
+}
+
+function cancelPredownload() {
+  if (dlAbort) dlAbort.abort()
+}
+
+async function onClearCache() {
+  if (dlBusy.value) return
+  if (!window.confirm('Delete all cached offline map tiles?')) return
+  await clearTileCache()
+  await refreshCacheCount()
 }
 
 const followVehicle = ref(false)
@@ -169,28 +340,28 @@ onMounted(() => {
       // 1. Add Base Sources
       map.addSource('osm', {
           type: 'raster',
-          tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+          tiles: [tileSourceUrl('osm')],
           tileSize: 256,
           attribution: '&copy; OpenStreetMap Contributors'
       })
       
       map.addSource('satellite', {
           type: 'raster',
-          tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+          tiles: [tileSourceUrl('satellite')],
           tileSize: 256,
           attribution: 'Tiles &copy; Esri'
       })
 
       map.addSource('dark', {
           type: 'raster',
-          tiles: ['https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'],
+          tiles: [tileSourceUrl('dark')],
           tileSize: 256,
           attribution: '&copy; CARTO'
       })
 
       map.addSource('nautical', {
           type: 'raster',
-          tiles: ['https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png'],
+          tiles: [tileSourceUrl('nautical')],
           tileSize: 256,
           attribution: 'Map data &copy; OpenSeaMap contributors'
       })
@@ -1108,6 +1279,103 @@ watch([simulationResults, simulationOverlayVisible], () => {
 /* Sim overlay */
 .sim-btn { background: #333; color: #ccc; }
 .sim-btn.active { background: #1f77b4; color: white; }
+
+/* Offline tile cache */
+.cache-btn { background: rgba(50,50,50,0.85); color: #ddd; }
+.cache-btn.active { background: #2ecc71; color: #fff; }
+
+.cache-panel {
+  position: absolute;
+  top: 20px;
+  left: 130px;
+  width: 240px;
+  background: rgba(40, 40, 40, 0.96);
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 10px 12px;
+  z-index: 1015;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.45);
+  color: #ddd;
+  font-size: 12px;
+}
+.cache-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.cache-row:last-child { margin-bottom: 0; }
+.cache-title {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #fff;
+  font-size: 12px;
+}
+.cache-close {
+  background: none;
+  border: none;
+  color: #bbb;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.cache-close:hover { color: #fff; }
+.cache-info { color: #9ad; }
+.cache-hint {
+  color: #999;
+  font-size: 11px;
+  line-height: 1.35;
+  display: block;
+}
+.cache-label { color: #ccc; }
+.cache-input {
+  width: 54px;
+  padding: 3px 6px;
+  background: #2a2a2a;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #eee;
+  font-size: 12px;
+  text-align: center;
+}
+.cache-progress { gap: 8px; }
+.cache-progbar {
+  flex: 1;
+  height: 8px;
+  background: #333;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.cache-progfill {
+  height: 100%;
+  background: #2ecc71;
+  transition: width 0.15s;
+}
+.cache-progtext {
+  font-family: monospace;
+  font-size: 11px;
+  color: #bbb;
+  min-width: 64px;
+  text-align: right;
+}
+.cache-actions { gap: 8px; }
+.cache-action {
+  flex: 1;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.cache-action:hover { opacity: 0.85; }
+.cache-action:disabled { opacity: 0.4; cursor: not-allowed; }
+.cache-action.dl { background: #2ecc71; color: #fff; }
+.cache-action.cancel { background: #e08a00; color: #fff; }
+.cache-action.clear { background: #e53935; color: #fff; }
 
 :deep(.boat-marker) {
   width: 40px;

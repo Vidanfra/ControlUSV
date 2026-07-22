@@ -352,5 +352,23 @@
     "fwd_saturation": 100.0,
     "bwd_deadzone": 0.0,
     "bwd_saturation": 100.0
+  },
+  "offsets_config": {
+    "imu": {
+      "x": -0.545,
+      "y": 0.135,
+      "z": -0.233
+    },
+    "gnss_bow": {
+      "x": 0.802,
+      "y": 0.0,
+      "z": -0.293
+    },
+    "gnss_stern": {
+      "x": -0.657,
+      "y": 0.0,
+      "z": -0.293
+    },
+    "position_source": "stern"
   }
 }
