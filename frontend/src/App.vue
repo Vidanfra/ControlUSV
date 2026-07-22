@@ -44,6 +44,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useTelemetryStore } from './stores/telemetry'
+import { useAudioAlerts } from './composables/useAudioAlerts'
 
 // Import Views
 import MapView from './views/MapView.vue'
@@ -56,6 +57,9 @@ import SettingsView from './views/SettingsView.vue'
 import LogsView from './views/LogsView.vue'
 
 const telemetry = useTelemetryStore()
+
+// Acoustic alerts (connection loss, GNSS quality changes, arming, …)
+useAudioAlerts()
 
 // Sensor status indicators
 const sensors = [
