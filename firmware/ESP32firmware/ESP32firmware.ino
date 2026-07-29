@@ -7,7 +7,7 @@
 // los pines del firmware original (S3: 20,21,38,39,40) se han reasignado a
 // pines válidos de salida. Cámbialos si tu cableado es distinto.
 const int PIN_M1 = 15;  // Babor (Port)
-const int PIN_M2 = 0;  // Estribor (Starboard)
+const int PIN_M2 = 16;  // Estribor (Starboard)
 const int PIN_R1 = 18;  // Motor Relay
 const int PIN_R2 = 19;  // Comms Relay (Default ON)
 const int PIN_R3 = 21;  // Payload Relay
