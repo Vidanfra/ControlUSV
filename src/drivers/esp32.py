@@ -217,8 +217,28 @@ class Esp32Node:
                                     except (TypeError, ValueError):
                                         pass
 
-                    # 2) Wait briefly for a motor command
+                    # 2) Wait briefly for a motor command, then drain any
+                    #    backlog and keep only the FRESHEST one. ZMQ's SUB
+                    #    socket queues messages FIFO — if this loop ever
+                    #    falls even slightly behind the frontend's 20 Hz
+                    #    command rate (e.g. a slow ACK round-trip on a
+                    #    Windows COM port), stale queued commands would
+                    #    otherwise have to be sent first, delaying the
+                    #    operator's real-time input by seconds.
                     msg = sub.receive(timeout_ms=100)
+                    dropped = 0
+                    while msg is not None:
+                        newer = sub.receive(timeout_ms=0)
+                        if newer is None:
+                            break
+                        msg = newer
+                        dropped += 1
+                    if dropped:
+                        logger.debug(
+                            f"[ESP32 Node] Dropped {dropped} stale control_output "
+                            f"frame(s) to catch up to the latest command"
+                        )
+
                     port_pct = 0.0
                     stbd_pct = 0.0
                     if msg is not None:
