@@ -297,8 +297,12 @@ async def websocket_endpoint(websocket: WebSocket):
 def _run_simulation_sync(req: SimulationRequest) -> List[dict]:
     """Run simulation(s) in a blocking thread. Returns list of result dicts."""
     from src.gnc.vehicle_model import Salpa1Model
-    from src.gnc.autopilot import GNCController
     from src.gnc.gnc_utils import latlon_to_ned, ned_to_latlon, attitudeEuler
+    # Reuse the EXACT same controller factory the live vehicle / RT-sim uses so
+    # the offline prediction matches reality (nominal Salpa 1 inertia + thrust
+    # allocation, full GNC gains, velocity profiler, anti-windup, etc.).
+    from src.gnc.process import _make_default_controller
+    from src.core.models import GncConfig
 
     results = []
 
@@ -332,7 +336,10 @@ def _run_simulation_sync(req: SimulationRequest) -> List[dict]:
             de = sim_wp_ned[1][1] - sim_wp_ned[0][1]
             psi0 = math.atan2(de, dn)
 
-        # Build vehicle model (extracts physical parameters)
+        # Build the physics plant (payload/current-dependent). This represents
+        # the real vessel; the controller below is deliberately the NOMINAL
+        # onboard controller so the prediction reflects how the real vehicle
+        # (which does not gain-schedule on payload) will actually behave.
         model = Salpa1Model(
             payload_mass=cfg.payload_kg,
             V_current=cfg.current_speed,
@@ -340,20 +347,32 @@ def _run_simulation_sync(req: SimulationRequest) -> List[dict]:
             tau_X=cfg.surge_force,
         )
 
-        # Build controller using model's computed physical constants
-        controller = GNCController(
-            m_yaw=model.Izz_total,
-            B_inv=model.Binv,
-            n_max=model.n_max,
-            n_min=model.n_min,
+        # Build the controller EXACTLY like the live vehicle / RT-sim via the
+        # shared factory. cfg.delta maps to the ALOS look-ahead floor
+        # (delta_min); k_delta enables speed-proportional look-ahead. When a
+        # field is absent (legacy Static-Sim profiles) the onboard default is
+        # used so behaviour is unchanged for those.
+        _defaults = GncConfig()
+        cruise_kn = getattr(cfg, 'cruise_speed_kn', None)
+        k_delta_val = getattr(cfg, 'k_delta', None)
+        gnc_cfg = GncConfig(
             wn=cfg.wn_pid,
             zeta=cfg.zeta_pid,
-            wn_d=cfg.wn_ref,
-            zeta_d=cfg.zeta_ref,
-            delta=cfg.delta,
+            wn_ref=cfg.wn_ref,
+            zeta_ref=cfg.zeta_ref,
+            k_delta=(k_delta_val if k_delta_val is not None else _defaults.k_delta),
+            delta_min=cfg.delta,
             gamma=cfg.gamma,
-            tau_X=cfg.surge_force,
+            cruise_speed_kn=(cruise_kn if cruise_kn else _defaults.cruise_speed_kn),
+            e_x_threshold_deg=getattr(cfg, 'e_x_threshold_deg', _defaults.e_x_threshold_deg),
+            accel_ms2=getattr(cfg, 'accel_ms2', _defaults.accel_ms2),
+            vel_profiler_enabled=getattr(cfg, 'vel_profiler_enabled', _defaults.vel_profiler_enabled),
         )
+        controller = _make_default_controller(gnc_cfg)
+        if not cruise_kn:
+            # Legacy Static-Sim path: honour the explicit surge_force instead of
+            # the cruise-speed-derived thrust.
+            controller.set_surge_force(cfg.surge_force)
 
         # Load waypoints as list of dicts
         wp_dicts = [
@@ -391,6 +410,7 @@ def _run_simulation_sync(req: SimulationRequest) -> List[dict]:
         completion_mode = getattr(cfg, 'completion_mode', 'stop_time')
         is_forward = (cfg.start_mode != 'last_wp')
         current_wp_ned = list(sim_wp_ned)  # mutable copy for reversing
+        complete_time = None  # sim time [s] when the last waypoint was first reached
 
         for i in range(N_steps):
             t = i * dt
@@ -406,7 +426,10 @@ def _run_simulation_sync(req: SimulationRequest) -> List[dict]:
             eta = attitudeEuler(eta, nu, dt)
 
             # Handle completion modes (loop/loop_reverse) during one-shot
-            if controller.is_mission_complete():
+            mission_done_now = controller.is_mission_complete()
+            if mission_done_now and complete_time is None:
+                complete_time = round(t, 3)
+            if mission_done_now:
                 if completion_mode == 'loop':
                     # Restart same direction
                     wp_dicts_loop = [
@@ -446,6 +469,24 @@ def _run_simulation_sync(req: SimulationRequest) -> List[dict]:
                 psi_err_log.append(round(debug.get("heading_error", 0.0), 4))
                 wp_reached_log.append(debug.get("wp_index", 0))
 
+            # For 'one_way' there's no restart, so once complete we can stop
+            # early instead of burning through the rest of total_time.
+            if completion_mode == 'one_way' and mission_done_now:
+                if not t_log or t_log[-1] != round(t, 3):
+                    t_log.append(round(t, 3))
+                    N_log.append(round(float(eta[0]), 3))
+                    E_log.append(round(float(eta[1]), 3))
+                    psi_log.append(round(float(eta[5]), 4))
+                    psi_d_log.append(round(debug.get("psi_d", 0.0), 4))
+                    spd = math.sqrt(float(nu[0])**2 + float(nu[1])**2)
+                    speed_log.append(round(spd, 3))
+                    cte_log.append(round(debug.get("cross_track_error", 0.0), 3))
+                    n1_log.append(round(float(n1), 1))
+                    n2_log.append(round(float(n2), 1))
+                    psi_err_log.append(round(debug.get("heading_error", 0.0), 4))
+                    wp_reached_log.append(debug.get("wp_index", 0))
+                break
+
         # Convert N/E to lat/lon
         lat_log = []
         lon_log = []
@@ -470,6 +511,7 @@ def _run_simulation_sync(req: SimulationRequest) -> List[dict]:
             n2=n2_log,
             psi_error=psi_err_log,
             wp_reached=wp_reached_log,
+            mission_complete_time=complete_time,
         ).model_dump())
 
     return results

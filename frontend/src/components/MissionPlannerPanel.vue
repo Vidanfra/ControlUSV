@@ -249,6 +249,29 @@
       </div>
     </div>
 
+    <!-- ─── Route Precalculation ─────────────────────────────────── -->
+    <div class="field">
+      <div class="precalc-btn-row">
+        <button class="btn btn-precalc"
+          @click="precalculateRoute"
+          :disabled="missionWaypoints.length < 2 || precalcLoading">
+          {{ precalcLoading ? 'CALCULATING…' : '⏱ PRECALCULATE ROUTE' }}
+        </button>
+        <button v-if="store.simulationResults.length > 0" class="btn btn-clear-sim"
+          title="Clear simulation from map" @click="clearPrecalc">✕</button>
+      </div>
+      <div v-if="precalcError" class="alert alert-error">{{ precalcError }}</div>
+      <div v-if="precalcResult" class="precalc-box">
+        <div class="precalc-row"><span>Distance</span><strong>{{ (precalcResult.distanceM / 1000).toFixed(2) }} km</strong></div>
+        <div class="precalc-row"><span>Est. Duration</span><strong>{{ formatDuration(precalcResult.etaS) }}</strong></div>
+        <div class="precalc-row"><span>Avg. Speed</span><strong>{{ precalcResult.avgSpeedKn.toFixed(2) }} kn</strong></div>
+        <div v-if="!precalcResult.completed" class="precalc-hint">
+          Route did not finish inside the simulated window — duration is a lower bound. Track shown on map (SHOW SIM).
+        </div>
+        <div v-else class="precalc-hint">Simulated track shown on map (SHOW SIM).</div>
+      </div>
+    </div>
+
     <!-- ─── Pre-flight alerts ────────────────────────────────────── -->
     <div v-if="startError" class="alert alert-error">{{ startError }}</div>
     <div v-for="w in startWarnings" :key="w" class="alert alert-warning">{{ w }}</div>
@@ -307,6 +330,9 @@ const startWarnings = ref([])
 const expandedSurveyId = ref(null)
 const dragSrcIdx = ref(null)
 const dragOverId = ref(null)
+const precalcLoading = ref(false)
+const precalcError = ref('')
+const precalcResult = ref(null)
 
 // ── Derived mission item views ────────────────────────────────────────────────
 const missionStart = computed(() => store.missionItems.find(i => i.type === 'mission_start'))
@@ -320,6 +346,122 @@ const surgeForceN = computed(() => {
   const v = speedMs.value
   return 21.94 * v + 42.58 * v * v
 })
+
+// ── Route precalculation (runs the physics simulation with the current
+//    mission waypoints, the Simulation tab's vehicle/environment settings
+//    and the live GNC controller gains) ─────────────────────────────────────
+function haversineDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371000
+  const toRad = d => d * Math.PI / 180
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
+  return 2 * R * Math.asin(Math.sqrt(a))
+}
+function totalRouteDistance(wps) {
+  let d = 0
+  for (let i = 1; i < wps.length; i++) {
+    d += haversineDistance(wps[i - 1].lat, wps[i - 1].lon, wps[i].lat, wps[i].lon)
+  }
+  return d
+}
+function getSimEnv() {
+  // Vehicle/environment params configured in the Simulation tab ("Vehicle & Environment")
+  try {
+    const saved = JSON.parse(localStorage.getItem('simSettings') || '{}')
+    return {
+      payload_kg: saved.rtEnv?.payload_kg ?? 25,
+      current_speed: saved.rtEnv?.current_speed ?? 0.0,
+      current_dir: saved.rtEnv?.current_dir ?? 0.0,
+    }
+  } catch {
+    return { payload_kg: 25, current_speed: 0.0, current_dir: 0.0 }
+  }
+}
+function formatDuration(s) {
+  s = Math.max(0, Math.round(s))
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const sec = s % 60
+  if (h > 0) return `${h}h ${m}m ${sec}s`
+  if (m > 0) return `${m}m ${sec}s`
+  return `${sec}s`
+}
+async function precalculateRoute() {
+  precalcError.value = ''
+  precalcResult.value = null
+  const wps = missionWaypoints.value
+  if (wps.length < 2) {
+    precalcError.value = 'Need at least 2 waypoints to precalculate.'
+    return
+  }
+
+  const distanceM = totalRouteDistance(wps)
+  const naiveEtaS = speedMs.value > 0.05 ? distanceM / speedMs.value : 0
+  // Generous time budget so the sim always has room to finish, no matter how
+  // long the route is. The backend breaks out of the loop as soon as the
+  // route completes (completion_mode 'one_way'), so a large upper bound here
+  // costs nothing for normal routes — it's only a safety ceiling in case the
+  // vehicle can never reach the last waypoint.
+  const totalTimeBudget = Math.min(Math.max(naiveEtaS * 4 + 300, 120), 14 * 3600)
+
+  const env = getSimEnv()
+  const gnc = store.gncConfig || {}
+
+  const request = {
+    configs: [{
+      profile_id: 0,
+      payload_kg: env.payload_kg,
+      wn_pid: gnc.wn ?? 1.7,
+      zeta_pid: gnc.zeta ?? 0.7,
+      wn_ref: gnc.wn_ref ?? 0.7,
+      zeta_ref: gnc.zeta_ref ?? 0.9,
+      delta: gnc.delta_min ?? 5.0,
+      k_delta: gnc.k_delta ?? 15.0,
+      gamma: gnc.gamma ?? 0.0,
+      current_speed: env.current_speed,
+      current_dir: env.current_dir,
+      // Derive thrust from the mission cruise speed via the same drag inversion
+      // the real vehicle uses (backend reads cruise_speed_kn). surge_force is a
+      // fallback only.
+      cruise_speed_kn: cruiseSpeedKn.value,
+      surge_force: surgeForceN.value,
+      e_x_threshold_deg: gnc.e_x_threshold_deg ?? 10.0,
+      vel_profiler_enabled: gnc.vel_profiler_enabled ?? true,
+      accel_ms2: gnc.accel_ms2 ?? 0.3,
+      start_mode: 'first_wp',
+      completion_mode: 'one_way',
+    }],
+    waypoints: wps,
+    total_time: totalTimeBudget,
+    time_step: 0.05,
+    current_lat: store.lat,
+    current_lon: store.lon,
+    current_heading: store.bestHeading,
+  }
+
+  precalcLoading.value = true
+  const result = await store.runSimulation(request)
+  precalcLoading.value = false
+
+  if (!result.ok) {
+    precalcError.value = result.message || 'Precalculation failed'
+    return
+  }
+
+  const r = result.results[0]
+  const completed = r.mission_complete_time !== null && r.mission_complete_time !== undefined
+  const etaS = completed ? r.mission_complete_time : (r.time[r.time.length - 1] ?? naiveEtaS)
+  const avgSpeedKn = etaS > 0 ? (distanceM / etaS) / KN_TO_MS : 0
+  precalcResult.value = { distanceM, etaS, completed, avgSpeedKn }
+}
+
+function clearPrecalc() {
+  store.clearSimulation()
+  precalcResult.value = null
+  precalcError.value = ''
+}
 
 function surveyNumber(id) {
   return store.missionItems.filter(i => i.type === 'survey').findIndex(i => i.id === id) + 1
@@ -777,6 +919,36 @@ h3 {
 .alert { padding: 6px 8px; border-radius: 4px; font-size: 0.78rem; }
 .alert-error   { background: rgba(180,0,0,0.2); color: #ff6b6b; border: 1px solid #9a0000; }
 .alert-warning { background: rgba(160,100,0,0.2); color: #ffcc66; border: 1px solid #805000; }
+
+/* ─── Route precalculation ───────────────────────────────────────────────── */
+.precalc-btn-row { display: flex; gap: 6px; }
+.btn-precalc {
+  flex: 1;
+  background: #1a237e;
+  color: #90caf9;
+}
+.btn-precalc:hover:not(:disabled) { background: #283593; }
+.btn-clear-sim {
+  flex-shrink: 0;
+  width: 36px;
+  background: #4e1a1a;
+  color: #ef9a9a;
+  padding: 10px 0;
+}
+.btn-clear-sim:hover { background: #7f1c1c; }
+.precalc-box {
+  margin-top: 6px;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 5px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.precalc-row { display: flex; justify-content: space-between; font-size: 0.8rem; color: #ccc; }
+.precalc-row strong { color: #FFA500; }
+.precalc-hint { font-size: 0.7rem; color: #888; font-style: italic; margin-top: 2px; }
 
 /* ─── Buttons (base) ─────────────────────────────────────────────────────── */
 .btn {

@@ -244,11 +244,16 @@ class SimulationConfig(BaseModel):
     zeta_pid: float = Field(0.5, description="PID damping ratio")
     wn_ref: float = Field(1.0, description="Reference model natural frequency [rad/s]")
     zeta_ref: float = Field(1.0, description="Reference model damping ratio")
-    delta: float = Field(5.0, description="ALOS look-ahead distance [m]")
+    delta: float = Field(5.0, description="ALOS minimum look-ahead distance [m] (maps to delta_min / low-speed floor)")
+    k_delta: Optional[float] = Field(None, description="ALOS CTE convergence time constant [s]. If set, enables speed-proportional look-ahead (Δ = max(delta, k_delta·U)) exactly like the live autopilot. If None, the onboard default is used.")
     gamma: float = Field(0.0, description="ALOS adaptive sideslip gain")
     current_speed: float = Field(0.0, description="Ocean current speed [m/s]")
     current_dir: float = Field(0.0, description="Ocean current direction [deg]")
-    surge_force: float = Field(150.0, description="Surge force [N]")
+    surge_force: float = Field(150.0, description="Cruise surge force [N] (used only when cruise_speed_kn is not provided)")
+    cruise_speed_kn: Optional[float] = Field(None, description="Cruise speed [knots]. If set, tau_X is derived via the same drag inversion the real vehicle uses, matching reality. Overrides surge_force.")
+    e_x_threshold_deg: float = Field(10.0, description="PID anti-windup threshold [deg] (matches the onboard controller)")
+    vel_profiler_enabled: bool = Field(True, description="Enable the trapezoidal velocity profiler (matches the onboard controller)")
+    accel_ms2: float = Field(0.3, description="Acceleration rate leaving a waypoint [m/s²] (matches the onboard controller)")
     start_mode: str = Field("first_wp", description="'first_wp', 'last_wp', or 'current_pos'")
     completion_mode: str = Field("stop_time", description="'stop_time', 'one_way', 'loop', 'loop_reverse'")
 
@@ -282,6 +287,7 @@ class SimulationResult(BaseModel):
     n2: List[float]
     psi_error: List[float]
     wp_reached: List[int]
+    mission_complete_time: Optional[float] = Field(None, description="Sim time [s] when the last waypoint was first reached (None if not reached within total_time)")
 
 
 class RTSimConfig(BaseModel):
