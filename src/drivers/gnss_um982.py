@@ -59,6 +59,8 @@ class UM982Driver:
         self._reader_thread = None
         self._rtcm_thread = None
         self._error_logged = False  # Track if error has been logged
+        self._rtcm_bytes = 0        # Total RTCM correction bytes forwarded to receiver
+        self._rtcm_logged = False   # Whether first-RTCM-received message was logged
 
         # Accumulated parsed data (updated per-sentence, callback fired on GGA)
         self.data = {
@@ -145,6 +147,25 @@ class UM982Driver:
             if not chunk:
                 raise ConnectionError("NTRIP: connection closed during header read")
             header += chunk
+
+        # Validate the caster response. Without this check a wrong mountpoint,
+        # bad credentials, or a sourcetable reply is silently treated as a
+        # successful connection, so no RTCM ever flows and RTK never engages.
+        status_line = header.split(b"\r\n", 1)[0].decode(errors="ignore")
+        upper = status_line.upper()
+        if "SOURCETABLE" in upper:
+            sock.close()
+            raise ConnectionError(
+                f"NTRIP: caster returned a sourcetable — mountpoint "
+                f"'{self.mountpoint}' not found. Status: '{status_line}'"
+            )
+        if "200" not in upper or ("ICY 200 OK" not in upper and "HTTP" not in upper):
+            sock.close()
+            raise ConnectionError(
+                f"NTRIP: caster did not accept the stream request "
+                f"(check mountpoint/username/password). Status: '{status_line}'"
+            )
+        logger.info(f"[UM982] NTRIP caster accepted: '{status_line}'")
         return sock
 
     def _rtcm_loop(self):
@@ -157,6 +178,10 @@ class UM982Driver:
                     break
                 if self.ser and self.ser.is_open:
                     self.ser.write(data)
+                    self._rtcm_bytes += len(data)
+                    if not self._rtcm_logged:
+                        logger.info("[UM982] Receiving RTCM corrections from NTRIP caster")
+                        self._rtcm_logged = True
             except Exception as e:
                 logger.warning(f"[UM982] RTCM error: {e}")
                 time.sleep(1)
@@ -224,6 +249,15 @@ class UM982Driver:
             self._parse_zda(line)
 
     def _send_gga_to_ntrip(self, line: str):
+        # VRS/near-RTK mountpoints generate corrections around the position in
+        # the GGA we upload. Only forward a GGA once we actually have a fix,
+        # otherwise we'd request corrections for lat/lon 0,0 (Gulf of Guinea).
+        with self._lock:
+            has_fix = self.data["fix_type"] > 0 and (
+                self.data["lat"] != 0.0 or self.data["lon"] != 0.0
+            )
+        if not has_fix:
+            return
         try:
             if self.ntrip_sock:
                 self.ntrip_sock.sendall((line + "\r\n").encode())
