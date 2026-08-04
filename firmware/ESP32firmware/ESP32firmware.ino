@@ -6,14 +6,25 @@
 // NOTA: GPIO34..39 son SOLO ENTRADA en el ESP32 WROOM original, por lo que
 // los pines del firmware original (S3: 20,21,38,39,40) se han reasignado a
 // pines válidos de salida. Cámbialos si tu cableado es distinto.
-const int PIN_M1 = 15;  // Babor (Port)
-const int PIN_M2 = 16;  // Estribor (Starboard)
+const int PIN_M1 = 16;  // Babor (Port)
+const int PIN_M2 = 15;  // Estribor (Starboard)
 const int PIN_R1 = 18;  // Motor Relay
 const int PIN_R2 = 19;  // Comms Relay (Default ON)
 const int PIN_R3 = 21;  // Payload Relay
 
 // LED integrado de un solo color del Freenove ESP32 WROOM (GPIO 2)
 const int PIN_LED = 2;
+
+// --- INVERSIÓN DE SENTIDO DE GIRO ---
+// El mixing (Manager/GNC) envía el MISMO valor a M1 y M2 cuando el joystick
+// se mueve solo adelante/atrás (sin giro), y el mapeo a microsegundos de
+// abajo es idéntico para ambos canales. Por tanto, si un motor gira al
+// revés respecto al otro con el mismo comando, la causa es el sentido
+// eléctrico de giro del ESC/motor (orden de fases), no un bug de mezcla.
+// En vez de re-soldear las fases del ESC, invierte aquí el canal afectado
+// (true) y vuelve a flashear. Deja el otro en false.
+const bool INVERT_M1 = true;  // Babor (Port)
+const bool INVERT_M2 = false;  // Estribor (Starboard)
 
 const unsigned long TIMEOUT_MS = 250; // 0.25 segundos failsafe
 const long BAUDRATE = 115200;
@@ -137,6 +148,10 @@ void setMotors(float p1, float p2) {
   
   if (p2 > 100) p2 = 100;
   if (p2 < -100) p2 = -100;
+
+  // Compensar sentido de giro invertido de un motor (ver INVERT_M1/M2 arriba)
+  if (INVERT_M1) p1 = -p1;
+  if (INVERT_M2) p2 = -p2;
 
   // Mapear -100..100 a 1000us..2000us
   // Formula: us = (percent * 5) + 1500
