@@ -150,6 +150,9 @@ class ImuNode:
     def __init__(self, serial_port="/dev/serial0", baud_rate=9600, mag_declination=0.0, user_offset=0.0):
         """
         Connects the WT901 IMU to the internal ZMQ data bus.
+
+        Declination and user offset default to zero because Navigation applies
+        them from OffsetsConfig; they only exist for standalone CLI use.
         """
         self.mag_declination = mag_declination
         self.user_offset = user_offset
@@ -248,20 +251,20 @@ class ImuNode:
             # Map into Pydantic Model
             msg = ImuMessage(
                 timestamp=ts,
-                roll=raw_data_dict["roll"],
-                pitch=raw_data_dict["pitch"],
-                yaw=raw_data_dict["yaw"],
-                ax=raw_data_dict["ax"],
-                ay=raw_data_dict["ay"],
-                az=raw_data_dict["az"],
-                wx=raw_data_dict["wx"],
-                wy=raw_data_dict["wy"],
-                wz=raw_data_dict["wz"],
-                mx=raw_data_dict["mx"],
-                my=raw_data_dict["my"],
-                mz=raw_data_dict["mz"],
+                roll_raw=raw_data_dict["roll"],
+                pitch_raw=raw_data_dict["pitch"],
+                yaw_raw=raw_data_dict["yaw"],
+                ax_raw=raw_data_dict["ax"],
+                ay_raw=raw_data_dict["ay"],
+                az_raw=raw_data_dict["az"],
+                wx_raw=raw_data_dict["wx"],
+                wy_raw=raw_data_dict["wy"],
+                wz_raw=raw_data_dict["wz"],
+                mx_raw=raw_data_dict["mx"],
+                my_raw=raw_data_dict["my"],
+                mz_raw=raw_data_dict["mz"],
                 temp=raw_data_dict["temp"],
-                mag_heading=m_heading
+                mag_heading_raw=m_heading
             )
             
             # Serialize

@@ -65,9 +65,13 @@ DEFAULTS = {
 
 # --------------------------------------------------------------------- model --
 def thrust_n(cmd_pct, t_fwd_n: float, t_rev_n: float) -> np.ndarray:
-    """Linear command->thrust map with separate forward / reverse bollard gains."""
+    """Command->thrust map with separate forward / reverse bollard gains.
+
+    Quadratic because the ESP32 maps percent linearly to the ESC pulse width
+    (us = 1500 + 5*pct), i.e. to propeller speed, and thrust goes with n**2.
+    """
     c = np.asarray(cmd_pct, dtype=float) / 100.0
-    return np.where(c >= 0.0, c * t_fwd_n, c * t_rev_n)
+    return np.where(c >= 0.0, c * c * t_fwd_n, -c * c * t_rev_n)
 
 
 def yaw_moment(port_pct, stbd_pct, t_fwd_n: float, t_rev_n: float, sep_m: float) -> np.ndarray:

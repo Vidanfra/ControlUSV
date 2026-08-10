@@ -37,7 +37,7 @@ class HALProcess(ServiceProcess):
 
         # Start IMU Node in a background thread
         try:
-            self.imu_node = ImuNode(serial_port="/dev/serial0", baud_rate=9600, mag_declination=2.5)
+            self.imu_node = ImuNode(serial_port="/dev/serial0", baud_rate=9600)
             self.imu_thread = threading.Thread(target=self.imu_node.run, daemon=True)
             self.imu_thread.start()
             logger.info("IMU Node started on /dev/serial0")

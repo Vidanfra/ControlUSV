@@ -129,35 +129,39 @@ class GNSSData(BaseModel):
 
 class ImuMessage(BaseModel):
     """
-    Detailed data from IMU (Inertial Measurement Unit), adapted for WT901C but universalized.
+    Raw data from the IMU (Inertial Measurement Unit), adapted for WT901C but universalized.
+
+    Every measurement is published exactly as the sensor reports it, in the
+    sensor frame and with no offset applied — hence the ``_raw`` suffix.
+    Navigation converts them to the body frame / CRP (``*_crp`` in USVState).
     """
     timestamp: float = Field(..., description="Unix timestamp of the measurement")
 
-    # Angles (deg or rad, typically we use deg for raw messages until EKF)
-    roll: float = 0.0
-    pitch: float = 0.0
-    yaw: float = 0.0
+    # Attitude in the sensor frame [deg]
+    roll_raw: float = 0.0
+    pitch_raw: float = 0.0
+    yaw_raw: float = 0.0
 
-    # Accelerometer (m/s^2)
-    ax: float = 0.0
-    ay: float = 0.0
-    az: float = 0.0
+    # Accelerometer in the sensor frame (m/s^2)
+    ax_raw: float = 0.0
+    ay_raw: float = 0.0
+    az_raw: float = 0.0
 
-    # Gyroscope (deg/s)
-    wx: float = 0.0
-    wy: float = 0.0
-    wz: float = 0.0
+    # Gyroscope in the sensor frame (deg/s)
+    wx_raw: float = 0.0
+    wy_raw: float = 0.0
+    wz_raw: float = 0.0
 
-    # Magnetometer
-    mx: float = 0.0
-    my: float = 0.0
-    mz: float = 0.0
-    
+    # Magnetometer in the sensor frame (counts)
+    mx_raw: float = 0.0
+    my_raw: float = 0.0
+    mz_raw: float = 0.0
+
     # Internal Temp
     temp: float = 0.0
-    
-    # Computed mag compass heading
-    mag_heading: float = 0.0
+
+    # Compass heading computed by the driver in the sensor frame
+    mag_heading_raw: float = 0.0
 
     # Data source tag
     source: str = "sensor"
@@ -166,6 +170,10 @@ class USVState(BaseModel):
     """
     State estimation of the vehicle (output of navigation/EKF filter).
     Published on gnc/ekf_state. Consumed by GNC, Dashboard, Map, MAVLink.
+
+    Every IMU-derived quantity is referenced to the body frame and to the CRP
+    (``_crp``): the sensor frame is rotated into the body frame and the
+    accelerations are corrected for the IMU lever arm.
     """
     timestamp: float
     
@@ -180,9 +188,21 @@ class USVState(BaseModel):
     
     # Attitude
     heading: float = Field(0.0, description="Heading/Yaw in radians")
-    roll: float = Field(0.0, description="Roll in degrees (verbatim from the IMU)")
-    pitch: float = Field(0.0, description="Pitch in degrees (verbatim from the IMU)")
-    yaw: float = Field(0.0, description="Yaw in degrees (verbatim from the IMU, not referenced to true north)")
+    roll_crp: float = Field(0.0, description="Roll in degrees, body frame")
+    pitch_crp: float = Field(0.0, description="Pitch in degrees, body frame")
+    yaw_crp: float = Field(0.0, description="Yaw in degrees, body frame (not referenced to true north)")
+
+    # Angular rates, body frame [deg/s] (identical at the IMU and at the CRP)
+    wx_crp: float = Field(0.0, description="Roll rate in deg/s, body frame")
+    wy_crp: float = Field(0.0, description="Pitch rate in deg/s, body frame")
+    wz_crp: float = Field(0.0, description="Yaw rate in deg/s, body frame (starboard turn positive)")
+
+    # Specific force at the CRP, body frame [m/s^2]
+    accx_crp: float = Field(0.0, description="Forward acceleration in m/s^2 at the CRP")
+    accy_crp: float = Field(0.0, description="Starboard acceleration in m/s^2 at the CRP")
+    accz_crp: float = Field(0.0, description="Down acceleration in m/s^2 at the CRP")
+
+    mag_heading_crp: float = Field(0.0, description="Tilt-compensated magnetic heading in degrees, body frame")
     
     # Heading quality
     heading_status: str = Field("", description="A=GNSS dual-antenna, M=magnetic, S=simulated")
@@ -471,18 +491,33 @@ class SensorOffset(BaseModel):
     z: float = Field(0.0, description="Down offset from CRP [m] (+below)")
 
 
+class ImuOffset(SensorOffset):
+    """IMU lever arm plus the rotation from the sensor frame to the body frame.
+
+    The rotation is applied to every measured vector as the ZYX sequence
+    ``R = Rz(yaw) @ Ry(pitch) @ Rx(roll)``, so a WT901C installed with its x
+    axis to starboard, y to the bow and z up (the Salpa 1 layout) is described
+    by roll 180, pitch 0, yaw 90.
+    """
+    roll_deg: float = Field(180.0, description="Rotation about x, applied first [deg]")
+    pitch_deg: float = Field(0.0, description="Rotation about y, applied second [deg]")
+    yaw_deg: float = Field(90.0, description="Rotation about z, applied last [deg]")
+    mag_declination_deg: float = Field(2.5, description="Magnetic declination added to the compass heading [deg]")
+    mag_user_offset_deg: float = Field(0.0, description="Manual compass heading trim [deg]")
+
+
 class OffsetsConfig(BaseModel):
     """Sensor lever-arm offsets used to translate raw sensor measurements to
     the vessel CRP (Common Reference Point / centre of gravity).
 
     Navigation uses these to correct the GNSS antenna position to the CRP
-    (lever-arm compensation, rotated by the vessel attitude). By default the
-    position is taken from the stern antenna; the bow antenna is only used to
-    derive heading.
+    (lever-arm compensation, rotated by the vessel attitude). The fix always
+    comes from the stern antenna; the bow antenna is only used to derive
+    heading.
     """
-    imu: SensorOffset = Field(
-        default_factory=lambda: SensorOffset(x=-0.545, y=0.135, z=-0.233),
-        description="IMU (WT901C) position relative to CRP.",
+    imu: ImuOffset = Field(
+        default_factory=lambda: ImuOffset(x=-0.545, y=0.135, z=-0.233),
+        description="IMU (WT901C) position and mounting orientation relative to CRP.",
     )
     gnss_bow: SensorOffset = Field(
         default_factory=lambda: SensorOffset(x=0.802, y=0.0, z=-0.293),
@@ -490,9 +525,5 @@ class OffsetsConfig(BaseModel):
     )
     gnss_stern: SensorOffset = Field(
         default_factory=lambda: SensorOffset(x=-0.657, y=0.0, z=-0.293),
-        description="Stern (aft) GNSS antenna position relative to CRP.",
-    )
-    position_source: str = Field(
-        "stern",
-        description="Antenna providing the fix used for position: 'stern' or 'bow'.",
+        description="Stern (aft) GNSS antenna position relative to CRP. Provides the fix.",
     )

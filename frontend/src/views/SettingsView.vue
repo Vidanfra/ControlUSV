@@ -455,7 +455,8 @@
           (+right), <strong>Z</strong> down (+below), in metres. Navigation uses
           these to translate the GNSS antenna fix to the CRP (lever-arm
           compensation rotated by the vessel attitude). The CRP itself is the
-          origin (0, 0, 0).
+          origin (0, 0, 0). The position fix always comes from the stern
+          antenna; the bow antenna is only used for heading.
         </p>
 
         <div class="offsets-table">
@@ -485,19 +486,53 @@
           </div>
         </div>
 
-        <div class="setting-row" style="margin-top:20px">
-          <label for="offPosSource">Position Source Antenna</label>
-          <div class="input-group">
-            <select id="offPosSource" v-model="offsetsForm.position_source" class="text-input">
-              <option value="stern">Stern (aft) antenna</option>
-              <option value="bow">Bow (forward) antenna</option>
-            </select>
+        <h4 class="offsets-subtitle">IMU Mounting Orientation</h4>
+        <p class="hint" style="margin-top:-6px; margin-bottom:12px">
+          Rotation from the IMU axes to the body frame (X bow, Y starboard,
+          Z down), applied to the attitude, the gyro, the accelerometer and the
+          magnetometer in the ZYX sequence Rz(Yaw)·Ry(Pitch)·Rx(Roll). Example:
+          an IMU mounted with X to starboard, Y to the bow and Z up needs
+          <strong>Roll 180, Pitch 0, Yaw 90</strong>.
+        </p>
+
+        <div class="offsets-table">
+          <div class="offsets-head">
+            <span></span>
+            <span>Roll — about X</span>
+            <span>Pitch — about Y</span>
+            <span>Yaw — about Z</span>
           </div>
-          <p class="hint">
-            Antenna whose fix provides the vessel position. The lever arm of
-            this antenna is used to compute the CRP. The other antenna is used
-            only for heading. Default: stern.
-          </p>
+
+          <div class="offsets-row">
+            <span class="offset-name">Mounting angle (°)</span>
+            <input v-model.number="offsetsForm.imu.roll_deg" type="number" step="0.1" class="offset-input" />
+            <input v-model.number="offsetsForm.imu.pitch_deg" type="number" step="0.1" class="offset-input" />
+            <input v-model.number="offsetsForm.imu.yaw_deg" type="number" step="0.1" class="offset-input" />
+          </div>
+        </div>
+
+        <h4 class="offsets-subtitle">Magnetic Compass</h4>
+        <p class="hint" style="margin-top:-6px; margin-bottom:12px">
+          Added to the tilt-compensated magnetic heading, which is the heading
+          fallback when the GNSS dual antenna is unavailable. Declination is the
+          local magnetic-to-true north correction (east positive); the user
+          offset is a manual trim.
+        </p>
+
+        <div class="offsets-table">
+          <div class="offsets-head">
+            <span></span>
+            <span>Declination (°)</span>
+            <span>User offset (°)</span>
+            <span></span>
+          </div>
+
+          <div class="offsets-row">
+            <span class="offset-name">Heading correction</span>
+            <input v-model.number="offsetsForm.imu.mag_declination_deg" type="number" step="0.1" class="offset-input" />
+            <input v-model.number="offsetsForm.imu.mag_user_offset_deg" type="number" step="0.1" class="offset-input" />
+            <span class="offset-fixed"></span>
+          </div>
         </div>
 
         <div v-if="offsetsError" class="validation-error">
@@ -1213,11 +1248,14 @@ const offsetSensors = [
 ]
 
 const offsetsError = ref(null)
+const IMU_MOUNT_DEFAULTS = {
+  roll_deg: 180.0, pitch_deg: 0.0, yaw_deg: 90.0,
+  mag_declination_deg: 2.5, mag_user_offset_deg: 0.0,
+}
 const offsetsForm = ref({
-  imu:        { x: -0.545, y: 0.135, z: -0.233 },
+  imu:        { x: -0.545, y: 0.135, z: -0.233, ...IMU_MOUNT_DEFAULTS },
   gnss_bow:   { x: 0.802,  y: 0.0,   z: -0.293 },
   gnss_stern: { x: -0.657, y: 0.0,   z: -0.293 },
-  position_source: 'stern',
 })
 
 function syncOffsetsForm() {
@@ -1225,11 +1263,13 @@ function syncOffsetsForm() {
   const pick = (s, dx, dy, dz) => ({
     x: s?.x ?? dx, y: s?.y ?? dy, z: s?.z ?? dz,
   })
+  const mount = (s) => Object.fromEntries(
+    Object.entries(IMU_MOUNT_DEFAULTS).map(([k, d]) => [k, s?.[k] ?? d])
+  )
   offsetsForm.value = {
-    imu:        pick(oc.imu,        -0.545, 0.135, -0.233),
+    imu:        { ...pick(oc.imu, -0.545, 0.135, -0.233), ...mount(oc.imu) },
     gnss_bow:   pick(oc.gnss_bow,    0.802, 0.0,   -0.293),
     gnss_stern: pick(oc.gnss_stern, -0.657, 0.0,   -0.293),
-    position_source: oc.position_source ?? 'stern',
   }
 }
 function resetOffsetsForm() { syncOffsetsForm() }
@@ -1239,11 +1279,13 @@ const offsetsConfigChanged = computed(() => {
   const f = offsetsForm.value
   const diff = (a, b, dx, dy, dz) =>
     (a.x !== (b?.x ?? dx)) || (a.y !== (b?.y ?? dy)) || (a.z !== (b?.z ?? dz))
+  const mountDiff = Object.entries(IMU_MOUNT_DEFAULTS)
+    .some(([k, d]) => f.imu[k] !== (oc.imu?.[k] ?? d))
   return (
     diff(f.imu,        oc.imu,        -0.545, 0.135, -0.233) ||
     diff(f.gnss_bow,   oc.gnss_bow,    0.802, 0.0,   -0.293) ||
     diff(f.gnss_stern, oc.gnss_stern, -0.657, 0.0,   -0.293) ||
-    f.position_source !== (oc.position_source ?? 'stern')
+    mountDiff
   )
 })
 
@@ -1265,8 +1307,11 @@ function saveOffsetsConfig() {
       errors.push(`${s.label}: all axes must be numbers`)
     }
   }
-  if (!['stern', 'bow'].includes(f.position_source)) {
-    errors.push('Position source must be stern or bow')
+  if (!finite(f.imu.roll_deg) || !finite(f.imu.pitch_deg) || !finite(f.imu.yaw_deg)) {
+    errors.push('IMU mounting angles must be numbers')
+  }
+  if (!finite(f.imu.mag_declination_deg) || !finite(f.imu.mag_user_offset_deg)) {
+    errors.push('Magnetic declination and user offset must be numbers')
   }
   if (errors.length > 0) {
     offsetsError.value = errors.join('; ') + '.'
@@ -1277,7 +1322,6 @@ function saveOffsetsConfig() {
     imu:        { ...f.imu },
     gnss_bow:   { ...f.gnss_bow },
     gnss_stern: { ...f.gnss_stern },
-    position_source: f.position_source,
   })
 }
 </script>
@@ -1897,6 +1941,11 @@ select.text-input {
 }
 .offsets-row:last-child { border-bottom: none; }
 .offsets-row.crp { color: #FFA500; }
+.offsets-subtitle {
+  margin: 25px 0 10px;
+  color: #ccc;
+  font-size: 1em;
+}
 .offset-name {
   color: #ccc;
   font-weight: 600;

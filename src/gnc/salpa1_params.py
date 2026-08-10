@@ -61,7 +61,7 @@ CG_PAYLOAD      = _p['mass']['cg_payload_m']         # [m×3]  CG of payload in 
 R44_COEFF       = _p['mass']['r44_coeff']            # [-]    k44/beam  (roll gyration ratio);  Ig[0,0] = m * (r44_coeff*beam)²
 R55_COEFF       = _p['mass']['r55_coeff']            # [-]    k55/length (pitch gyration ratio); Ig[1,1] = m * (r55_coeff*L)²
 R66_COEFF       = _p['mass']['r66_coeff']            # [-]    k66/length (yaw gyration ratio);   Ig[2,2] = m * (r66_coeff*L)²
-IZZ_TOTAL       = _p['mass']['izz_total_kgm2']       # [kg·m²] total yaw MOI (hull+payload+Nrdot added mass); used in autopilot
+IZZ_TOTAL       = _p['mass']['izz_total_kgm2']       # [kg·m²] yaw MOI used as the autopilot plant model; should include Nrdot added mass (current value is rigid-body only)
 
 # ── Added-mass fractions ──────────────────────────────────────────────────────
 # Each coefficient is a fraction of the corresponding rigid-body inertia term.

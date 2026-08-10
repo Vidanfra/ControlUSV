@@ -278,6 +278,7 @@ class GNCProcess(ServiceProcess):
             self.lon = data.get('lon', self.lon)
             self.sog_ms = data.get('speed', self.sog_ms)
             self.heading_rad = data.get('heading', self.heading_rad)
+            self.yaw_rate = math.radians(data.get('wz_crp', math.degrees(self.yaw_rate)))
             self.heading_status = data.get('heading_status', self.heading_status)
             self.nav_source = data.get('source', 'sensor')
             self.last_nav_time = time.time()

@@ -266,10 +266,13 @@ export const useTelemetryStore = defineStore('telemetry', {
     // Body frame: x forward, y starboard, z down [m]. Backend is authoritative;
     // this mirrors the system/status heartbeat.
     offsetsConfig: {
-      imu:        { x: -0.545, y: 0.135, z: -0.233 },
+      imu: {
+        x: -0.545, y: 0.135, z: -0.233,
+        roll_deg: 180.0, pitch_deg: 0.0, yaw_deg: 90.0,
+        mag_declination_deg: 2.5, mag_user_offset_deg: 0.0,
+      },
       gnss_bow:   { x: 0.802,  y: 0.0,   z: -0.293 },
       gnss_stern: { x: -0.657, y: 0.0,   z: -0.293 },
-      position_source: 'stern',
     },
     systemMonitor: {
       timestamp: 0,
@@ -1257,32 +1260,32 @@ export const useTelemetryStore = defineStore('telemetry', {
              this.sensorZeroValues.power = (data.voltage === 0)
           }
           else if (topic === 'sensor/imu') {
-             this.imuRoll = data.roll
-             this.imuPitch = data.pitch
-             this.imuYaw = data.yaw
-             this.imuAx = data.ax
-             this.imuAy = data.ay
-             this.imuAz = data.az
-             this.imuP = data.wx
-             this.imuQ = data.wy
-             this.imuR = data.wz
-             this.imuMagHeading = data.mag_heading ?? 0.0
+             this.imuRoll = data.roll_raw
+             this.imuPitch = data.pitch_raw
+             this.imuYaw = data.yaw_raw
+             this.imuAx = data.ax_raw
+             this.imuAy = data.ay_raw
+             this.imuAz = data.az_raw
+             this.imuP = data.wx_raw
+             this.imuQ = data.wy_raw
+             this.imuR = data.wz_raw
+             this.imuMagHeading = data.mag_heading_raw ?? 0.0
              // Append to chart history
              const nowMs = Date.now()
              this.imuHistory.push({
                timeMs: nowMs,
                label: new Date(nowMs).toISOString().substr(11, 8),
-               roll: data.roll || 0, pitch: data.pitch || 0, yaw: data.yaw || 0,
-               ax: data.ax || 0, ay: data.ay || 0, az: data.az || 0,
-               p: data.wx || 0, q: data.wy || 0, r: data.wz || 0
+               roll: data.roll_raw || 0, pitch: data.pitch_raw || 0, yaw: data.yaw_raw || 0,
+               ax: data.ax_raw || 0, ay: data.ay_raw || 0, az: data.az_raw || 0,
+               p: data.wx_raw || 0, q: data.wy_raw || 0, r: data.wz_raw || 0
              })
              const cutoffImu = nowMs - 120000
              if (this.imuHistory.length > 0 && this.imuHistory[0].timeMs < cutoffImu)
                this.imuHistory = this.imuHistory.filter(p => p.timeMs > cutoffImu)
              // Zero-value detection: warn if all motion values are zero while connected
              this.sensorZeroValues.imu = (
-               data.roll === 0 && data.pitch === 0 && data.yaw === 0 &&
-               data.ax === 0 && data.ay === 0 && data.az === 0
+               data.roll_raw === 0 && data.pitch_raw === 0 && data.yaw_raw === 0 &&
+               data.ax_raw === 0 && data.ay_raw === 0 && data.az_raw === 0
              )
           }
           else if (topic === 'sensor/status') {

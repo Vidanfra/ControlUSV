@@ -58,8 +58,8 @@ def _period_seconds(value: float, unit: str) -> float:
 
 
 # Field ids whose source payload is in radians but should be logged/broadcast
-# as degrees (EKF state heading/course and GNC headings). USVState roll/pitch/
-# yaw are NOT here: they are copied verbatim from the IMU, already in degrees.
+# as degrees (EKF state heading/course and GNC headings). The USVState _crp
+# fields are NOT here: navigation already publishes them in degrees.
 _RAD_TO_DEG_IDS = {
     "state_course", "state_heading",
     "gnc_target_heading", "gnc_heading_error",
