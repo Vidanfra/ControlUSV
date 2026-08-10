@@ -105,7 +105,11 @@ PONTOON_BEAM = 0.35      # [m] Width of ONE pontoon at waterline
 PONTOON_Y = 0.673         # [m] Distance from centerline to pontoon center
                                 # Otter: 0.395 m
                                 # For Salpa1: approximately (BEAM/2 - PONTOON_BEAM/2)
-                                # TODO: Measure from centerline to middle of pontoon
+                                # Used for hydrostatics only (waterline centroid)
+
+MOTOR_Y = 0.765           # [m] Distance from centerline to each motor shaft
+                                # Measured motor-to-motor separation: 1.53 m
+                                # This is the thrust lever arm used in allocation
 
 CW_PONT = 0.75           # [-] Waterline area coefficient (0.7 - 0.95)
                                 # Otter: 0.75
@@ -149,10 +153,9 @@ T_SWAY = 1.5             # [s] Time constant in sway (lateral motion decay)
                                 # Larger = slower sway damping (heavier boat)
                                 # TODO: Estimate or tune from experiments
 
-T_YAW = 1.5              # [s] Time constant in yaw (rotation decay)
-                                # Otter: 1.0 s  
-                                # Larger = slower yaw damping (more inertia)
-                                # TODO: Estimate or tune from experiments
+T_YAW = 1.06             # [s] Time constant in yaw (rotation decay)
+                                # Otter: 1.0 s
+                                # Measured: tau = Izz/d1 = 185/175
 
 # PROPULSION SYSTEM (CRITICAL)
 # -----------------------------------------------------------------------------
@@ -160,10 +163,10 @@ T_YAW = 1.5              # [s] Time constant in yaw (rotation decay)
 # NOTE: These coefficients are PER MOTOR (not total)
 
 K_POS = 0.00365          # [N/(rad/s)²] Positive (forward) thrust coefficient
-                                # Calculated from: k = T_max / n_max²
-                                # T_max = 11.5 kgf × 9.81 = 112.8 N (per motor)
-                                # n_max = 1680 rpm × 2π/60 = 175.9 rad/s
-                                # k_pos = 112.8 / 175.9² = 0.00365
+                                # Original datasheet derivation: k = T_max / n_max²
+                                # with T_max = 11.5 kgf and n_max = 175.9 rad/s.
+                                # Bollard test now gives 9.5 kgf per motor, so the
+                                # saturation speed drops to n_max = 159.8 rad/s.
                                 # Otter: 0.02216/2 = 0.01108 (they divided because
                                 #        24.4 kgf was TOTAL thrust for both motors)
 
@@ -171,12 +174,11 @@ K_NEG = 0.00255          # [N/(rad/s)²] Negative (reverse) thrust coefficient
                                 # Estimated as ~70% of k_pos (typical for propellers)
                                 # TODO: Measure reverse thrust if possible
 
-MAX_THRUST_KGF = 11.5    # [kgf] Maximum thrust PER MOTOR
-                                # Otter: 24.4/2 = 12.2 kgf per motor
+MAX_THRUST_KGF = 9.5     # [kgf] Maximum thrust PER MOTOR
+                                # Measured on the bollard test
 
-MIN_THRUST_KGF = 8.0     # [kgf] Maximum reverse thrust PER MOTOR
-                                # Estimated as ~70% of forward thrust
-                                # TODO: Check motor specs for reverse thrust
+MIN_THRUST_KGF = 5.5     # [kgf] Maximum reverse thrust PER MOTOR
+                                # Measured on the bollard test
 
 T_PROP = 0.1             # [s] Propeller/motor time constant
                                 # Otter: 0.1 s
@@ -203,10 +205,9 @@ WN_REF = 1             # [rad/s] Reference model natural frequency
 ZETA_REF = 1.0           # [-] Reference model damping ratio
                                 # Otter: 1.0
 
-R_MAX_DEG = 1000        # [deg/s] Maximum yaw rate
+R_MAX_DEG = 25          # [deg/s] Maximum yaw rate
                                 # Otter: 10 deg/s
-                                # Reduce for larger/slower vessels
-                                # TODO: What turn rate is comfortable?
+                                # Physical maximum is approx. 34 deg/s
 
 # -----------------------------------------------------------------------------
 # OTHER PARAMETERS
@@ -329,8 +330,8 @@ class salpa1:
         self.Ig = Ig_CG - m * self.S_rg @ self.S_rg - self.mp * self.S_rp @ self.S_rp
 
         # Propeller lever arms and thrust coefficients (from configuration)
-        self.l1 = -y_pont                   # lever arm, left propeller (m)
-        self.l2 = y_pont                    # lever arm, right propeller (m)
+        self.l1 = -MOTOR_Y                  # lever arm, left propeller (m)
+        self.l2 = MOTOR_Y                   # lever arm, right propeller (m)
         self.k_pos = K_POS           # positive thrust coefficient
         self.k_neg = K_NEG           # negative thrust coefficient
         
@@ -351,7 +352,7 @@ class salpa1:
         Zwdot = -1.0 * m
         Kpdot = -0.2 * self.Ig[0, 0]
         Mqdot = -0.8 * self.Ig[1, 1]
-        Nrdot = -1.7 * self.Ig[2, 2]
+        Nrdot = -2.1 * self.Ig[2, 2]
 
         self.MA = -np.diag([Xudot, Yvdot, Zwdot, Kpdot, Mqdot, Nrdot])
 

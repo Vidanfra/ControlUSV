@@ -12,9 +12,9 @@ pointing to src.gnc instead of the external python_vehicle_simulator package.
 Vehicle specifications:
     - Length: 2.4 m, Beam: 1.7 m, Draft: 0.09 m (at 165 kg)
     - Mass: 165 kg hull + payload
-    - Twin pontoon catamaran with 2 electric motors
+    - Twin pontoon catamaran with 2 electric motors (1.53 m apart)
     - Max speed: 4 knots (~2.06 m/s)
-    - Max thrust per motor: 11.5 kgf
+    - Max thrust per motor: 9.5 kgf forward / 5.5 kgf reverse (bollard test)
 
 Reference: T. I. Fossen (2021). Handbook of Marine Craft Hydrodynamics and
 Motion Control. 2nd Edition, Wiley.
@@ -27,7 +27,7 @@ from loguru import logger
 from src.gnc.gnc_utils import Smtrx, Hmtrx, Rzyx, m2c, crossFlowDrag, sat, ssa
 from src.gnc.control import PIDpolePlacement, controlAllocation
 from src.gnc.salpa1_params import (
-    LENGTH, BEAM, DRAFT, PONTOON_BEAM, PONTOON_Y, CW_PONT, CB_PONT,
+    LENGTH, BEAM, DRAFT, PONTOON_BEAM, PONTOON_Y, MOTOR_Y, CW_PONT, CB_PONT,
     HULL_MASS, CG_HULL, CG_PAYLOAD, R44_COEFF, R55_COEFF, R66_COEFF,
     K_POS, K_NEG, MAX_THRUST_KGF, MIN_THRUST_KGF, T_PROP,
     T_SWAY, T_YAW, WN_AUTOPILOT, ZETA_AUTOPILOT, WN_REF, ZETA_REF, R_MAX_DEG,
@@ -108,8 +108,8 @@ class Salpa1Model:
         self.Ig = Ig_CG - m * self.S_rg @ self.S_rg - self.mp * self.S_rp @ self.S_rp
 
         # Propeller configuration
-        self.l1 = -y_pont
-        self.l2 = y_pont
+        self.l1 = -MOTOR_Y
+        self.l2 = MOTOR_Y
         self.k_pos = K_POS
         self.k_neg = K_NEG
         self.n_max = N_MAX

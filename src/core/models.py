@@ -260,9 +260,9 @@ class SimulationConfig(BaseModel):
     """One simulation profile configuration."""
     profile_id: int = 0
     payload_kg: float = Field(25.0, description="Payload mass [kg]")
-    wn_pid: float = Field(4.0, description="PID natural frequency [rad/s]")
-    zeta_pid: float = Field(0.5, description="PID damping ratio")
-    wn_ref: float = Field(1.0, description="Reference model natural frequency [rad/s]")
+    wn_pid: float = Field(1.5, description="PID natural frequency [rad/s] (matches the onboard controller)")
+    zeta_pid: float = Field(0.7, description="PID damping ratio (matches the onboard controller)")
+    wn_ref: float = Field(0.5, description="Reference model natural frequency [rad/s] (matches the onboard controller)")
     zeta_ref: float = Field(1.0, description="Reference model damping ratio")
     delta: float = Field(5.0, description="ALOS minimum look-ahead distance [m] (maps to delta_min / low-speed floor)")
     k_delta: Optional[float] = Field(None, description="ALOS CTE convergence time constant [s]. If set, enables speed-proportional look-ahead (Δ = max(delta, k_delta·U)) exactly like the live autopilot. If None, the onboard default is used.")

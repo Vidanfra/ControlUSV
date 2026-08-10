@@ -48,8 +48,8 @@
 | Hull mass | 165 kg + up to 25 kg payload |
 | Propulsion | 2× electric thrusters (differential) |
 | Max speed | ~4 kn (≈ 2.06 m/s) |
-| Max propeller speed | ±175.9 rad/s |
-| Thruster lever arms | ±0.673 m |
+| Max propeller speed | +159.8 / −145.4 rad/s |
+| Thruster lever arms | ±0.765 m (1.53 m motor separation) |
 
 ---
 
@@ -361,19 +361,19 @@ $$v_{cruise} = \frac{-X_{u,lin} + \sqrt{X_{u,lin}^2 + 4\,X_{u,quad}\,\tau_{cruis
 **Purpose:** convert the commanded force–moment pair $(\tau_X, \tau_N)$ into individual motor RPM commands $(n_1, n_2)$ sent to the ESP32.
 
 **Model:**
-$$\boldsymbol{\tau} = \mathbf{B}\,\mathbf{u}, \qquad \mathbf{B} = k_+ \begin{bmatrix}1 & 1 \\ -l_1 & -l_2\end{bmatrix}, \quad l_i = \mp y_{pont}$$
+$$\boldsymbol{\tau} = \mathbf{B}\,\mathbf{u}, \qquad \mathbf{B} = k_+ \begin{bmatrix}1 & 1 \\ -l_1 & -l_2\end{bmatrix}, \quad l_i = \mp y_{mot}$$
 
 $$\mathbf{u} = \mathbf{B}^{-1}\boldsymbol{\tau}, \qquad n_i = \text{sign}(u_i)\sqrt{|u_i|}$$
 
-For **differential steering** with symmetric lever arms ($l_1 = -l_2 = y_{pont}$):
-$$n_{port}^2 = \frac{\tau_X / k_+ - \tau_N / (k_+ \cdot 2 y_{pont})}{1}, \qquad
-n_{stbd}^2 = \frac{\tau_X / k_+ + \tau_N / (k_+ \cdot 2 y_{pont})}{1}$$
+For **differential steering** with symmetric lever arms ($l_1 = -l_2 = y_{mot}$):
+$$n_{port}^2 = \frac{\tau_X / k_+ - \tau_N / (k_+ \cdot 2 y_{mot})}{1}, \qquad
+n_{stbd}^2 = \frac{\tau_X / k_+ + \tau_N / (k_+ \cdot 2 y_{mot})}{1}$$
 
 **Key parameters:**
 
 | Parameter | JSON key | Effect of error |
 |-----------|----------|-----------------|
-| $y_{pont}$ (m) | `pontoon_y_m` | Lever arm. 5 mm error → 0.7% wrong yaw torque per differential count. **Measure to ±2 mm** |
+| $y_{mot}$ (m) | `motor_y_m` | Lever arm (half the motor-to-motor separation). 5 mm error → 0.7% wrong yaw torque per differential count. **Measure to ±2 mm** |
 | $k_+$ | `k_pos` | Forward thrust coefficient. Error scales all computed RPM commands. **Measure on thrust stand** |
 
 Motor speeds are clamped to $[n_{min},\ n_{max}]$ computed from `max_thrust_per_motor_kgf` and `k_pos`.
@@ -384,8 +384,8 @@ Motor speeds are clamped to $[n_{min},\ n_{max}]$ computed from `max_thrust_per_
 
 Perform in calm water, zero wind, with RTK GNSS active.
 
-**Step 1 — Verify thrust allocation (pontoon_y_m)**
-Arm in MANUAL mode. Apply a small differential command (left stick only). Vessel should yaw in place. If it also surges, the allocation is skewed → re-measure `pontoon_y_m`.
+**Step 1 — Verify thrust allocation (motor_y_m)**
+Arm in MANUAL mode. Apply a small differential command (left stick only). Vessel should yaw in place. If it also surges, the allocation is skewed → re-measure `motor_y_m`.
 
 **Step 2 — Set `izz_total_kgm2` (or verify `r66_coeff` + `nrdot_frac`)**
 Apply a yaw step in MANUAL mode; measure the initial angular acceleration $\alpha = \tau_{applied} / I_{zz}$. If the measured $I_{zz}$ differs significantly from the JSON value, update `izz_total_kgm2` — this rescales all PID gains.

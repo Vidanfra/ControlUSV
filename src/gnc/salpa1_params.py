@@ -48,7 +48,8 @@ BEAM         = _p['geometry']['beam_m']           # [m]  max beam (pontoon tip t
 DRAFT        = _p['geometry']['draft_m']          # [m]  design waterline draft at nominal load; scales with m_total in sim
 LCF          = _p['geometry']['lcf_m']            # [m]  longitudinal centre of flotation from body-frame origin (≈ 0)
 PONTOON_BEAM = _p['geometry']['pontoon_beam_m']   # [m]  width of one pontoon tube; Aw_pont = CW_PONT * PONTOON_BEAM * LENGTH
-PONTOON_Y    = _p['geometry']['pontoon_y_m']      # [m]  lateral distance from centreline to pontoon centre = motor lever arm
+PONTOON_Y    = _p['geometry']['pontoon_y_m']      # [m]  lateral distance from centreline to pontoon waterline centroid (hydrostatics only)
+MOTOR_Y      = _p['geometry']['motor_y_m']        # [m]  lateral distance from centreline to each motor shaft = thrust lever arm
 CW_PONT      = _p['geometry']['cw_pont']          # [-]  waterplane area coefficient of one pontoon (rect ≈ 1, round ≈ 0.75)
 CB_PONT      = _p['geometry']['cb_pont']          # [-]  block coefficient of one pontoon; Vol_pont = CB * B * L * T
 
@@ -61,7 +62,7 @@ CG_PAYLOAD      = _p['mass']['cg_payload_m']         # [m×3]  CG of payload in 
 R44_COEFF       = _p['mass']['r44_coeff']            # [-]    k44/beam  (roll gyration ratio);  Ig[0,0] = m * (r44_coeff*beam)²
 R55_COEFF       = _p['mass']['r55_coeff']            # [-]    k55/length (pitch gyration ratio); Ig[1,1] = m * (r55_coeff*L)²
 R66_COEFF       = _p['mass']['r66_coeff']            # [-]    k66/length (yaw gyration ratio);   Ig[2,2] = m * (r66_coeff*L)²
-IZZ_TOTAL       = _p['mass']['izz_total_kgm2']       # [kg·m²] yaw MOI used as the autopilot plant model; should include Nrdot added mass (current value is rigid-body only)
+IZZ_TOTAL       = _p['mass']['izz_total_kgm2']       # [kg·m²] measured yaw MOI (rigid body + Nrdot added inertia) used as the autopilot plant model
 
 # ── Added-mass fractions ──────────────────────────────────────────────────────
 # Each coefficient is a fraction of the corresponding rigid-body inertia term.
@@ -108,7 +109,7 @@ WN_AUTOPILOT    = _p['control_defaults']['wn']             # [rad/s]  autopilot 
 ZETA_AUTOPILOT  = _p['control_defaults']['zeta']           # [-]      autopilot damping ratio; 0.7 = Butterworth, no overshoot
 WN_REF          = _p['control_defaults']['wn_ref']         # [rad/s]  reference model frequency; must be < WN_AUTOPILOT
 ZETA_REF        = _p['control_defaults']['zeta_ref']       # [-]      reference model damping; 1.0 = critically damped
-R_MAX_DEG       = _p['control_defaults']['r_max_deg_s']    # [deg/s]  max yaw-rate in reference model; 1000 = unlimited
+R_MAX_DEG       = _p['control_defaults']['r_max_deg_s']    # [deg/s]  max yaw-rate in reference model (physical max ≈ 34 °/s)
 K_DELTA         = _p['control_defaults']['k_delta_s']      # [s]      CTE convergence time constant; Δ = max(DELTA_MIN, K_DELTA * U); τ_ye = K_DELTA
 DELTA_MIN       = _p['control_defaults']['delta_min_m']    # [m]      minimum look-ahead distance floor (low-speed protection)
 E_X_THRESHOLD   = _p['control_defaults']['e_x_threshold_deg']  # [deg] integrator anti-windup threshold
@@ -124,7 +125,7 @@ G       = 9.81
 TAU_MAX = 2.0 * MAX_THRUST_KGF * G
 # [N] Maximum combined surge thrust from both motors.
 # Formula: 2 motors × max_thrust_per_motor_kgf × g
-# Example: 2 × 11.5 × 9.81 ≈ 225.63 N
+# Example: 2 × 9.5 × 9.81 ≈ 186.4 N
 
 UMAX = MAX_SPEED_KN * 0.5144
 # [m/s] Maximum surge speed converted from knots.
@@ -134,13 +135,13 @@ UMAX = MAX_SPEED_KN * 0.5144
 XU_LIN = XU_LIN_FRAC * TAU_MAX / UMAX
 # [N·s/m] Linear (velocity-proportional) surge drag coefficient.
 # Derived so that XU_LIN * UMAX = xu_lin_frac * TAU_MAX (linear fraction of total drag at UMAX).
-# Example: 0.2 × 225.63 / 2.0576 ≈ 21.94 N·s/m
+# Example: 0.2 × 186.4 / 2.0576 ≈ 18.12 N·s/m
 # Used in: process.py (tau→speed inversion), vehicle_model.py (dynamics)
 
 XU_QUAD = XU_QUAD_FRAC * TAU_MAX / UMAX ** 2
 # [N·s²/m²] Quadratic (velocity²-proportional) surge drag coefficient.
 # Derived so that XU_QUAD * UMAX² = xu_quad_frac * TAU_MAX (quadratic fraction of total drag at UMAX).
-# Example: 0.8 × 225.63 / 2.0576² ≈ 42.58 N·s²/m²
+# Example: 0.8 × 186.4 / 2.0576² ≈ 35.18 N·s²/m²
 # Used in: process.py (tau→speed inversion), vehicle_model.py (dynamics)
 
 _M_NOM  = HULL_MASS + DEFAULT_PAYLOAD
@@ -156,19 +157,19 @@ M_SURGE = _M_NOM * (1.0 - AM_XUDOT)
 N_MAX = math.sqrt(MAX_THRUST_KGF * G / K_POS)
 # [rad/s] Maximum propeller angular speed (forward).
 # From thrust law at saturation: T_max = K_POS * N_MAX²  →  N_MAX = sqrt(T_max[N] / K_POS)
-# Example: sqrt(11.5 × 9.81 / 0.00365) ≈ 175.9 rad/s
+# Example: sqrt(9.5 × 9.81 / 0.00365) ≈ 159.8 rad/s
 # Used in: ESC saturation in autopilot, vehicle_model.
 
 N_MIN = -math.sqrt(MIN_THRUST_KGF * G / K_NEG)
 # [rad/s] Minimum (maximum reverse) propeller angular speed.
 # From reverse thrust law: T_rev = K_NEG * n²  →  N_MIN = -sqrt(T_rev_max[N] / K_NEG)
-# Example: -sqrt(8.0 × 9.81 / 0.00255) ≈ -175.4 rad/s
+# Example: -sqrt(5.5 × 9.81 / 0.00255) ≈ -145.4 rad/s
 # Used in: ESC saturation in autopilot, vehicle_model.
 
-L1 = -PONTOON_Y
+L1 = -MOTOR_Y
 # [m] Port motor moment arm (negative = port side).
 # Yaw moment from port motor: tau_yaw_port  =  L1 * T_port
 
-L2 =  PONTOON_Y
+L2 =  MOTOR_Y
 # [m] Starboard motor moment arm (positive = starboard side).
 # Yaw moment from stbd motor: tau_yaw_stbd  =  L2 * T_stbd

@@ -24,6 +24,7 @@ from src.gnc.salpa1_params import (
     XU_LIN as _XU_LIN, XU_QUAD as _XU_QUAD,
     M_SURGE as _M_SURGE,
     IZZ_TOTAL, N_MAX, N_MIN, WN_AUTOPILOT, ZETA_AUTOPILOT, WN_REF, ZETA_REF,
+    R_MAX_DEG, K_DELTA, DELTA_MIN, E_X_THRESHOLD,
 )
 
 
@@ -36,8 +37,9 @@ class HeadingAutopilot:
     or driven by the PathFollower for waypoint following.
     """
 
-    def __init__(self, m_yaw, wn=1.5, zeta=0.7, wn_d=0.5, zeta_d=1.0,
-                 r_max_deg=1000.0, e_x_threshold_deg=10.0):
+    def __init__(self, m_yaw, wn=WN_AUTOPILOT, zeta=ZETA_AUTOPILOT,
+                 wn_d=WN_REF, zeta_d=ZETA_REF,
+                 r_max_deg=R_MAX_DEG, e_x_threshold_deg=E_X_THRESHOLD):
         """
         Args:
             m_yaw: Yaw moment of inertia including added mass [kg·m²]
@@ -133,7 +135,7 @@ class PathFollower:
     Returns desired heading for the HeadingAutopilot to track.
     """
 
-    def __init__(self, k_delta=15.0, gamma=0.0, delta_min=5.0):
+    def __init__(self, k_delta=K_DELTA, gamma=0.0, delta_min=DELTA_MIN):
         """
         Args:
             k_delta:   CTE convergence time constant [s]. Look-ahead Δ = max(delta_min, k_delta * U),
@@ -260,7 +262,7 @@ class StationKeeper:
     def __init__(self, station_ned, reaching_radius=3.0, station_radius=10.0,
                  m_yaw=IZZ_TOTAL, B_inv=None, n_max=N_MAX, n_min=N_MIN,
                  wn=WN_AUTOPILOT, zeta=ZETA_AUTOPILOT, wn_d=WN_REF, zeta_d=ZETA_REF,
-                 k_delta=15.0, delta_min=5.0, gamma=0.0, tau_X=150.0,
+                 k_delta=K_DELTA, delta_min=DELTA_MIN, gamma=0.0, tau_X=150.0,
                  vel_profiler_enabled=True, accel_ms2=0.3):
         """
         Args:
@@ -645,9 +647,10 @@ class GNCController:
     """
 
     def __init__(self, m_yaw, B_inv, n_max, n_min,
-                 wn=1.5, zeta=0.7, wn_d=0.5, zeta_d=1.0,
-                 k_delta=15.0, delta_min=5.0, gamma=0.0,
-                 tau_X=150.0, e_x_threshold_deg=10.0,
+                 wn=WN_AUTOPILOT, zeta=ZETA_AUTOPILOT, wn_d=WN_REF, zeta_d=ZETA_REF,
+                 k_delta=K_DELTA, delta_min=DELTA_MIN, gamma=0.0,
+                 tau_X=150.0, e_x_threshold_deg=E_X_THRESHOLD,
+                 r_max_deg=R_MAX_DEG,
                  vel_profiler_enabled=True, accel_ms2=0.3):
         """
         Args:
@@ -662,10 +665,12 @@ class GNCController:
             gamma: ALOS adaptive gain
             tau_X: Cruise surge force [N]
             e_x_threshold_deg: Anti-windup threshold [deg]
+            r_max_deg: Reference-model yaw-rate limit [deg/s]
             vel_profiler_enabled: Enable/disable the trapezoidal velocity profiler
             accel_ms2: Acceleration rate when leaving a waypoint [m/s²]
         """
         self.autopilot    = HeadingAutopilot(m_yaw, wn, zeta, wn_d, zeta_d,
+                                             r_max_deg=r_max_deg,
                                              e_x_threshold_deg=e_x_threshold_deg)
         self.path_follower = PathFollower(k_delta, gamma, delta_min)
         self.vel_profiler  = VelocityProfiler(tau_X, accel_ms2=accel_ms2)

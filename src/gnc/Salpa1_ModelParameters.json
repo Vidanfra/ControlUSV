@@ -8,19 +8,22 @@
     "lcf_m":         -0.001,
     "pontoon_beam_m": 0.35,
     "pontoon_y_m":    0.673,
+    "_comment_motor_y": "Half the measured motor-to-motor separation (1.53 m). This is the thrust lever arm; pontoon_y_m stays the hydrostatic waterline-centroid offset.",
+    "motor_y_m":      0.765,
     "cw_pont":        0.75,
     "cb_pont":        0.871
   },
 
   "mass": {
     "hull_kg":           165.0,
-    "default_payload_kg": 25.0,
+    "default_payload_kg": 0.0,
     "cg_hull_m":         [-0.063, 0.0, -0.065],
     "cg_payload_m":      [0.1,   0.0, -0.1],
     "r44_coeff":          0.43,
     "r55_coeff":          0.25,
     "r66_coeff":          0.25,
-    "izz_total_kgm2":    60.0
+    "_comment_izz":      "Measured effective yaw inertia (rigid body + added inertia), yaw-decay identification method C. Plausible range 160-200.",
+    "izz_total_kgm2":   185.0
   },
 
   "added_mass": {
@@ -30,14 +33,14 @@
     "zwdot_frac": -1.0,
     "kpdot_frac": -0.2,
     "mqdot_frac": -0.8,
-    "nrdot_frac": -1.7
+    "nrdot_frac": -2.1
   },
 
   "propulsion": {
-    "k_pos":                          0.00365,
-    "k_neg":                          0.00255,
-    "max_thrust_per_motor_kgf":      11.5,
-    "max_reverse_thrust_per_motor_kgf": 8.0,
+    "k_pos":                          0.00301,
+    "k_neg":                          0.00175,
+    "max_thrust_per_motor_kgf":       9.5,
+    "max_reverse_thrust_per_motor_kgf": 5.5,
     "t_prop_s":                       0.1,
     "max_speed_kn":                   4.0
   },
@@ -46,16 +49,18 @@
     "_comment":        "xu_lin_frac and xu_quad_frac split the drag between linear and quadratic terms.",
     "xu_lin_frac":     0.2,
     "xu_quad_frac":    0.8,
-    "yaw_quad_fac":   10.0
+    "_comment_yaw_quad": "Measured quadratic yaw drag d2 = 13 N.m.s^2 against a linear term of 175 N.m.s; crossFlowDrag already supplies part of it, so only a small residual multiplier is applied.",
+    "yaw_quad_fac":    0.05
   },
 
   "damping": {
+    "_comment_t_yaw": "Measured yaw time constant tau = Izz/d1 = 185/175.",
     "t_sway_s": 1.5,
-    "t_yaw_s":  1.5
+    "t_yaw_s":  1.06
   },
 
   "control_defaults": {
-    "_comment_wn":          "Inner PID loop natural frequency [rad/s]. Kp = IZZ*wn², Kd = IZZ*2*zeta*wn - IZZ. Saturates at tau_yaw_max/Kp rad ≈ 64° at wn=1.5.",
+    "_comment_wn":          "Inner PID loop natural frequency [rad/s]. Kp = IZZ*wn², Kd = IZZ*2*zeta*wn - IZZ. With IZZ=185 and tau_yaw_max = 2*9.5*9.81*0.765 ≈ 143 N·m, the proportional term saturates beyond ≈ 20° of heading error at wn=1.5.",
     "wn":                   1.5,
     "_comment_zeta":        "Inner PID damping ratio [-]. 0.7 = Butterworth (no overshoot). Do not go below 0.5.",
     "zeta":                 0.7,
@@ -63,7 +68,7 @@
     "wn_ref":               0.5,
     "_comment_zeta_ref":    "Reference model damping ratio [-]. 1.0 = critically damped (no overshoot on commanded heading).",
     "zeta_ref":             1.0,
-    "_comment_r_max":       "Max yaw-rate inside the reference model [deg/s]. 1000 = effectively unlimited. Set e.g. 20 to add hard rate limiting.",
+    "_comment_r_max":       "Max yaw-rate inside the reference model [deg/s]. Physical maximum is ≈ 34 °/s at full differential thrust; 25 leaves margin so the reference is always trackable.",
     "r_max_deg_s":          1000.0,
     "_comment_delta":       "Speed-proportional look-ahead: Δ = max(delta_min_m, k_delta_s * U). k_delta_s is the CTE convergence time constant [s]: τ_ye = Δ/U = k_delta_s (constant at all speeds). Rule: k_delta_s >> settling_time = 4/(zeta*wn) ≈ 3.8 s. k=15 gives τ_ye=15s (4× margin).",
     "k_delta_s":            15.0,
