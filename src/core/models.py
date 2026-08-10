@@ -178,11 +178,11 @@ class USVState(BaseModel):
     speed: float = Field(0.0, description="Speed over ground")
     course: float = Field(0.0, description="Course over ground in radians")
     
-    # Attitude (radians)
+    # Attitude
     heading: float = Field(0.0, description="Heading/Yaw in radians")
-    roll: float = 0.0
-    pitch: float = 0.0
-    yaw: float = 0.0
+    roll: float = Field(0.0, description="Roll in degrees (verbatim from the IMU)")
+    pitch: float = Field(0.0, description="Pitch in degrees (verbatim from the IMU)")
+    yaw: float = Field(0.0, description="Yaw in degrees (verbatim from the IMU, not referenced to true north)")
     
     # Heading quality
     heading_status: str = Field("", description="A=GNSS dual-antenna, M=magnetic, S=simulated")
