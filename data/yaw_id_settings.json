@@ -1,0 +1,18 @@
+{
+  "last_file": "C:/Users/vicente.danvila/Desktop/USV/USV Salpa 1/Software Development/ControlUSV/logs/NAV_20260806T163225Z_20260806T163642Z.csv",
+  "yaw_source": "Yaw [deg]",
+  "fix_imu": true,
+  "drop_repeats": true,
+  "t_fwd_kgf": 9.5,
+  "t_rev_kgf": 5.5,
+  "separation_m": 1.53,
+  "prop_tau_s": 0.1,
+  "a_skip_s": 0.2,
+  "a_win_s": 1.0,
+  "quad_damping": true,
+  "fit_delay": true,
+  "wn": 1.5,
+  "zeta": 0.7,
+  "t0": 177.22,
+  "t1": 197.25
+}

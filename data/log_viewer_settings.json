@@ -1,0 +1,20 @@
+{
+  "last_file": "C:/Users/vicente.danvila/Desktop/USV/USV Salpa 1/Software Development/ControlUSV/logs/NAV_20260806T163703Z_20260806T163751Z.csv",
+  "ts_selected": [
+    "Heading [deg]",
+    "Yaw [deg]",
+    "Motor Port [%]"
+  ],
+  "map_selected": [
+    "Motor Port [%]"
+  ],
+  "arrow_field": "Heading [deg]",
+  "decimation": 20,
+  "local_enu": false,
+  "basemap": true,
+  "single_axes": false,
+  "utc_axis": true,
+  "sample_markers": true,
+  "min_extent_m": 50.0,
+  "marker_size": 12.0
+}
