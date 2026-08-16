@@ -30,6 +30,7 @@
 
     <div class="floating-dashboard">
       <Dashboard />
+      <SignalQualityPanel />
     </div>
     <div class="top-center-bar">
       <ControlPanel />
@@ -59,6 +60,7 @@ import Dashboard from '../components/Dashboard.vue'
 import StationPanel from '../components/StationPanel.vue'
 import WpRoutePanel from '../components/WpRoutePanel.vue'
 import MissionPlannerPanel from '../components/MissionPlannerPanel.vue'
+import SignalQualityPanel from '../components/SignalQualityPanel.vue'
 import { useTelemetryStore } from '../stores/telemetry'
 import { useManualControl } from '../composables/useManualControl'
 
@@ -161,6 +163,10 @@ const strStyle = computed(() => {
   top: 20px;
   right: 20px;
   z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
 }
 
 .top-center-bar {

@@ -28,6 +28,40 @@ function makeSurveyItem(radius = 3, speed = 1.0) {
   }
 }
 
+// ── Link-quality bookkeeping ─────────────────────────────────────────────────
+// Kept outside the store: high-churn, per-PING data that must not be reactive.
+const PING_PERIOD_MS = 500          // keep-alive / RTT probe rate
+const PING_TIMEOUT_MS = 3000        // unanswered after this → counted as lost
+const LATENCY_HISTORY_LEN = 60      // samples kept for the sparkline (~30 s)
+const _pendingPings = new Map()     // seq → send timestamp (performance.now())
+
+function resetLinkStats(store) {
+  _pendingPings.clear()
+  store.latencyMs = 0
+  store.latencyAvgMs = 0
+  store.latencyJitterMs = 0
+  store.latencyLossPct = 0
+  store.latencyHistory = []
+}
+
+function pushLatencySample(store, rttMs) {
+  const h = store.latencyHistory
+  h.push(rttMs)                     // null marks a lost probe
+  if (h.length > LATENCY_HISTORY_LEN) h.splice(0, h.length - LATENCY_HISTORY_LEN)
+
+  if (rttMs !== null) store.latencyMs = rttMs
+
+  const window = h.slice(-20)
+  const ok = window.filter(v => v !== null)
+  store.latencyLossPct = window.length ? (100 * (window.length - ok.length)) / window.length : 0
+  if (ok.length) {
+    store.latencyAvgMs = ok.reduce((a, b) => a + b, 0) / ok.length
+    let jit = 0
+    for (let i = 1; i < ok.length; i++) jit += Math.abs(ok[i] - ok[i - 1])
+    store.latencyJitterMs = ok.length > 1 ? jit / (ok.length - 1) : 0
+  }
+}
+
 export const useTelemetryStore = defineStore('telemetry', {
   state: () => ({
     lat: 0.0,
@@ -284,9 +318,70 @@ export const useTelemetryStore = defineStore('telemetry', {
       net_rx_kbps: 0, net_tx_kbps: 0,
       hostname: '', os_name: '',
     },
+
+    // ── Link quality (frontend ↔ backend round-trip on the PING/PONG stream) ─
+    linkTransport: 'unknown',   // wifi | zerotier | ethernet | vpn | loopback | unknown
+    linkIface: '',              // backend NIC that accepted the socket (e.g. wlan0, ztabcdef)
+    linkServerIp: '',
+    linkClientIp: '',
+    latencyMs: 0,               // last measured RTT
+    latencyAvgMs: 0,            // mean RTT over the recent window
+    latencyJitterMs: 0,         // mean absolute delta between consecutive RTTs
+    latencyLossPct: 0,          // unanswered PINGs over the recent window
+    latencyHistory: [],         // last LATENCY_HISTORY_LEN RTT samples (null = lost)
   }),
 
   getters: {
+    // ── Link quality ─────────────────────────────────────────────────────
+    // Grade the control link from RTT + loss so the operator can tell at a
+    // glance whether commands are still going through promptly.
+    linkQuality(state) {
+      if (!state.isConnected) return { level: 'offline', label: 'OFFLINE', score: 0, color: '#777' }
+      if (!state.latencyHistory.length) return { level: 'unknown', label: 'MEASURING', score: 0, color: '#777' }
+      const rtt = state.latencyAvgMs
+      const loss = state.latencyLossPct
+      if (loss >= 40 || rtt >= 1000) return { level: 'bad',       label: 'CRITICAL',  score: 10,  color: '#e53935' }
+      if (loss >= 15 || rtt >= 400)  return { level: 'poor',      label: 'POOR',      score: 35,  color: '#ff7043' }
+      if (loss >= 5  || rtt >= 150)  return { level: 'fair',      label: 'FAIR',      score: 60,  color: '#FFA500' }
+      if (rtt >= 60)                 return { level: 'good',      label: 'GOOD',      score: 80,  color: '#9ccc65' }
+      return                                { level: 'excellent', label: 'EXCELLENT', score: 100, color: '#00C851' }
+    },
+
+    // Bar fill 0–100 %: full bar = fast link. Logarithmic so the useful
+    // 10–1000 ms range spreads across the whole width.
+    linkQualityPct(state) {
+      if (!state.isConnected || !state.latencyHistory.length) return 0
+      const rtt = Math.max(state.latencyAvgMs, 1)
+      const pct = 100 * (1 - (Math.log10(rtt) - 1) / 2)   // 10 ms → 100 %, 1000 ms → 0 %
+      const lossPenalty = state.latencyLossPct
+      return Math.max(0, Math.min(100, pct - lossPenalty))
+    },
+
+    // Is the link getting better or worse? Compares the two halves of the
+    // recent window; ±15 % dead-band avoids flapping.
+    linkTrend(state) {
+      const ok = state.latencyHistory.slice(-12).filter(v => v !== null)
+      if (ok.length < 6) return 'stable'
+      const half = Math.floor(ok.length / 2)
+      const mean = a => a.reduce((x, y) => x + y, 0) / a.length
+      const older = mean(ok.slice(0, half))
+      const recent = mean(ok.slice(half))
+      if (recent > older * 1.15 + 3) return 'degrading'
+      if (recent < older * 0.85 - 3) return 'improving'
+      return 'stable'
+    },
+
+    linkTransportLabel(state) {
+      switch (state.linkTransport) {
+        case 'wifi':      return 'LOCAL WIFI'
+        case 'ethernet':  return 'LAN'
+        case 'zerotier':  return 'ZEROTIER VPN'
+        case 'vpn':       return 'VPN'
+        case 'loopback':  return 'LOCALHOST'
+        default:          return 'UNKNOWN'
+      }
+    },
+
     // ── Flat waypoint list derived from missionItems ──────────────────────
     // This is what the backend receives. If missionItems is empty or has no
     // positioned items the legacy list is returned (used by SimView CSV upload).
@@ -978,23 +1073,34 @@ export const useTelemetryStore = defineStore('telemetry', {
         // Expose updater so onmessage can reset the timer
         ws._updateLastMsgTime = () => { _lastMsgTime = Date.now() }
 
-        // ── Frontend keep-alive PING (1 Hz) ───────────────────────────────────
+        // ── Frontend keep-alive PING (2 Hz) ───────────────────────────────────
         // The backend uses these PINGs to populate the `comms/link` topic which
         // gates GNC's comm-loss failsafe. Without this stream, a real 4G or
         // commander disconnect would never trip the failsafe.
+        // The echoed PONG also gives us the round-trip latency of the control link.
         let _pingSeq = 0
+        resetLinkStats(this)
         const _pingTimer = setInterval(() => {
           if (this.socket !== ws || ws.readyState !== WebSocket.OPEN) {
             clearInterval(_pingTimer)
             return
           }
+          // Expire probes that were never answered and count them as lost.
+          const nowPerf = performance.now()
+          for (const [seq, t0] of _pendingPings) {
+            if (nowPerf - t0 > PING_TIMEOUT_MS) {
+              _pendingPings.delete(seq)
+              pushLatencySample(this, null)
+            }
+          }
           _pingSeq += 1
           try {
+            _pendingPings.set(_pingSeq, performance.now())
             ws.send(JSON.stringify({ type: 'PING', seq: _pingSeq, ts: Date.now() / 1000.0 }))
           } catch (e) {
             clearInterval(_pingTimer)
           }
-        }, 1000)
+        }, PING_PERIOD_MS)
         ws._pingTimer = _pingTimer
       }
 
@@ -1013,6 +1119,18 @@ export const useTelemetryStore = defineStore('telemetry', {
             return
           }
           if (topic === 'comms/pong') {
+            const t0 = _pendingPings.get(data?.seq)
+            if (t0 !== undefined) {
+              _pendingPings.delete(data.seq)
+              pushLatencySample(this, performance.now() - t0)
+            }
+            return
+          }
+          if (topic === 'comms/link_info') {
+            this.linkTransport = data?.transport || 'unknown'
+            this.linkIface     = data?.iface     || ''
+            this.linkServerIp  = data?.server_ip || ''
+            this.linkClientIp  = data?.client_ip || ''
             return
           }
           if (topic === 'comms/link') {
@@ -1174,6 +1292,19 @@ export const useTelemetryStore = defineStore('telemetry', {
              if (data.offsets_config) {
                // Backend is authoritative for sensor lever-arm offsets.
                this.offsetsConfig = { ...this.offsetsConfig, ...data.offsets_config }
+             }
+             if (data.gnss_config) {
+               // Backend is authoritative for GNSS/NTRIP config — sync so the
+               // Settings form reflects the persisted values after a reload.
+               const gc = data.gnss_config
+               if (gc.serial_port   !== undefined) this.gnssSerialPort   = gc.serial_port
+               if (gc.baud_rate     !== undefined) this.gnssBaudRate     = gc.baud_rate
+               if (gc.ntrip_caster  !== undefined) this.gnssNtripCaster  = gc.ntrip_caster
+               if (gc.ntrip_port    !== undefined) this.gnssNtripPort    = gc.ntrip_port
+               if (gc.mountpoint    !== undefined) this.gnssMountpoint   = gc.mountpoint
+               if (gc.username      !== undefined) this.gnssUsername    = gc.username
+               if (gc.password      !== undefined) this.gnssPassword    = gc.password
+               if (gc.command_freq  !== undefined) this.gnssCommandFreq = gc.command_freq
              }
           }
           else if (topic === 'gnc/control_debug') {
@@ -1340,6 +1471,7 @@ export const useTelemetryStore = defineStore('telemetry', {
         if (this.socket !== ws) return   // orphaned socket — ignore
         this.isConnected = false
         if (ws._pingTimer) { clearInterval(ws._pingTimer); ws._pingTimer = null }
+        resetLinkStats(this)
         console.warn('WebSocket Disconnected. Reconnecting in 3s...')
         setTimeout(() => {
           this.connectWebSocket()

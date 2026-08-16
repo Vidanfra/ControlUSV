@@ -27,6 +27,66 @@ if sys.platform == 'win32':
 # Both are initialized in ConnectionManager.connect.
 _PING_ALIVE_WINDOW_S = 2.0   # client is "alive" if it pinged within this window
 
+
+def _iface_for_ip(ip: str) -> str:
+    """Return the name of the local network interface that owns `ip` ('' if unknown)."""
+    if not ip:
+        return ""
+    try:
+        import psutil
+    except ImportError:
+        return ""
+    try:
+        for name, addrs in psutil.net_if_addrs().items():
+            for a in addrs:
+                if getattr(a, "address", "").split("%")[0] == ip:
+                    return name
+    except Exception:
+        pass
+    return ""
+
+
+def _classify_transport(iface: str, ip: str) -> str:
+    """Map an interface name (or, as fallback, an IP) to a transport label."""
+    n = (iface or "").lower()
+    if n.startswith(("zt", "ztx", "zterr")):
+        return "zerotier"
+    if n.startswith(("wl", "wifi", "ath", "ra")):
+        return "wifi"
+    if n.startswith(("tun", "tap", "wg", "ppp", "tailscale")):
+        return "vpn"
+    if n.startswith(("en", "eth", "eno", "enp", "usb")):
+        return "ethernet"
+    if n.startswith("lo"):
+        return "loopback"
+
+    # No interface match (psutil missing, IPv6 scope, container NAT): fall back
+    # to the address family. ZeroTier hands out 10.x / 172.2x.x / fd:: leases,
+    # while the boat's own WiFi AP/LAN is 192.168.x.x.
+    if ip.startswith("127.") or ip == "::1" or ip == "localhost":
+        return "loopback"
+    if ip.startswith("192.168."):
+        return "wifi"
+    if ip.startswith(("10.", "172.")) or ip.lower().startswith(("fd", "fc")):
+        return "zerotier"
+    return "unknown"
+
+
+def _link_info(websocket: WebSocket) -> dict:
+    """Describe how this client reached us (which local NIC accepted the socket)."""
+    scope = getattr(websocket, "scope", None) or {}
+    server = scope.get("server") or ("", 0)
+    client = scope.get("client") or ("", 0)
+    server_ip = str(server[0] or "")
+    iface = _iface_for_ip(server_ip)
+    return {
+        "transport": _classify_transport(iface, server_ip),
+        "iface": iface,
+        "server_ip": server_ip,
+        "client_ip": str(client[0] or ""),
+    }
+
+
 class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
@@ -39,6 +99,13 @@ class ConnectionManager:
         websocket._last_seq = -1
         self.active_connections.append(websocket)
         logger.info(f"WebSocket client connected. Total: {len(self.active_connections)}")
+        info = _link_info(websocket)
+        logger.info(f"Link: {info['client_ip']} -> {info['server_ip']} "
+                    f"({info['iface'] or '?'} / {info['transport']})")
+        try:
+            await websocket.send_text(json.dumps({"topic": "comms/link_info", "data": info}))
+        except Exception:
+            pass
 
     def disconnect(self, websocket: WebSocket):
         if websocket in self.active_connections:
@@ -225,7 +292,11 @@ async def process_incoming_command(data_str: str, websocket: WebSocket):
         try:
             await websocket.send_text(json.dumps({
                 "topic": "comms/pong",
-                "data": {"seq": data.get("seq"), "ts": time.time()},
+                "data": {
+                    "seq": data.get("seq"),
+                    "ts": time.time(),
+                    "client_ts": data.get("ts"),   # echoed for client-side RTT
+                },
             }))
         except Exception:
             pass
