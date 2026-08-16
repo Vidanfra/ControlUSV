@@ -1,14 +1,33 @@
 from src.core.process import ServiceProcess
 from src.core.messaging import Publisher, Subscriber, Topics
-from src.core.models import CommandMessage, CommandType
+from src.core.models import CommandMessage, CommandType, GnssConfig
 from src.drivers.imu import ImuNode
 from src.drivers.power_pzem import PowerNode
 from src.drivers.gnss_um982 import GnssNode
 from src.drivers.esp32 import Esp32Node
 from src.core.config import settings
 from loguru import logger
+import json
+import os
 import time
 import threading
+
+# Same persisted settings file the ManagerProcess writes to — read directly so
+# the GNSS node starts with the saved NTRIP config instead of blank defaults.
+_SETTINGS_FILE = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'manager_settings.json')
+
+
+def _load_gnss_config() -> GnssConfig:
+    try:
+        if os.path.exists(_SETTINGS_FILE):
+            with open(_SETTINGS_FILE, 'r') as f:
+                data = json.load(f)
+            if 'gnss_config' in data:
+                return GnssConfig(**data['gnss_config'])
+    except Exception as e:
+        logger.warning(f"HAL: could not load persisted GNSS config ({e}), using defaults")
+    return GnssConfig()
+
 
 class HALProcess(ServiceProcess):
     def setup(self):
@@ -18,19 +37,20 @@ class HALProcess(ServiceProcess):
 
         # Start GNSS Node (UM982) in a background thread
         try:
+            gnss_cfg = _load_gnss_config()
             self.gnss_node = GnssNode(
-                serial_port="/dev/gnss_um982",
-                baud_rate=115200,
-                ntrip_caster="",     # Set via Settings UI
-                ntrip_port=2101,
-                mountpoint="",
-                username="",
-                password="",
-                command_freq=1.0,
+                serial_port=gnss_cfg.serial_port,
+                baud_rate=gnss_cfg.baud_rate,
+                ntrip_caster=gnss_cfg.ntrip_caster,
+                ntrip_port=gnss_cfg.ntrip_port,
+                mountpoint=gnss_cfg.mountpoint,
+                username=gnss_cfg.username,
+                password=gnss_cfg.password,
+                command_freq=gnss_cfg.command_freq,
             )
             self.gnss_thread = threading.Thread(target=self.gnss_node.run, daemon=True)
             self.gnss_thread.start()
-            logger.info("GNSS Node (UM982) started on /dev/gnss_um982")
+            logger.info(f"GNSS Node (UM982) started on {gnss_cfg.serial_port}")
         except Exception as e:
             logger.warning(f"Could not start GNSS Node: {e}. GNSS data will not be available.")
             self.gnss_node = None

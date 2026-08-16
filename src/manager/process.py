@@ -3,7 +3,7 @@ from src.core.messaging import PubSubBroker, Publisher, Subscriber, Topics
 from src.core.models import (
     CommandMessage, CommandType, USVState, VehicleMode,
     FailsafeConfig, GncConfig, LoggingConfig, RelayConfig, MotorConfig,
-    OffsetsConfig,
+    OffsetsConfig, GnssConfig,
 )
 
 _RELAY_RESTART_SECONDS = 5.0   # pulse width for the "Restart" button
@@ -54,6 +54,7 @@ class ManagerProcess(ServiceProcess):
         self.relay_config = RelayConfig()
         self.motor_config = MotorConfig()
         self.offsets_config = OffsetsConfig()
+        self.gnss_config = GnssConfig()
         self.gnss_fix_type = 0
 
         # Load previously saved user settings (overrides defaults above)
@@ -125,6 +126,7 @@ class ManagerProcess(ServiceProcess):
             "relay_config": self.relay_config.model_dump(),
             "motor_config": self.motor_config.model_dump(),
             "offsets_config": self.offsets_config.model_dump(),
+            "gnss_config": self.gnss_config.model_dump(),
             "system_status": "ACTIVE"
         }
         self.status_pub.publish(status_payload)
@@ -301,6 +303,18 @@ class ManagerProcess(ServiceProcess):
                 except Exception as e:
                     logger.error(f"Invalid offsets config: {e}")
 
+            elif cmd.type == CommandType.SET_GNSS_CONFIG:
+                try:
+                    # Merge into existing config so partial payloads don't reset
+                    # unrelated fields (e.g. changing only command_freq must not
+                    # blank out a previously saved NTRIP caster).
+                    merged = {**self.gnss_config.model_dump(), **(cmd.payload or {})}
+                    self.gnss_config = GnssConfig(**merged)
+                    logger.info(f"GNSS config updated: {self.gnss_config.model_copy(update={'password': '***'})}")
+                    self._save_settings()
+                except Exception as e:
+                    logger.error(f"Invalid GNSS config: {e}")
+
         except Exception as e:
             logger.error(f"Failed to handle command: {e}")
 
@@ -461,6 +475,11 @@ class ManagerProcess(ServiceProcess):
                         self.offsets_config = OffsetsConfig(**data['offsets_config'])
                     except Exception as e:
                         logger.warning(f"Manager: invalid stored offsets_config ({e})")
+                if 'gnss_config' in data:
+                    try:
+                        self.gnss_config = GnssConfig(**data['gnss_config'])
+                    except Exception as e:
+                        logger.warning(f"Manager: invalid stored gnss_config ({e})")
                 logger.info(f"Manager: settings loaded from {_SETTINGS_FILE}")
         except Exception as e:
             logger.warning(f"Manager: could not load settings ({e}), using defaults")
@@ -489,6 +508,7 @@ class ManagerProcess(ServiceProcess):
                     },
                     'motor_config': self.motor_config.model_dump(),
                     'offsets_config': self.offsets_config.model_dump(),
+                    'gnss_config': self.gnss_config.model_dump(),
                 }, f, indent=2)
         except Exception as e:
             logger.warning(f"Manager: could not save settings: {e}")

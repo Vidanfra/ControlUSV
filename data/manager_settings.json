@@ -7,7 +7,7 @@
     "k_delta": 15.0,
     "delta_min": 5.0,
     "gamma": 0.0,
-    "cruise_speed_kn": 4,
+    "cruise_speed_kn": 4.0,
     "e_x_threshold_deg": 10.0,
     "accel_ms2": 0.3,
     "vel_profiler_enabled": true
@@ -160,7 +160,7 @@
         "id": "csv-1780249503893-304",
         "name": "NAV",
         "enabled": false,
-        "frequency_value": 10.0,
+        "frequency_value": 20.0,
         "frequency_unit": "hz",
         "rotation_hours": 1.0,
         "output_path": "/home/usv/USV/ControlUSV/logs",
@@ -186,7 +186,17 @@
           "gnc_kp_m",
           "motor_port",
           "motor_starboard",
-          "gnc_dist_to_wp"
+          "gnc_dist_to_wp",
+          "bat_voltage",
+          "bat_current",
+          "bat_energy_wh",
+          "bat_accumulated_wh",
+          "fs_comm_timeout",
+          "link_last_ping_age",
+          "sysmon_os",
+          "sysmon_net_rx",
+          "sysmon_net_tx",
+          "state_mag_heading_crp"
         ]
       }
     ],
@@ -255,5 +265,15 @@
       "y": 0.0,
       "z": -0.293
     }
+  },
+  "gnss_config": {
+    "serial_port": "/dev/gnss_um982",
+    "baud_rate": 115200,
+    "ntrip_caster": "192.148.213.42",
+    "ntrip_port": 2101,
+    "mountpoint": "VRS3M",
+    "username": "vicentedf88",
+    "password": "Danvila1999",
+    "command_freq": 5.0
   }
 }

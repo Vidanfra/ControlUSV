@@ -61,6 +61,16 @@ class UM982Driver:
         self._error_logged = False  # Track if error has been logged
         self._rtcm_bytes = 0        # Total RTCM correction bytes forwarded to receiver
         self._rtcm_logged = False   # Whether first-RTCM-received message was logged
+        self._ntrip_error_logged = False
+        self._latest_gga = ""       # Last GGA sentence, uploaded to the caster by the RTCM thread
+        self._last_gga_uplink = 0.0
+        self._last_rtcm_time = 0.0
+
+        # Casters expect a GGA position update roughly every 10 s; sending one
+        # per fix (1 Hz) can fill the socket buffer and stall the sender.
+        self._GGA_UPLINK_INTERVAL = 10.0
+        self._NTRIP_RETRY_INTERVAL = 5.0
+        self._NTRIP_STALL_TIMEOUT = 30.0   # no RTCM for this long → reconnect the caster
 
         # Accumulated parsed data (updated per-sentence, callback fired on GGA)
         self.data = {
@@ -94,16 +104,11 @@ class UM982Driver:
             self._send_stream_commands()
             time.sleep(0.5)
 
-            # Connect NTRIP (optional)
+            # NTRIP is optional and connects from its own thread, so a slow or
+            # unreachable caster never delays the NMEA reader.
             if self.ntrip_caster and self.mountpoint:
-                try:
-                    self.ntrip_sock = self._connect_ntrip()
-                    logger.info("[UM982] NTRIP connected")
-                    self._rtcm_thread = threading.Thread(target=self._rtcm_loop, daemon=True)
-                    self._rtcm_thread.start()
-                except Exception as e:
-                    logger.warning(f"[UM982] NTRIP connection failed: {e}. Running without corrections.")
-                    self.ntrip_sock = None
+                self._rtcm_thread = threading.Thread(target=self._rtcm_loop, daemon=True)
+                self._rtcm_thread.start()
 
             self._reader_thread = threading.Thread(target=self._reader_loop, daemon=True)
             self._reader_thread.start()
@@ -114,14 +119,16 @@ class UM982Driver:
 
     def stop(self):
         self.running = False
+        self._close_ntrip()
+        # Join before closing the port, otherwise the reader is still blocked in
+        # readline() on a closed fd and raises "Bad file descriptor".
+        current = threading.current_thread()
+        for t in (self._rtcm_thread, self._reader_thread):
+            if t and t.is_alive() and t is not current:
+                t.join(timeout=self.timeout + 2.0)
         try:
             if self.ser and self.ser.is_open:
                 self.ser.close()
-        except Exception:
-            pass
-        try:
-            if self.ntrip_sock:
-                self.ntrip_sock.close()
         except Exception:
             pass
 
@@ -166,25 +173,107 @@ class UM982Driver:
                 f"(check mountpoint/username/password). Status: '{status_line}'"
             )
         logger.info(f"[UM982] NTRIP caster accepted: '{status_line}'")
+        # Short timeout so the stream loop stays responsive to shutdown, GGA
+        # uplinks and stall detection instead of blocking on recv/send.
+        sock.settimeout(1.0)
         return sock
 
+    def _close_ntrip(self):
+        sock = self.ntrip_sock
+        self.ntrip_sock = None
+        if sock:
+            try:
+                sock.close()
+            except Exception:
+                pass
+
+    def _reconnect_ntrip(self) -> bool:
+        try:
+            sock = self._connect_ntrip()
+        except Exception as e:
+            if not self._ntrip_error_logged:
+                logger.warning(
+                    f"[UM982] NTRIP connection failed: {e}. "
+                    f"Retrying every {self._NTRIP_RETRY_INTERVAL:.0f}s, running without corrections."
+                )
+                self._ntrip_error_logged = True
+            return False
+        if not self.running:
+            # stop() ran while the handshake was in flight.
+            try:
+                sock.close()
+            except Exception:
+                pass
+            return False
+        self.ntrip_sock = sock
+        self._ntrip_error_logged = False
+        self._rtcm_logged = False
+        self._last_rtcm_time = time.time()
+        self._last_gga_uplink = 0.0
+        logger.info("[UM982] NTRIP connected")
+        return True
+
+    def _uplink_gga(self):
+        """Periodically upload the last GGA so VRS casters keep sending corrections."""
+        now = time.time()
+        if now - self._last_gga_uplink < self._GGA_UPLINK_INTERVAL:
+            return
+        with self._lock:
+            line = self._latest_gga
+            has_fix = self.data["fix_type"] > 0 and (
+                self.data["lat"] != 0.0 or self.data["lon"] != 0.0
+            )
+        # Uploading a 0,0 position would request corrections for the wrong place.
+        if not line or not has_fix or self.ntrip_sock is None:
+            return
+        try:
+            self.ntrip_sock.sendall((line + "\r\n").encode())
+            self._last_gga_uplink = now
+        except Exception as e:
+            logger.warning(f"[UM982] GGA uplink failed: {e} — reconnecting NTRIP")
+            self._close_ntrip()
+
     def _rtcm_loop(self):
-        """Forward RTCM corrections from NTRIP caster to receiver serial port."""
-        while self.running and self.ntrip_sock:
+        """Own the NTRIP link: connect, forward RTCM to the receiver, and
+        reconnect on failure without disturbing the NMEA reader."""
+        while self.running:
+            if self.ntrip_sock is None:
+                if not self._reconnect_ntrip():
+                    deadline = time.time() + self._NTRIP_RETRY_INTERVAL
+                    while self.running and time.time() < deadline:
+                        time.sleep(0.2)
+                continue
+
             try:
                 data = self.ntrip_sock.recv(1024)
                 if not data:
-                    logger.warning("[UM982] NTRIP stream ended")
-                    break
+                    logger.warning("[UM982] NTRIP stream ended — reconnecting")
+                    self._close_ntrip()
+                    continue
                 if self.ser and self.ser.is_open:
                     self.ser.write(data)
                     self._rtcm_bytes += len(data)
+                    self._last_rtcm_time = time.time()
                     if not self._rtcm_logged:
                         logger.info("[UM982] Receiving RTCM corrections from NTRIP caster")
                         self._rtcm_logged = True
+            except socket.timeout:
+                pass
             except Exception as e:
-                logger.warning(f"[UM982] RTCM error: {e}")
-                time.sleep(1)
+                if self.running:
+                    logger.warning(f"[UM982] RTCM error: {e} — reconnecting NTRIP")
+                self._close_ntrip()
+                continue
+
+            self._uplink_gga()
+
+            if self._last_rtcm_time and (
+                time.time() - self._last_rtcm_time > self._NTRIP_STALL_TIMEOUT
+            ):
+                logger.warning(
+                    f"[UM982] No RTCM for {self._NTRIP_STALL_TIMEOUT:.0f}s — reconnecting NTRIP"
+                )
+                self._close_ntrip()
 
     # ------------------------------------------------------------------ stream commands
     def _send_stream_commands(self):
@@ -218,7 +307,8 @@ class UM982Driver:
                 # Clear error flag on successful read
                 self._error_logged = False
             except serial.SerialException as e:
-                logger.error(f"[UM982] Serial error: {e}")
+                if self.running:
+                    logger.error(f"[UM982] Serial error: {e}")
                 self._error_logged = True
                 time.sleep(1)
             except Exception as e:
@@ -233,7 +323,6 @@ class UM982Driver:
         typ = line[3:6]
         if typ == "GGA":
             self._parse_gga(line)
-            self._send_gga_to_ntrip(line)
             # GGA is the trigger sentence — fire callback
             if self.on_data_callback:
                 with self._lock:
@@ -248,22 +337,6 @@ class UM982Driver:
         elif typ == "ZDA":
             self._parse_zda(line)
 
-    def _send_gga_to_ntrip(self, line: str):
-        # VRS/near-RTK mountpoints generate corrections around the position in
-        # the GGA we upload. Only forward a GGA once we actually have a fix,
-        # otherwise we'd request corrections for lat/lon 0,0 (Gulf of Guinea).
-        with self._lock:
-            has_fix = self.data["fix_type"] > 0 and (
-                self.data["lat"] != 0.0 or self.data["lon"] != 0.0
-            )
-        if not has_fix:
-            return
-        try:
-            if self.ntrip_sock:
-                self.ntrip_sock.sendall((line + "\r\n").encode())
-        except Exception as e:
-            logger.warning(f"[UM982] Failed to send GGA to NTRIP: {e}")
-
     def _parse_gga(self, line: str):
         try:
             msg = pynmea2.parse(line)
@@ -274,6 +347,7 @@ class UM982Driver:
                 self.data["fix_type"] = int(msg.gps_qual) if msg.gps_qual else 0
                 self.data["num_satellites"] = int(msg.num_sats) if msg.num_sats else 0
                 self.data["hdop"] = float(msg.horizontal_dil) if msg.horizontal_dil else 99.99
+                self._latest_gga = line
         except pynmea2.nmea.ParseError:
             logger.warning(f"[UM982] GGA parse error: {line}")
         except Exception as e:

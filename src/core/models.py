@@ -75,6 +75,18 @@ class FailsafeConfig(BaseModel):
     ins_timeout: float = 10.0
     ins_action: str = "emergency_stop"
 
+class GnssConfig(BaseModel):
+    """UM982 GNSS receiver + NTRIP configuration (persisted so RTK settings
+    survive a backend restart instead of resetting to blank)."""
+    serial_port: str = "/dev/gnss_um982"
+    baud_rate: int = 115200
+    ntrip_caster: str = ""
+    ntrip_port: int = 2101
+    mountpoint: str = ""
+    username: str = ""
+    password: str = ""
+    command_freq: float = 1.0
+
 class GncConfig(BaseModel):
     """GNC Controller configuration parameters."""
     wn: float = Field(1.5, gt=0, description="Heading PID Natural Frequency (must be > 0)")
