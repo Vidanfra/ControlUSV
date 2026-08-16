@@ -1,0 +1,19 @@
+[Unit]
+Description=ControlUSV - Salpa 1 USV Control Software
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=usv
+Group=usv
+WorkingDirectory=/home/usv/USV/ControlUSV
+ExecStart=/home/usv/USV/ControlUSV/.venv/bin/python /home/usv/USV/ControlUSV/main.py
+Environment=PYTHONUNBUFFERED=1
+Restart=on-failure
+RestartSec=5
+KillMode=control-group
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target
