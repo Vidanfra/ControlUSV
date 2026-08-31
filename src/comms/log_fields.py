@@ -89,6 +89,8 @@ LOG_FIELD_GROUPS = [
             _f("gnss_num_sats",     "Satellites",         T_GNSS, "num_satellites", "",     "int"),
             _f("gnss_hdop",         "HDOP",               T_GNSS, "hdop",           "",     "float"),
             _f("gnss_vdop",         "VDOP",               T_GNSS, "vdop",           "",     "float"),
+            _f("gnss_h_accuracy",   "Horizontal Accuracy (1σ)", T_GNSS, "horizontal_accuracy_m", "m", "float"),
+            _f("gnss_v_accuracy",   "Vertical Accuracy (1σ)",   T_GNSS, "vertical_accuracy_m",   "m", "float"),
             _f("gnss_heading",      "Heading (THS)",      T_GNSS, "heading",        "deg",  "float"),
             _f("gnss_heading_status","Heading Status",    T_GNSS, "heading_status", "",     "str"),
             _f("gnss_cog",          "COG",                T_GNSS, "cog",            "deg",  "float"),

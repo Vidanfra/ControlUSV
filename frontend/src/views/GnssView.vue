@@ -66,19 +66,22 @@
       <h3 class="mt-3">Navigation</h3>
       <div class="stat-group">
         <div class="stat-box">
-          <h4>COG</h4>
-          <div class="value">{{ telemetry.gnssCog?.toFixed(1) ?? '0.0' }}°</div>
-        </div>
-        <div class="stat-box">
           <h4>SOG</h4>
           <div class="value">{{ telemetry.gnssSogKnots?.toFixed(2) ?? '0.00' }} kn</div>
         </div>
         <div class="stat-box">
-          <h4>Heading (Dual-Ant)</h4>
+          <h4>COG</h4>
+          <div class="value">{{ telemetry.gnssCog?.toFixed(1) ?? '0.0' }}°</div>
+        </div>
+        <div class="stat-box">
+          <h4>Heading (GNSS)</h4>
           <div class="value">{{ telemetry.gnssHeading?.toFixed(1) ?? '0.0' }}°</div>
         </div>
+        <div class="stat-box">
+          <h4>Heading (MAG)</h4>
+          <div class="value">{{ telemetry.imuMagHeading?.toFixed(1) ?? '0.0' }}°</div>
+        </div>
       </div>
-
       <h3 class="mt-3">Quality</h3>
       <div class="stat-group">
         <div class="stat-box">
@@ -90,12 +93,12 @@
           <div class="value">{{ telemetry.gnssNumSats ?? 0 }}</div>
         </div>
         <div class="stat-box">
-          <h4>HDOP</h4>
-          <div class="value">{{ telemetry.gnssHdop?.toFixed(2) ?? '99.99' }} m</div>
+          <h4>Horizontal Accuracy (1 sigma)</h4>
+          <div class="value">{{ telemetry.gnssHorizontalAccuracyM == null ? '--' : `${telemetry.gnssHorizontalAccuracyM.toFixed(3)} m` }}</div>
         </div>
         <div class="stat-box">
-          <h4>VDOP</h4>
-          <div class="value">{{ telemetry.gnssVdop?.toFixed(2) ?? '99.99' }} m</div>
+          <h4>Vertical Accuracy (1 sigma)</h4>
+          <div class="value">{{ telemetry.gnssVerticalAccuracyM == null ? '--' : `${telemetry.gnssVerticalAccuracyM.toFixed(3)} m` }}</div>
         </div>
       </div>
     </div>

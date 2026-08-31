@@ -6,6 +6,7 @@ corrections from an NTRIP caster, and publishes GNSSData on the ZMQ bus.
 """
 import socket
 import base64
+import math
 import serial
 import threading
 import time
@@ -81,6 +82,8 @@ class UM982Driver:
             "num_satellites": 0,
             "hdop": 99.99,
             "vdop": 99.99,
+            "horizontal_accuracy_m": None,
+            "vertical_accuracy_m": None,
             "heading": 0.0,
             "heading_status": "",
             "cog": 0.0,
@@ -282,6 +285,7 @@ class UM982Driver:
         commands = [
             f"GPGGA {interval_s:g}",
             f"GPGSA {interval_s:g}",
+            f"GPGST {interval_s:g}",
             f"GPTHS {interval_s:g}",
             f"GPVTG {interval_s:g}",
             f"GPZDA {interval_s:g}",
@@ -330,6 +334,8 @@ class UM982Driver:
                 self.on_data_callback(snapshot)
         elif typ == "GSA":
             self._parse_gsa(line)
+        elif typ == "GST":
+            self._parse_gst(line)
         elif typ == "THS":
             self._parse_ths(line)
         elif typ == "VTG":
@@ -370,6 +376,23 @@ class UM982Driver:
             logger.warning(f"[UM982] GSA parse error: {line}")
         except Exception as e:
             logger.warning(f"[UM982] GSA exception: {e}")
+
+    def _parse_gst(self, line: str):
+        """Parse receiver-estimated 1-sigma position errors from NMEA GST."""
+        try:
+            msg = pynmea2.parse(line)
+            latitude_sigma = float(msg.std_dev_latitude)
+            longitude_sigma = float(msg.std_dev_longitude)
+            altitude_sigma = float(msg.std_dev_altitude)
+            with self._lock:
+                self.data["horizontal_accuracy_m"] = math.hypot(
+                    latitude_sigma, longitude_sigma
+                )
+                self.data["vertical_accuracy_m"] = altitude_sigma
+        except pynmea2.nmea.ParseError:
+            logger.warning(f"[UM982] GST parse error: {line}")
+        except (TypeError, ValueError, AttributeError) as e:
+            logger.warning(f"[UM982] GST accuracy unavailable ({e}): {line}")
 
     def _parse_ths(self, line: str):
         """Parse $GPTHS – True Heading and Status (UM982 dual-antenna)."""
@@ -534,6 +557,8 @@ class GnssNode:
                 num_satellites=raw_data["num_satellites"],
                 hdop=raw_data["hdop"],
                 vdop=raw_data.get("vdop", 99.99),
+                horizontal_accuracy_m=raw_data.get("horizontal_accuracy_m"),
+                vertical_accuracy_m=raw_data.get("vertical_accuracy_m"),
                 heading=raw_data["heading"],
                 heading_status=raw_data["heading_status"],
                 cog=raw_data["cog"],

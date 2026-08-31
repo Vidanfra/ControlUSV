@@ -130,6 +130,8 @@ class GNSSData(BaseModel):
     num_satellites: int = Field(0, description="Number of satellites used")
     hdop: float = Field(99.99, description="Horizontal Dilution of Precision")
     vdop: float = Field(99.99, description="Vertical Dilution of Precision")
+    horizontal_accuracy_m: Optional[float] = Field(None, ge=0.0, description="GST horizontal 1-sigma error [m]")
+    vertical_accuracy_m: Optional[float] = Field(None, ge=0.0, description="GST altitude 1-sigma error [m]")
     heading: float = Field(0.0, description="True heading from dual-antenna THS (degrees)")
     heading_status: str = Field("", description="THS status: A=autonomous, E=estimated, M=manual, V=void")
     cog: float = Field(0.0, description="Course over ground (degrees true)")

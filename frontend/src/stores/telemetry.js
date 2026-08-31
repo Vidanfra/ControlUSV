@@ -152,6 +152,8 @@ export const useTelemetryStore = defineStore('telemetry', {
     gnssNumSats: 0,
     gnssHdop: 99.99,
     gnssVdop: 99.99,
+    gnssHorizontalAccuracyM: null,
+    gnssVerticalAccuracyM: null,
     gnssHeading: 0.0,
     gnssHeadingStatus: '',
     gnssCog: 0.0,
@@ -1147,6 +1149,8 @@ export const useTelemetryStore = defineStore('telemetry', {
             this.gnssNumSats = data.num_satellites
             this.gnssHdop = data.hdop
             this.gnssVdop = data.vdop
+            this.gnssHorizontalAccuracyM = data.horizontal_accuracy_m ?? null
+            this.gnssVerticalAccuracyM = data.vertical_accuracy_m ?? null
             this.gnssHeading = data.heading          // degrees — dual-antenna true heading
             this.gnssHeadingStatus = data.heading_status
             this.gnssCog = data.cog                  // degrees — course over ground
