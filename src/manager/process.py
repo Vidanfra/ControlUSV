@@ -3,7 +3,7 @@ from src.core.messaging import PubSubBroker, Publisher, Subscriber, Topics
 from src.core.models import (
     CommandMessage, CommandType, USVState, VehicleMode,
     FailsafeConfig, GncConfig, LoggingConfig, RelayConfig, MotorConfig,
-    OffsetsConfig, GnssConfig,
+    OffsetsConfig, GnssConfig, InsConfig,
 )
 
 _RELAY_RESTART_SECONDS = 5.0   # pulse width for the "Restart" button
@@ -55,6 +55,7 @@ class ManagerProcess(ServiceProcess):
         self.motor_config = MotorConfig()
         self.offsets_config = OffsetsConfig()
         self.gnss_config = GnssConfig()
+        self.ins_config = InsConfig()
         self.gnss_fix_type = 0
 
         # Load previously saved user settings (overrides defaults above)
@@ -127,6 +128,7 @@ class ManagerProcess(ServiceProcess):
             "motor_config": self.motor_config.model_dump(),
             "offsets_config": self.offsets_config.model_dump(),
             "gnss_config": self.gnss_config.model_dump(),
+            "ins_config": self.ins_config.model_dump(),
             "system_status": "ACTIVE"
         }
         self.status_pub.publish(status_payload)
@@ -315,6 +317,15 @@ class ManagerProcess(ServiceProcess):
                 except Exception as e:
                     logger.error(f"Invalid GNSS config: {e}")
 
+            elif cmd.type == CommandType.SET_INS_CONFIG:
+                try:
+                    merged = {**self.ins_config.model_dump(), **(cmd.payload or {})}
+                    self.ins_config = InsConfig(**merged)
+                    logger.info(f"INS config updated: {self.ins_config}")
+                    self._save_settings()
+                except Exception as e:
+                    logger.error(f"Invalid INS config: {e}")
+
         except Exception as e:
             logger.error(f"Failed to handle command: {e}")
 
@@ -480,6 +491,11 @@ class ManagerProcess(ServiceProcess):
                         self.gnss_config = GnssConfig(**data['gnss_config'])
                     except Exception as e:
                         logger.warning(f"Manager: invalid stored gnss_config ({e})")
+                if 'ins_config' in data:
+                    try:
+                        self.ins_config = InsConfig(**data['ins_config'])
+                    except Exception as e:
+                        logger.warning(f"Manager: invalid stored ins_config ({e})")
                 logger.info(f"Manager: settings loaded from {_SETTINGS_FILE}")
         except Exception as e:
             logger.warning(f"Manager: could not load settings ({e}), using defaults")
@@ -509,6 +525,7 @@ class ManagerProcess(ServiceProcess):
                     'motor_config': self.motor_config.model_dump(),
                     'offsets_config': self.offsets_config.model_dump(),
                     'gnss_config': self.gnss_config.model_dump(),
+                    'ins_config': self.ins_config.model_dump(),
                 }, f, indent=2)
         except Exception as e:
             logger.warning(f"Manager: could not save settings: {e}")

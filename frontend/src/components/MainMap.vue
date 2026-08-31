@@ -161,7 +161,7 @@ import {
 } from '../composables/useMapTileCache.js'
 
 const telemetry = useTelemetryStore()
-const { lat, lon, missionWaypoints, missionItems, pathHistory, simulationResults, simulationOverlayVisible, stationWaypoint, stationRadius, stationReachingRadius, homeWaypoint, simStartWaypoint } = storeToRefs(telemetry)
+const { lat, lon, missionWaypoints, missionItems, pathHistory, gnssCrpHistory, simulationResults, simulationOverlayVisible, stationWaypoint, stationRadius, stationReachingRadius, homeWaypoint, simStartWaypoint } = storeToRefs(telemetry)
 
 // Survey drag-marker state
 let polyVertexMarkers = []   // maplibregl.Marker[] — one per polygon vertex
@@ -417,6 +417,14 @@ onMounted(() => {
           }
       })
 
+          map.addSource('gnss-crp-fixes', {
+            type: 'geojson',
+            data: {
+              type: 'FeatureCollection',
+              features: []
+            }
+          })
+
       // 4. Add Mission Layers (on top of map)
       // Trail Layer
       map.addLayer({
@@ -428,11 +436,26 @@ onMounted(() => {
               'line-cap': 'round'
           },
           paint: {
-              'line-color': '#FF0000', // Red path
+              'line-color': '#42d4f4',
               'line-width': 3,
               'line-opacity': 0.8
           }
       })
+
+          map.addLayer({
+            id: 'gnss-crp-points',
+            type: 'circle',
+            source: 'gnss-crp-fixes',
+            paint: {
+              'circle-radius': 5,
+              'circle-color': '#ff3030',
+              'circle-opacity': 0.9,
+              'circle-stroke-color': '#ffffff',
+              'circle-stroke-width': 1
+            }
+          })
+
+          updateGnssFixes()
 
       map.addLayer({
           id: 'mission-line',
@@ -1129,9 +1152,27 @@ const updateTrail = () => {
     })
 
     // Change trail color based on sim state
-    const trailColor = '#FF0000'
+    const trailColor = telemetry.insActive ? '#42d4f4' : '#FF0000'
     map.setPaintProperty('trail-line', 'line-color', trailColor)
 }
+
+const updateGnssFixes = () => {
+  const source = map?.getSource('gnss-crp-fixes')
+  if (!source) return
+
+  const features = gnssCrpHistory.value
+    .filter(point => point.lat !== 0 && point.lon !== 0)
+    .slice(-10)
+    .map((point, index, points) => ({
+      type: 'Feature',
+      properties: { sequence: index + 1, latest: index === points.length - 1 },
+      geometry: { type: 'Point', coordinates: [point.lon, point.lat] }
+    }))
+
+  source.setData({ type: 'FeatureCollection', features })
+}
+
+watch(gnssCrpHistory, updateGnssFixes, { deep: true })
 
 // --- Load Route from File ---
 function loadRouteFromFile(e) {

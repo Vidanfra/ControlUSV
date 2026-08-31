@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Navigation Process — dummy passthrough (future EKF/sensor fusion).
+"""GNSS-aided multiplicative error-state inertial navigation process.
 
-Subscribes to sensor/gnss and sensor/imu, forwards a unified navigation
-state on gnc/ekf_state.  When a real EKF is implemented, the body of
-the loop() method is replaced with the filter update logic.
+Raw sensor data is transformed to the vessel body frame and CRP before a
+15-state MEKF propagates position, velocity, attitude, and IMU biases. GNSS
+position, velocity, and dual-antenna heading provide quality-adaptive aiding.
 """
 
 import math
@@ -15,7 +14,9 @@ from loguru import logger
 
 from src.core.process import ServiceProcess
 from src.core.messaging import Publisher, Subscriber, Topics
-from src.core.models import ImuState, USVState, OffsetsConfig
+from src.core.models import ImuState, InsConfig, USVState, OffsetsConfig
+from src.gnc.gnc_utils import latlon_to_ned, ned_to_latlon
+from src.gnc.ins_mekf import InsMekf, MekfTuning
 
 # Mean Earth radius [m] (WGS-84 mean) used for the local flat-earth
 # metre <-> degree conversion of the lever-arm correction.
@@ -58,7 +59,7 @@ def _euler_zyx(R):
 
 class NavigationProcess(ServiceProcess):
     """
-    Navigation module — currently a raw passthrough.
+    Navigation module with selectable GNSS-only and GNSS-aided INS modes.
 
     Subscribes to:
         - sensor/gnss : position, heading, speed
@@ -90,6 +91,15 @@ class NavigationProcess(ServiceProcess):
         self.speed = 0.0
         self.course = 0.0
         self.source = "sensor"
+        self.fix_type = 0
+        self.gnss_horizontal_accuracy_m = None
+        self.gnss_vertical_accuracy_m = None
+        self.gnss_timestamp = 0.0
+        self.gnss_lat_crp = None
+        self.gnss_lon_crp = None
+        self.gnss_altitude_crp = None
+        self.last_gnss_time = 0.0
+        self.last_valid_gnss_time = 0.0
 
         # Heading from the GNSS dual antenna, kept apart from the published
         # heading so that it can expire and let the magnetometer take over.
@@ -123,11 +133,311 @@ class NavigationProcess(ServiceProcess):
         # heartbeat (system/status), which is the persistence authority.
         self.offsets_config = OffsetsConfig()
 
+        # Multiplicative error-state INS. It initializes only after both a valid
+        # global GNSS fix and a transformed IMU attitude are available.
+        self.ins_config = InsConfig()
+        self.ins_filter = self._new_ins_filter()
+        self.ins_origin = None
+        self._last_ins_imu_t = 0.0
+        self._ins_source = None
+
         # Validity
         self.has_gnss = False
         self.has_imu = False
 
-        logger.info("Navigation Process initialized (passthrough + CRP lever-arm mode)")
+        logger.info("Navigation Process initialized (15-state INS MEKF + GNSS-only fallback)")
+
+    def _new_ins_filter(self):
+        cfg = self.ins_config
+        return InsMekf(MekfTuning(
+            accel_noise_mps2_sqrt_hz=cfg.accel_noise_mps2_sqrt_hz,
+            gyro_noise_rad_s_sqrt_hz=math.radians(cfg.gyro_noise_deg_s_sqrt_hz),
+            accel_bias_noise_mps2_sqrt_hz=cfg.accel_bias_noise_mps2_sqrt_hz,
+            gyro_bias_noise_rad_s_sqrt_hz=math.radians(
+                cfg.gyro_bias_noise_deg_s_sqrt_hz
+            ),
+            accel_bias_tau_s=cfg.accel_bias_tau_s,
+            gyro_bias_tau_s=cfg.gyro_bias_tau_s,
+            gravity_aiding_noise=cfg.gravity_aiding_noise,
+            gravity_gate_mps2=cfg.gravity_gate_mps2,
+            innovation_gate_sigma=cfg.innovation_gate_sigma,
+        ))
+
+    def _reset_ins(self, reason):
+        was_initialized = getattr(self, 'ins_filter', None) is not None and self.ins_filter.initialized
+        self.ins_filter = self._new_ins_filter()
+        self.ins_origin = None
+        self._last_ins_imu_t = 0.0
+        self._ins_source = None
+        if was_initialized:
+            logger.info(f"Navigation: INS reset ({reason})")
+
+    def _initialize_ins_if_ready(self):
+        now = time.time()
+        if (
+            not self.ins_config.enabled
+            or self.ins_filter.initialized
+            or not self.has_imu
+            or not self.has_gnss
+            or self.fix_type <= 0
+            or now - self.last_valid_gnss_time > self.ins_config.gnss_loss_timeout_s
+            or (self.lat == 0.0 and self.lon == 0.0)
+        ):
+            return False
+
+        if now - self._gnss_heading_t < _GNSS_HEADING_TIMEOUT_S:
+            initial_yaw = self._gnss_heading_rad
+            yaw_sigma = math.radians(self.ins_config.gnss_heading_sigma_deg)
+        elif self.ins_config.use_magnetometer:
+            initial_yaw = math.radians(self.mag_heading_crp)
+            yaw_sigma = math.radians(self.ins_config.mag_heading_sigma_deg)
+        else:
+            initial_yaw = math.radians(self.yaw_crp)
+            yaw_sigma = math.radians(30.0)
+
+        attitude = np.array([
+            math.radians(self.roll_crp),
+            math.radians(self.pitch_crp),
+            initial_yaw,
+        ])
+        if self.source == 'sim':
+            crp_lat, crp_lon, crp_alt = self.lat, self.lon, self.altitude
+        else:
+            crp_lat, crp_lon, crp_alt = self._antenna_to_crp(
+                self.lat, self.lon, self.altitude, attitude
+            )
+        self.ins_origin = (crp_lat, crp_lon, crp_alt)
+        self.gnss_lat_crp = crp_lat
+        self.gnss_lon_crp = crp_lon
+        self.gnss_altitude_crp = crp_alt
+        velocity_ned = np.array([
+            self.speed * math.cos(self.course),
+            self.speed * math.sin(self.course),
+            0.0,
+        ])
+        position_sigma = self._gnss_position_sigmas()
+        self.ins_filter.initialize(
+            position_ned=np.zeros(3),
+            velocity_ned=velocity_ned,
+            euler_rpy_rad=attitude,
+            position_sigma=position_sigma,
+            velocity_sigma=(
+                self.ins_config.gnss_velocity_sigma_mps,
+                self.ins_config.gnss_velocity_sigma_mps,
+                1.0,
+            ),
+            attitude_sigma_rad=(math.radians(5.0), math.radians(5.0), yaw_sigma),
+        )
+        self._last_ins_imu_t = self.imu_timestamp
+        self._ins_source = self.imu_source
+        logger.info(
+            f"Navigation: INS initialized at {crp_lat:.8f}, {crp_lon:.8f} "
+            f"with fix type {self.fix_type}"
+        )
+        return True
+
+    def _process_ins_imu_sample(self):
+        if not self.ins_filter.initialized:
+            self._initialize_ins_if_ready()
+        if not self.ins_filter.initialized:
+            return
+
+        sample_time = self.imu_timestamp
+        dt = sample_time - self._last_ins_imu_t
+        self._last_ins_imu_t = sample_time
+        if dt <= 0.0:
+            return
+        if dt > 0.5:
+            logger.warning(f"Navigation: skipped {dt:.2f}s IMU sample gap")
+            return
+
+        latitude_rad = math.radians(self.ins_origin[0])
+        self.ins_filter.predict(
+            self.acc_crp,
+            np.radians(self.w_crp),
+            dt,
+            latitude_rad,
+        )
+        horizontal_speed = float(np.linalg.norm(self.ins_filter.velocity[0:2]))
+        if horizontal_speed <= self.ins_config.gravity_max_speed_mps:
+            self.ins_filter.update_gravity(self.acc_crp, latitude_rad)
+
+        gnss_heading_fresh = (
+            time.time() - self._gnss_heading_t < _GNSS_HEADING_TIMEOUT_S
+        )
+        if self.ins_config.use_magnetometer and not gnss_heading_fresh:
+            self.ins_filter.update_heading(
+                math.radians(self.mag_heading_crp),
+                math.radians(self.ins_config.mag_heading_sigma_deg),
+            )
+
+    def _update_ins_from_gnss(self):
+        if self._gnss_heading_status in ('A', 'S'):
+            heading_sigma = (
+                math.radians(0.2) if self._gnss_heading_status == 'S'
+                else math.radians(self.ins_config.gnss_heading_sigma_deg)
+            )
+            self.ins_filter.update_heading(self._gnss_heading_rad, heading_sigma)
+
+        position_sigma = self._gnss_position_sigmas()
+        if self.fix_type <= 0 or position_sigma is None:
+            return
+
+        attitude = self.ins_filter.euler_rpy_rad
+        if self.source == 'sim':
+            crp_lat, crp_lon, crp_alt = self.lat, self.lon, self.altitude
+        else:
+            crp_lat, crp_lon, crp_alt = self._antenna_to_crp(
+                self.lat, self.lon, self.altitude, attitude
+            )
+        self.gnss_lat_crp = crp_lat
+        self.gnss_lon_crp = crp_lon
+        self.gnss_altitude_crp = crp_alt
+        north, east = latlon_to_ned(
+            crp_lat, crp_lon, self.ins_origin[0], self.ins_origin[1]
+        )
+        down = self.ins_origin[2] - crp_alt
+        self.ins_filter.update_position(
+            np.array([north, east, down]),
+            position_sigma,
+            clip_innovation=self.fix_type == 4,
+        )
+
+        velocity_scale = {4: 1.0, 5: 2.0, 2: 4.0, 1: 6.0}.get(
+            self.fix_type, 6.0
+        )
+        velocity_ne = np.array([
+            self.speed * math.cos(self.course),
+            self.speed * math.sin(self.course),
+        ])
+        velocity_sigma = np.full(
+            2, self.ins_config.gnss_velocity_sigma_mps * velocity_scale
+        )
+        self.ins_filter.update_velocity(velocity_ne, velocity_sigma)
+
+    def _gnss_position_sigmas(self):
+        cfg = self.ins_config
+        if self.fix_type == 4:
+            horizontal = self.gnss_horizontal_accuracy_m
+            vertical = self.gnss_vertical_accuracy_m
+            horizontal_axis = (
+                horizontal / math.sqrt(2.0)
+                if isinstance(horizontal, (int, float)) and horizontal > 0.0
+                else cfg.rtk_fixed_horizontal_floor_m
+            )
+            return np.array([
+                max(cfg.rtk_fixed_horizontal_floor_m, horizontal_axis),
+                max(cfg.rtk_fixed_horizontal_floor_m, horizontal_axis),
+                max(
+                    cfg.rtk_fixed_vertical_floor_m,
+                    vertical if isinstance(vertical, (int, float)) and vertical > 0.0
+                    else cfg.rtk_fixed_vertical_floor_m,
+                ),
+            ])
+        if self.fix_type == 5:
+            return np.array([
+                cfg.rtk_float_horizontal_sigma_m,
+                cfg.rtk_float_horizontal_sigma_m,
+                cfg.rtk_float_vertical_sigma_m,
+            ])
+        if self.fix_type == 2:
+            return np.array([
+                cfg.dgps_horizontal_sigma_m,
+                cfg.dgps_horizontal_sigma_m,
+                cfg.dgps_vertical_sigma_m,
+            ])
+        if self.fix_type == 1:
+            return np.array([
+                cfg.gps_horizontal_sigma_m,
+                cfg.gps_horizontal_sigma_m,
+                cfg.gps_vertical_sigma_m,
+            ])
+        return None
+
+    def _effective_fix_type(self, now):
+        if now - self.last_valid_gnss_time > self.ins_config.gnss_loss_timeout_s:
+            return 0
+        return self.fix_type
+
+    def _position_source(self, now):
+        if self.source == 'sim':
+            return 'SIM'
+        fix_type = self._effective_fix_type(now)
+        if fix_type <= 0:
+            if self.ins_config.enabled and self.ins_filter.initialized:
+                return 'INS'
+            return 'GNSS_LOST'
+        return {
+            4: 'RTK_FIXED',
+            5: 'RTK_FLOAT',
+            2: 'DGNSS',
+            1: 'GPS',
+        }.get(fix_type, 'GNSS')
+
+    def _publish_ins_navigation(self, now, imu_fresh):
+        north, east, down = self.ins_filter.position
+        lat, lon = ned_to_latlon(
+            north, east, self.ins_origin[0], self.ins_origin[1]
+        )
+        altitude = self.ins_origin[2] - down
+        roll, pitch, yaw = self.ins_filter.euler_rpy_rad
+        velocity_north, velocity_east = self.ins_filter.velocity[0:2]
+        speed = math.hypot(velocity_north, velocity_east)
+        course = (
+            math.atan2(velocity_east, velocity_north) if speed > 1e-6 else self.course
+        )
+
+        gnss_heading_fresh = now - self._gnss_heading_t < _GNSS_HEADING_TIMEOUT_S
+        if self.source == 'sim' and gnss_heading_fresh:
+            heading_status = 'S'
+        elif gnss_heading_fresh:
+            heading_status = 'A'
+        elif self.ins_config.use_magnetometer and imu_fresh:
+            heading_status = 'M'
+        else:
+            heading_status = 'I'
+
+        corrected_rate = (
+            self.w_crp - np.degrees(self.ins_filter.gyro_bias)
+            if imu_fresh else np.zeros(3)
+        )
+        corrected_force = self.acc_crp - self.ins_filter.accel_bias
+        self.heading_rad = yaw
+        self.heading_status = heading_status
+        self.speed = speed
+        self.course = course
+        self._check_yaw_rate_sign(math.radians(corrected_rate[2]), now)
+        state = USVState(
+            timestamp=now,
+            lat=lat,
+            lon=lon,
+            altitude=altitude,
+            gnss_timestamp=self.gnss_timestamp,
+            gnss_lat_crp=self.gnss_lat_crp,
+            gnss_lon_crp=self.gnss_lon_crp,
+            gnss_altitude_crp=self.gnss_altitude_crp,
+            speed=speed,
+            course=course,
+            heading=yaw,
+            roll_crp=math.degrees(roll),
+            pitch_crp=math.degrees(pitch),
+            yaw_crp=math.degrees(yaw),
+            wx_crp=float(corrected_rate[0]),
+            wy_crp=float(corrected_rate[1]),
+            wz_crp=float(corrected_rate[2]),
+            accx_crp=float(corrected_force[0]),
+            accy_crp=float(corrected_force[1]),
+            accz_crp=float(corrected_force[2]),
+            mag_heading_crp=self.mag_heading_crp,
+            heading_status=heading_status,
+            fix_type=self._effective_fix_type(now),
+            ins_active=True,
+            position_source=self._position_source(now),
+            horizontal_accuracy_m=self.ins_filter.horizontal_position_sigma_m,
+            vertical_accuracy_m=self.ins_filter.vertical_position_sigma_m,
+            source=self.source,
+        )
+        self.nav_pub.publish(state.model_dump())
 
     def loop(self):
         """Main loop — runs at 20 Hz. Consume sensors and publish unified state."""
@@ -143,11 +453,27 @@ class NavigationProcess(ServiceProcess):
                     new_cfg = OffsetsConfig(**data['offsets_config'])
                     if new_cfg.model_dump() != self.offsets_config.model_dump():
                         self.offsets_config = new_cfg
+                        self._reset_ins("sensor offsets changed")
                         logger.debug("Navigation: offsets_config synced from heartbeat")
                 except Exception as e:
                     logger.warning(f"Navigation: invalid offsets_config in heartbeat: {e}")
+            if 'ins_config' in data:
+                try:
+                    new_cfg = InsConfig(**data['ins_config'])
+                    if new_cfg.model_dump() != self.ins_config.model_dump():
+                        self.ins_config = new_cfg
+                        self._reset_ins("INS configuration changed")
+                        logger.info(
+                            f"Navigation: INS {'enabled' if new_cfg.enabled else 'disabled'}"
+                        )
+                except Exception as e:
+                    logger.warning(f"Navigation: invalid ins_config in heartbeat: {e}")
+
+        ins_filter_before_sensor_updates = self.ins_filter
+        ins_was_initialized = self.ins_filter.initialized
 
         # --- Consume GNSS ---
+        gnss_updated = False
         while True:
             msg = self.gnss_sub.receive(timeout_ms=0)
             if msg is None:
@@ -158,6 +484,13 @@ class NavigationProcess(ServiceProcess):
             self.altitude = data.get('alt', self.altitude)
             self.speed = data.get('sog_knots', 0.0) * 0.514444  # knots → m/s
             self.course = math.radians(data.get('cog', 0.0))
+            self.fix_type = int(data.get('fix_type', 0))
+            self.gnss_horizontal_accuracy_m = data.get('horizontal_accuracy_m')
+            self.gnss_vertical_accuracy_m = data.get('vertical_accuracy_m')
+            self.gnss_timestamp = float(data.get('timestamp') or time.time())
+            self.last_gnss_time = time.time()
+            if self.fix_type > 0:
+                self.last_valid_gnss_time = self.last_gnss_time
 
             hs = data.get('heading_status', '')
             if hs in ('A', 'S'):
@@ -168,6 +501,7 @@ class NavigationProcess(ServiceProcess):
 
             self.source = data.get('source', 'sensor')
             self.has_gnss = True
+            gnss_updated = True
 
         # --- Consume IMU ---
         imu_updated = False
@@ -177,6 +511,8 @@ class NavigationProcess(ServiceProcess):
                 break
             _, data = msg
             imu_source = data.get('source', 'sensor')
+            if self.ins_filter.initialized and self._ins_source != imu_source:
+                self._reset_ins("IMU source changed")
             if imu_source == 'sim':
                 # The simulated IMU already reports in the body frame at the CRP.
                 self.source = 'sim'
@@ -199,15 +535,34 @@ class NavigationProcess(ServiceProcess):
             self.has_imu = True
             imu_updated = True
 
+            if self.ins_config.enabled:
+                self._process_ins_imu_sample()
+
         if imu_updated:
             self._publish_imu_state()
 
-        # --- Publish unified state ---
-        if not self.has_gnss:
-            return  # No position data yet
+        if self.ins_config.enabled:
+            self._initialize_ins_if_ready()
+            if (
+                gnss_updated
+                and ins_was_initialized
+                and self.ins_filter is ins_filter_before_sensor_updates
+                and self.ins_filter.initialized
+            ):
+                self._update_ins_from_gnss()
 
+        # --- Publish unified state ---
         now = time.time()
         imu_fresh = (now - self.last_imu_time) < _IMU_TIMEOUT_S
+        if self.ins_config.enabled and self.ins_filter.initialized:
+            try:
+                self._publish_ins_navigation(now, imu_fresh)
+            except Exception as e:
+                logger.error(f"Navigation: failed to publish INS state: {e}")
+            return
+
+        if not self.has_gnss:
+            return  # A global solution cannot initialize without GNSS
 
         # Heading source arbitration: the dual antenna wins while it is fresh,
         # otherwise the magnetometer takes over and the status degrades.
@@ -232,6 +587,9 @@ class NavigationProcess(ServiceProcess):
             crp_lat, crp_lon, crp_alt = self._antenna_to_crp(
                 self.lat, self.lon, self.altitude
             )
+        self.gnss_lat_crp = crp_lat
+        self.gnss_lon_crp = crp_lon
+        self.gnss_altitude_crp = crp_alt
 
         # A stale rate would keep feeding the autopilot derivative term after an
         # IMU dropout; publish zero instead.
@@ -239,11 +597,16 @@ class NavigationProcess(ServiceProcess):
         self._check_yaw_rate_sign(math.radians(w[2]), now)
 
         try:
+            effective_fix_type = self._effective_fix_type(now)
             state = USVState(
                 timestamp=now,
                 lat=crp_lat,
                 lon=crp_lon,
                 altitude=crp_alt,
+                gnss_timestamp=self.gnss_timestamp,
+                gnss_lat_crp=crp_lat,
+                gnss_lon_crp=crp_lon,
+                gnss_altitude_crp=crp_alt,
                 speed=self.speed,
                 course=self.course,
                 heading=self.heading_rad,
@@ -258,6 +621,15 @@ class NavigationProcess(ServiceProcess):
                 accz_crp=float(self.acc_crp[2]),
                 mag_heading_crp=self.mag_heading_crp,
                 heading_status=self.heading_status,
+                fix_type=effective_fix_type,
+                ins_active=False,
+                position_source=self._position_source(now),
+                horizontal_accuracy_m=(
+                    self.gnss_horizontal_accuracy_m if effective_fix_type > 0 else None
+                ),
+                vertical_accuracy_m=(
+                    self.gnss_vertical_accuracy_m if effective_fix_type > 0 else None
+                ),
                 source=self.source,
             )
             self.nav_pub.publish(state.model_dump())
@@ -381,7 +753,7 @@ class NavigationProcess(ServiceProcess):
     # ------------------------------------------------------------------
 
 
-    def _body_to_ned(self, r_body):
+    def _body_to_ned(self, r_body, attitude_rpy_rad=None):
         """Rotate a body-frame vector (x fwd, y stbd, z down) into the local
         NED frame (North, East, Down) using the current attitude.
 
@@ -391,9 +763,12 @@ class NavigationProcess(ServiceProcess):
         degrees, heading is already in radians.
         """
         rx, ry, rz = r_body
-        phi = math.radians(self.roll_crp)
-        theta = math.radians(self.pitch_crp)
-        psi = self.heading_rad
+        if attitude_rpy_rad is None:
+            phi = math.radians(self.roll_crp)
+            theta = math.radians(self.pitch_crp)
+            psi = self.heading_rad
+        else:
+            phi, theta, psi = attitude_rpy_rad
 
         cphi, sphi = math.cos(phi), math.sin(phi)
         cth, sth = math.cos(theta), math.sin(theta)
@@ -417,7 +792,7 @@ class NavigationProcess(ServiceProcess):
         )
         return n, e, d
 
-    def _antenna_to_crp(self, lat_deg, lon_deg, alt_m):
+    def _antenna_to_crp(self, lat_deg, lon_deg, alt_m, attitude_rpy_rad=None):
         """Return the (lat, lon, altitude) of the CRP given the position of the
         stern GNSS antenna, which is the one providing the fix.
 
@@ -430,7 +805,9 @@ class NavigationProcess(ServiceProcess):
 
         # Body-frame vector pointing from the antenna to the CRP.
         r_body = (-ant.x, -ant.y, -ant.z)
-        d_north, d_east, d_down = self._body_to_ned(r_body)
+        d_north, d_east, d_down = self._body_to_ned(
+            r_body, attitude_rpy_rad
+        )
 
         # Flat-earth conversion of the local NED offset to lat/lon/altitude.
         lat_rad = math.radians(lat_deg)

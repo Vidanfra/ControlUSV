@@ -443,6 +443,75 @@
           </div>
           <p class="hint">Sends configuration to the GNSS node. The receiver will reconnect with the new settings.</p>
         </div>
+
+        <div class="ins-section">
+          <h3>Inertial Navigation System</h3>
+
+          <div class="setting-row">
+            <label>Navigation Source</label>
+            <div class="ins-mode-control">
+              <button
+                class="ins-mode-option"
+                :class="{ active: insForm.enabled }"
+                @click="setInsEnabled(true)"
+              >INS + GNSS</button>
+              <button
+                class="ins-mode-option"
+                :class="{ active: !insForm.enabled }"
+                @click="setInsEnabled(false)"
+              >GNSS Only</button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <label class="toggle-label">
+              <input
+                type="checkbox"
+                v-model="insForm.use_magnetometer"
+                class="toggle-checkbox"
+                @change="insDirty = true"
+              />
+              <span class="toggle-text">Magnetometer yaw aiding</span>
+            </label>
+          </div>
+
+          <div v-for="group in insParameterGroups" :key="group.title" class="ins-parameter-group">
+            <h4>{{ group.title }}</h4>
+            <div class="ins-parameter-grid">
+              <label v-for="parameter in group.parameters" :key="parameter.key" class="ins-parameter">
+                <span>{{ parameter.label }}</span>
+                <div class="ins-parameter-input">
+                  <input
+                    v-model.number="insForm[parameter.key]"
+                    type="number"
+                    :min="parameter.min"
+                    :max="parameter.max"
+                    :step="parameter.step"
+                    class="offset-input"
+                    @input="insDirty = true"
+                  />
+                  <small>{{ parameter.unit }}</small>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div v-if="insError" class="validation-error">
+            <span>&#9888; {{ insError }}</span>
+            <button class="close-error" @click="insError = null">&#x2715;</button>
+          </div>
+
+          <div class="setting-row">
+            <div class="input-group">
+              <button class="btn btn-primary" @click="saveInsConfig" :disabled="!insConfigChanged">
+                Apply INS Settings
+              </button>
+              <button class="btn btn-secondary" @click="syncInsForm" :disabled="!insConfigChanged">
+                Discard
+              </button>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- Sensor Offsets (CRP lever-arm) Section -->
@@ -885,6 +954,75 @@ const gnssForm = ref({
   command_freq: 1.0
 })
 
+const INS_DEFAULTS = {
+  enabled: true,
+  use_magnetometer: true,
+  accel_noise_mps2_sqrt_hz: 0.12,
+  gyro_noise_deg_s_sqrt_hz: 0.30,
+  accel_bias_noise_mps2_sqrt_hz: 0.01,
+  gyro_bias_noise_deg_s_sqrt_hz: 0.02,
+  accel_bias_tau_s: 500.0,
+  gyro_bias_tau_s: 500.0,
+  gravity_aiding_noise: 0.05,
+  gravity_gate_mps2: 0.75,
+  gravity_max_speed_mps: 0.5,
+  gnss_velocity_sigma_mps: 0.15,
+  gnss_heading_sigma_deg: 0.5,
+  mag_heading_sigma_deg: 10.0,
+  rtk_fixed_horizontal_floor_m: 0.02,
+  rtk_fixed_vertical_floor_m: 0.04,
+  rtk_float_horizontal_sigma_m: 0.5,
+  rtk_float_vertical_sigma_m: 1.0,
+  dgps_horizontal_sigma_m: 1.5,
+  dgps_vertical_sigma_m: 2.5,
+  gps_horizontal_sigma_m: 3.0,
+  gps_vertical_sigma_m: 5.0,
+  innovation_gate_sigma: 5.0,
+  gnss_loss_timeout_s: 2.0,
+}
+const insForm = ref({ ...INS_DEFAULTS })
+const insDirty = ref(false)
+const insError = ref(null)
+const insParameterGroups = [
+  {
+    title: 'IMU Process Model',
+    parameters: [
+      { key: 'accel_noise_mps2_sqrt_hz', label: 'Accelerometer noise density', unit: 'm/s²/√Hz', min: 0.001, max: 10, step: 0.01 },
+      { key: 'gyro_noise_deg_s_sqrt_hz', label: 'Gyroscope noise density', unit: '°/s/√Hz', min: 0.001, max: 100, step: 0.01 },
+      { key: 'accel_bias_noise_mps2_sqrt_hz', label: 'Accelerometer bias noise', unit: 'm/s²/√Hz', min: 0.0001, max: 1, step: 0.001 },
+      { key: 'gyro_bias_noise_deg_s_sqrt_hz', label: 'Gyroscope bias noise', unit: '°/s/√Hz', min: 0.0001, max: 10, step: 0.001 },
+      { key: 'accel_bias_tau_s', label: 'Accelerometer bias time', unit: 's', min: 1, max: 100000, step: 10 },
+      { key: 'gyro_bias_tau_s', label: 'Gyroscope bias time', unit: 's', min: 1, max: 100000, step: 10 },
+    ],
+  },
+  {
+    title: 'Aiding and Validation',
+    parameters: [
+      { key: 'gravity_aiding_noise', label: 'Gravity direction noise', unit: '1σ', min: 0.001, max: 1, step: 0.01 },
+      { key: 'gravity_gate_mps2', label: 'Gravity acceleration gate', unit: 'm/s²', min: 0.01, max: 10, step: 0.05 },
+      { key: 'gravity_max_speed_mps', label: 'Gravity aiding max speed', unit: 'm/s', min: 0, max: 10, step: 0.1 },
+      { key: 'gnss_velocity_sigma_mps', label: 'GNSS velocity noise', unit: 'm/s 1σ', min: 0.001, max: 20, step: 0.01 },
+      { key: 'gnss_heading_sigma_deg', label: 'GNSS heading noise', unit: '° 1σ', min: 0.01, max: 90, step: 0.1 },
+      { key: 'mag_heading_sigma_deg', label: 'Magnetic heading noise', unit: '° 1σ', min: 0.1, max: 180, step: 0.5 },
+      { key: 'innovation_gate_sigma', label: 'Innovation gate', unit: 'σ', min: 1, max: 20, step: 0.5 },
+      { key: 'gnss_loss_timeout_s', label: 'GNSS loss timeout', unit: 's', min: 0.1, max: 60, step: 0.1 },
+    ],
+  },
+  {
+    title: 'GNSS Position Noise',
+    parameters: [
+      { key: 'rtk_fixed_horizontal_floor_m', label: 'RTK fixed horizontal floor', unit: 'm 1σ', min: 0.001, max: 10, step: 0.01 },
+      { key: 'rtk_fixed_vertical_floor_m', label: 'RTK fixed vertical floor', unit: 'm 1σ', min: 0.001, max: 20, step: 0.01 },
+      { key: 'rtk_float_horizontal_sigma_m', label: 'RTK float horizontal', unit: 'm 1σ', min: 0.01, max: 100, step: 0.1 },
+      { key: 'rtk_float_vertical_sigma_m', label: 'RTK float vertical', unit: 'm 1σ', min: 0.01, max: 200, step: 0.1 },
+      { key: 'dgps_horizontal_sigma_m', label: 'DGNSS horizontal', unit: 'm 1σ', min: 0.01, max: 100, step: 0.1 },
+      { key: 'dgps_vertical_sigma_m', label: 'DGNSS vertical', unit: 'm 1σ', min: 0.01, max: 200, step: 0.1 },
+      { key: 'gps_horizontal_sigma_m', label: 'GPS horizontal', unit: 'm 1σ', min: 0.01, max: 100, step: 0.1 },
+      { key: 'gps_vertical_sigma_m', label: 'GPS vertical', unit: 'm 1σ', min: 0.01, max: 200, step: 0.1 },
+    ],
+  },
+]
+
 // GNC config validation error
 const gncError = ref(null)
 
@@ -1040,6 +1178,9 @@ onMounted(() => {
 
   // Load sensor offsets from store
   syncOffsetsForm()
+
+  // Load INS configuration from the authoritative backend mirror.
+  syncInsForm()
 
   // Seed relay-name draft and start 1 Hz ticker for the restart countdown
   syncRelayNamesDraft()
@@ -1323,6 +1464,60 @@ function saveOffsetsConfig() {
     gnss_bow:   { ...f.gnss_bow },
     gnss_stern: { ...f.gnss_stern },
   })
+}
+
+// ─── Inertial navigation system ───────────────────────────
+const insNumericParameters = insParameterGroups.flatMap(group => group.parameters)
+
+function syncInsForm() {
+  const config = telemetry.insConfig || {}
+  insForm.value = Object.fromEntries(
+    Object.entries(INS_DEFAULTS).map(([key, fallback]) => [
+      key,
+      config[key] ?? fallback,
+    ])
+  )
+  insDirty.value = false
+  insError.value = null
+}
+
+function setInsEnabled(enabled) {
+  if (insForm.value.enabled === enabled) return
+  insForm.value.enabled = enabled
+  insDirty.value = true
+}
+
+const insConfigChanged = computed(() => {
+  const config = telemetry.insConfig || {}
+  return Object.entries(INS_DEFAULTS).some(
+    ([key, fallback]) => insForm.value[key] !== (config[key] ?? fallback)
+  )
+})
+
+watch(() => telemetry.insConfig, () => {
+  if (!insDirty.value) syncInsForm()
+}, { deep: true })
+
+watch(insForm, () => { insError.value = null }, { deep: true })
+
+function saveInsConfig() {
+  const errors = []
+  for (const parameter of insNumericParameters) {
+    const value = insForm.value[parameter.key]
+    if (!Number.isFinite(value) || value < parameter.min || value > parameter.max) {
+      errors.push(`${parameter.label}: ${parameter.min}–${parameter.max}`)
+    }
+  }
+  if (errors.length > 0) {
+    insError.value = errors.join('; ') + '.'
+    return
+  }
+  insError.value = null
+  if (telemetry.setInsConfig({ ...insForm.value })) {
+    insDirty.value = false
+  } else {
+    insError.value = 'Cannot apply INS settings while the backend is disconnected.'
+  }
 }
 </script>
 
@@ -1913,6 +2108,108 @@ select.text-input {
 
 /* Confirmation dialog (relay variant reuses .confirm-overlay/.confirm-dialog) */
 .confirm-dialog p em { color: #FFA500; font-style: normal; }
+
+/* ── Inertial navigation system ─────────────────────────────────── */
+.ins-section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #444;
+}
+
+.ins-mode-control {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+}
+
+.ins-mode-option {
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 1px solid #555;
+  background: #2a2a2a;
+  color: #bbb;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ins-mode-option:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.ins-mode-option:last-child {
+  margin-left: -1px;
+  border-radius: 0 6px 6px 0;
+}
+
+.ins-mode-option.active {
+  position: relative;
+  border-color: #FFA500;
+  background: #FFA500;
+  color: #121212;
+}
+
+.ins-parameter-group {
+  margin: 24px 0;
+}
+
+.ins-parameter-group h4 {
+  margin: 0 0 12px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid #333;
+  color: #ddd;
+  font-size: 0.95em;
+}
+
+.ins-parameter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 20px;
+}
+
+.ins-parameter {
+  min-width: 0;
+  color: #bbb;
+  font-size: 0.86em;
+}
+
+.ins-parameter > span {
+  display: block;
+  min-height: 2.2em;
+  margin-bottom: 5px;
+}
+
+.ins-parameter-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.ins-parameter-input small {
+  color: #888;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .ins-mode-control,
+  .ins-parameter-grid {
+    width: 100%;
+    grid-template-columns: 1fr;
+  }
+
+  .ins-mode-option:first-child,
+  .ins-mode-option:last-child {
+    margin: 0;
+    border-radius: 6px;
+  }
+
+  .ins-mode-option:last-child {
+    margin-top: 6px;
+  }
+
+  .ins-parameter > span {
+    min-height: 0;
+  }
+}
 
 /* ── Sensor offsets (CRP lever-arm) ─────────────────────────────── */
 .offsets-table {

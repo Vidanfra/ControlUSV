@@ -55,6 +55,7 @@ class CommandType(str, Enum):
     SET_RELAY_NAMES = "SET_RELAY_NAMES"   # payload: {names: [str, str, str]}
     SET_MOTOR_CONFIG = "SET_MOTOR_CONFIG" # payload: MotorConfig fields
     SET_OFFSETS_CONFIG = "SET_OFFSETS_CONFIG" # payload: OffsetsConfig fields
+    SET_INS_CONFIG = "SET_INS_CONFIG" # payload: InsConfig fields
 
 class Waypoint(BaseModel):
     lat: float
@@ -86,6 +87,35 @@ class GnssConfig(BaseModel):
     username: str = ""
     password: str = ""
     command_freq: float = Field(1.0, gt=0.0, le=20.0, description="NMEA output frequency [Hz]")
+
+
+class InsConfig(BaseModel):
+    """Multiplicative error-state INS tuning and aiding configuration."""
+    enabled: bool = True
+    use_magnetometer: bool = True
+    accel_noise_mps2_sqrt_hz: float = Field(0.12, gt=0.0, le=10.0)
+    gyro_noise_deg_s_sqrt_hz: float = Field(0.30, gt=0.0, le=100.0)
+    accel_bias_noise_mps2_sqrt_hz: float = Field(0.01, gt=0.0, le=1.0)
+    gyro_bias_noise_deg_s_sqrt_hz: float = Field(0.02, gt=0.0, le=10.0)
+    accel_bias_tau_s: float = Field(500.0, ge=1.0, le=100000.0)
+    gyro_bias_tau_s: float = Field(500.0, ge=1.0, le=100000.0)
+    gravity_aiding_noise: float = Field(0.05, gt=0.001, le=1.0)
+    gravity_gate_mps2: float = Field(0.75, gt=0.0, le=10.0)
+    gravity_max_speed_mps: float = Field(0.5, ge=0.0, le=10.0)
+    gnss_velocity_sigma_mps: float = Field(0.15, gt=0.001, le=20.0)
+    gnss_heading_sigma_deg: float = Field(0.5, gt=0.01, le=90.0)
+    mag_heading_sigma_deg: float = Field(10.0, gt=0.1, le=180.0)
+    rtk_fixed_horizontal_floor_m: float = Field(0.02, gt=0.001, le=10.0)
+    rtk_fixed_vertical_floor_m: float = Field(0.04, gt=0.001, le=20.0)
+    rtk_float_horizontal_sigma_m: float = Field(0.5, gt=0.01, le=100.0)
+    rtk_float_vertical_sigma_m: float = Field(1.0, gt=0.01, le=200.0)
+    dgps_horizontal_sigma_m: float = Field(1.5, gt=0.01, le=100.0)
+    dgps_vertical_sigma_m: float = Field(2.5, gt=0.01, le=200.0)
+    gps_horizontal_sigma_m: float = Field(3.0, gt=0.01, le=100.0)
+    gps_vertical_sigma_m: float = Field(5.0, gt=0.01, le=200.0)
+    innovation_gate_sigma: float = Field(5.0, ge=1.0, le=20.0)
+    gnss_loss_timeout_s: float = Field(2.0, ge=0.1, le=60.0)
+
 
 class GncConfig(BaseModel):
     """GNC Controller configuration parameters."""
@@ -217,6 +247,10 @@ class USVState(BaseModel):
     lat: float
     lon: float
     altitude: float = 0.0
+    gnss_timestamp: float = Field(0.0, description="Timestamp of the latest GNSS measurement")
+    gnss_lat_crp: Optional[float] = Field(None, description="Latest GNSS measurement translated to CRP [deg]")
+    gnss_lon_crp: Optional[float] = Field(None, description="Latest GNSS measurement translated to CRP [deg]")
+    gnss_altitude_crp: Optional[float] = Field(None, description="Latest GNSS measurement translated to CRP [m]")
     
     # Velocity (m/s)
     speed: float = Field(0.0, description="Speed over ground")
@@ -241,7 +275,14 @@ class USVState(BaseModel):
     mag_heading_crp: float = Field(0.0, description="Tilt-compensated magnetic heading in degrees, body frame")
     
     # Heading quality
-    heading_status: str = Field("", description="A=GNSS dual-antenna, M=magnetic, S=simulated")
+    heading_status: str = Field("", description="A=GNSS dual-antenna, M=magnetic, I=gyro INS, S=simulated")
+
+    # Navigation solution quality
+    fix_type: int = Field(0, description="Latest GNSS GGA fix type")
+    ins_active: bool = Field(False, description="True when MEKF output is active")
+    position_source: str = Field("GNSS", description="GNSS quality class or INS during an outage")
+    horizontal_accuracy_m: Optional[float] = Field(None, ge=0.0, description="Navigation horizontal 1-sigma [m]")
+    vertical_accuracy_m: Optional[float] = Field(None, ge=0.0, description="Navigation vertical 1-sigma [m]")
     
     # Data source tag
     source: str = Field("sensor", description="Data source: 'sensor' or 'sim'")

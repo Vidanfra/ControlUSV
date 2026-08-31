@@ -22,7 +22,7 @@
       </div>
       <div class="data-item">
         <label :class="{ 'sim-label': store.dataSource === 'sim' }">Heading</label>
-        <span>{{ store.bestHeading.toFixed(1) }}&deg; <small class="src-tag">{{ store.headingSource }}</small></span>
+        <span>{{ store.bestHeading.toFixed(1) }}&deg; <small class="src-tag" :class="{ ins: store.insActive }">{{ store.headingSource }}</small></span>
       </div>
       <div class="data-item">
         <label>Desired Hdg</label>
@@ -30,7 +30,7 @@
       </div>
       <div class="data-item">
         <label :class="{ 'sim-label': store.dataSource === 'sim' }">SOG</label>
-        <span>{{ store.gnssSogKnots.toFixed(1) }} kn</span>
+        <span>{{ (store.speed / 0.514444).toFixed(1) }} kn</span>
       </div>
 
       <!-- Waypoint section (STATION or WP_ROUTE active) -->
@@ -230,6 +230,11 @@ h3 {
   color: #888;
   font-weight: normal;
   margin-left: 3px;
+}
+
+.src-tag.ins {
+  color: #42d4f4;
+  font-weight: 700;
 }
 
 /* sim-label: same grey as normal labels — no cyan flash */

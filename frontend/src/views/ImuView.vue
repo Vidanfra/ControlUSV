@@ -238,6 +238,7 @@ const gyroChartData = computed(() => ({
   padding: 20px;
   gap: 20px;
   overflow: hidden;
+  min-width: 0;
 }
 
 .chart-controls {
@@ -345,5 +346,28 @@ const gyroChartData = computed(() => ({
 
 .var-hidden {
   opacity: 0.4;
+}
+
+@media (max-width: 800px) {
+  .imu-container {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .main-content {
+    flex: none;
+    overflow: visible;
+  }
+
+  .chart-wrapper {
+    flex: 0 0 240px;
+  }
+
+  .sidebar {
+    flex: none;
+    max-width: none;
+    border-left: none;
+    border-top: 2px solid #333;
+  }
 }
 </style>

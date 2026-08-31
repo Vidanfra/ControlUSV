@@ -66,8 +66,13 @@ export const useTelemetryStore = defineStore('telemetry', {
   state: () => ({
     lat: 0.0,
     lon: 0.0,
+    altitude: 0.0,
     heading: 0.0,
     headingStatus: '',
+    insActive: false,
+    positionSource: 'GNSS',
+    navHorizontalAccuracyM: null,
+    navVerticalAccuracyM: null,
     battery: 0.0,
     speed: 0.0,
     isConnected: false,
@@ -216,7 +221,10 @@ export const useTelemetryStore = defineStore('telemetry', {
     dataSource: 'sensor',         // 'sensor' or 'sim'
 
     // Pre-collected chart histories (2-min window, collected regardless of active tab)
-    gnssHistory: [],   // { timeMs, label, lat, lon, alt }
+    gnssHistory: [],   // Raw GNSS positions retained for sensor diagnostics.
+    gnssCrpHistory: [], // Last ten distinct GNSS measurements translated to CRP.
+    _lastGnssCrpTimestamp: 0,
+    insComparisonHistory: [], // Synchronized INS, GNSS, compass and COG samples.
     imuHistory: [],    // { timeMs, label, roll, pitch, yaw, ax, ay, az, p, q, r }
     gncHistory: [],    // { timeMs, label, actualHeading, targetHeading, headingError, cte, port, starboard, surgeVel, swayVel, surgeAcc, swayAcc, vCruise, tauXEff }
     powerHistory: [],  // { timeMs, label, voltage, current, power }
@@ -311,6 +319,34 @@ export const useTelemetryStore = defineStore('telemetry', {
       gnss_bow:   { x: 0.802,  y: 0.0,   z: -0.293 },
       gnss_stern: { x: -0.657, y: 0.0,   z: -0.293 },
     },
+    insConfig: {
+      enabled: true,
+      use_magnetometer: true,
+      accel_noise_mps2_sqrt_hz: 0.12,
+      gyro_noise_deg_s_sqrt_hz: 0.30,
+      accel_bias_noise_mps2_sqrt_hz: 0.01,
+      gyro_bias_noise_deg_s_sqrt_hz: 0.02,
+      accel_bias_tau_s: 500.0,
+      gyro_bias_tau_s: 500.0,
+      gravity_aiding_noise: 0.05,
+      gravity_gate_mps2: 0.75,
+      gravity_max_speed_mps: 0.5,
+      gnss_velocity_sigma_mps: 0.15,
+      gnss_heading_sigma_deg: 0.5,
+      mag_heading_sigma_deg: 10.0,
+      rtk_fixed_horizontal_floor_m: 0.02,
+      rtk_fixed_vertical_floor_m: 0.04,
+      rtk_float_horizontal_sigma_m: 0.5,
+      rtk_float_vertical_sigma_m: 1.0,
+      dgps_horizontal_sigma_m: 1.5,
+      dgps_vertical_sigma_m: 2.5,
+      gps_horizontal_sigma_m: 3.0,
+      gps_vertical_sigma_m: 5.0,
+      innovation_gate_sigma: 5.0,
+      gnss_loss_timeout_s: 2.0,
+    },
+    _pendingInsConfig: null,
+    _pendingInsConfigSentAt: 0,
     systemMonitor: {
       timestamp: 0,
       cpu_percent: 0,
@@ -430,7 +466,8 @@ export const useTelemetryStore = defineStore('telemetry', {
       return ((state.heading * 180 / Math.PI) + 360) % 360
     },
     headingSource(state) {
-      return { A: 'GNSS', M: 'MAG', S: 'SIM' }[state.headingStatus] || 'NONE'
+      if (state.insActive) return 'INS'
+      return { A: 'GNSS', M: 'MAG', I: 'INS', S: 'SIM' }[state.headingStatus] || 'NONE'
     },
     // Fix quality color: green for RTK fixed (4), yellow-green for float (5), 
     // yellow for DGPS (2), orange for GPS only (1), red for no fix (0)
@@ -587,7 +624,7 @@ export const useTelemetryStore = defineStore('telemetry', {
     sendCommand(type, payload = {}) {
       if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
         console.warn(`Cannot send command '${type}': WebSocket not open (readyState=${this.socket?.readyState})`)
-        return
+        return false
       }
 
       // Per-session monotonic sequence number. Backend dedups by (connection,
@@ -602,6 +639,7 @@ export const useTelemetryStore = defineStore('telemetry', {
 
       this.socket.send(JSON.stringify(message))
       if (type !== 'MANUAL_INPUT') console.log("Sent Command:", message)
+      return true
     },
 
     resetEnergy() {
@@ -687,6 +725,32 @@ export const useTelemetryStore = defineStore('telemetry', {
     setOffsetsConfig(config) {
       this.offsetsConfig = { ...this.offsetsConfig, ...config }
       this.sendCommand('SET_OFFSETS_CONFIG', this.offsetsConfig)
+    },
+
+    setInsConfig(config) {
+      const nextConfig = { ...this.insConfig, ...config }
+      if (!this.sendCommand('SET_INS_CONFIG', nextConfig)) return false
+      this.insConfig = nextConfig
+      this._pendingInsConfig = { ...nextConfig }
+      this._pendingInsConfigSentAt = Date.now()
+      return true
+    },
+
+    syncInsConfigFromBackend(config, nowMs = Date.now()) {
+      const incoming = { ...this.insConfig, ...config }
+      if (!this._pendingInsConfig) {
+        this.insConfig = incoming
+        return
+      }
+
+      const confirmed = Object.entries(this._pendingInsConfig).every(
+        ([key, value]) => incoming[key] === value
+      )
+      if (confirmed || nowMs - this._pendingInsConfigSentAt >= 5000) {
+        this.insConfig = incoming
+        this._pendingInsConfig = null
+        this._pendingInsConfigSentAt = 0
+      }
     },
 
     // ─── Logs feature ────────────────────────────────────────────────
@@ -1165,7 +1229,7 @@ export const useTelemetryStore = defineStore('telemetry', {
               label: new Date(nowMs).toISOString().substr(11, 8),
               lat: data.lat, lon: data.lon, alt: data.alt || 0
             })
-            const cutoffGnss = nowMs - 120000
+            const cutoffGnss = nowMs - 300000
             if (this.gnssHistory.length > 0 && this.gnssHistory[0].timeMs < cutoffGnss)
               this.gnssHistory = this.gnssHistory.filter(p => p.timeMs > cutoffGnss)
             // Degraded-quality detection: orange whenever the fix is not RTK Fixed (4).
@@ -1205,9 +1269,66 @@ export const useTelemetryStore = defineStore('telemetry', {
           else if (topic === 'gnc/ekf_state') {
             this.lat = data.lat
             this.lon = data.lon
+            this.altitude = data.altitude
             this.heading = data.heading
             this.headingStatus = data.heading_status || ''
+            this.insActive = data.ins_active ?? false
+            this.positionSource = data.position_source || 'GNSS'
+            this.navHorizontalAccuracyM = data.horizontal_accuracy_m ?? null
+            this.navVerticalAccuracyM = data.vertical_accuracy_m ?? null
             this.speed = data.speed
+
+            if (
+              Number.isFinite(data.gnss_timestamp) &&
+              data.gnss_timestamp > 0 &&
+              data.gnss_timestamp !== this._lastGnssCrpTimestamp &&
+              Number.isFinite(data.gnss_lat_crp) &&
+              Number.isFinite(data.gnss_lon_crp)
+            ) {
+              this._lastGnssCrpTimestamp = data.gnss_timestamp
+              this.gnssCrpHistory.push({
+                timeMs: data.gnss_timestamp * 1000,
+                lat: data.gnss_lat_crp,
+                lon: data.gnss_lon_crp,
+                alt: data.gnss_altitude_crp ?? 0
+              })
+              if (this.gnssCrpHistory.length > 10) {
+                this.gnssCrpHistory.splice(0, this.gnssCrpHistory.length - 10)
+              }
+            }
+
+            const nowMs = Number.isFinite(data.timestamp) ? data.timestamp * 1000 : Date.now()
+            this.insComparisonHistory.push({
+              timeMs: nowMs,
+              label: new Date(nowMs).toISOString().substr(11, 8),
+              insLat: data.lat,
+              insLon: data.lon,
+              insAlt: data.altitude ?? 0,
+              insHeading: Number.isFinite(data.heading)
+                ? ((data.heading * 180 / Math.PI) + 360) % 360
+                : 0,
+              gnssLat: data.gnss_lat_crp ?? this.gnssRawLat,
+              gnssLon: data.gnss_lon_crp ?? this.gnssRawLon,
+              gnssAlt: data.gnss_altitude_crp ?? this.gnssAlt,
+              gnssHeading: this.gnssHeading,
+              magHeading: this.imuMagHeading,
+              cog: this.gnssCog,
+              gnssHorizontalAccuracyM: this.gnssHorizontalAccuracyM,
+              gnssVerticalAccuracyM: this.gnssVerticalAccuracyM,
+              insHorizontalAccuracyM: data.horizontal_accuracy_m ?? null,
+              insVerticalAccuracyM: data.vertical_accuracy_m ?? null,
+              insActive: data.ins_active ?? false,
+              positionSource: data.position_source || 'GNSS'
+            })
+            const cutoffIns = nowMs - 300000
+            if (
+              this.insComparisonHistory.length > 0 &&
+              this.insComparisonHistory[0].timeMs < cutoffIns
+            ) {
+              this.insComparisonHistory = this.insComparisonHistory.filter(
+                point => point.timeMs > cutoffIns
+              )
+            }
             if (data.source) this.dataSource = data.source
             newLat = data.lat
             newLon = data.lon
@@ -1323,6 +1444,9 @@ export const useTelemetryStore = defineStore('telemetry', {
              if (data.offsets_config) {
                // Backend is authoritative for sensor lever-arm offsets.
                this.offsetsConfig = { ...this.offsetsConfig, ...data.offsets_config }
+             }
+             if (data.ins_config) {
+               this.syncInsConfigFromBackend(data.ins_config)
              }
              if (data.gnss_config) {
                // Backend is authoritative for GNSS/NTRIP config — sync so the

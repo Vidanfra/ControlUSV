@@ -11,6 +11,10 @@
         </select>
       </div>
 
+      <div class="chart-wrapper">
+        <Line :data="headingChartData" :options="headingChartOptions" />
+      </div>
+
       <!-- Latitude chart -->
       <div class="chart-wrapper">
         <Line :data="latChartData" :options="latChartOptions" />
@@ -36,8 +40,49 @@
         <span class="fix-label">{{ fixLabel }}</span>
       </div>
 
+      <h3 class="mt-3">INS</h3>
       <div class="stat-group">
         <div class="stat-box">
+          <h4>Latitude</h4>
+          <div class="value">{{ telemetry.lat.toFixed(8) }}°</div>
+        </div>
+        <div class="stat-box">
+          <h4>Longitude</h4>
+          <div class="value">{{ telemetry.lon.toFixed(8) }}°</div>
+        </div>
+        <div class="stat-box">
+          <h4>Altitude</h4>
+          <div class="value">{{ telemetry.altitude.toFixed(3) }} m</div>
+        </div>
+        <div class="stat-box">
+          <h4>Heading</h4>
+          <div class="value">{{ telemetry.bestHeading.toFixed(1) }}°</div>
+        </div>
+        <div class="stat-box">
+          <h4>SOG</h4>
+          <div class="value">{{ (telemetry.speed / 0.514444).toFixed(2) }} kn</div>
+        </div>
+        <div class="stat-box">
+          <h4>Horizontal Error (1 sigma)</h4>
+          <div class="value">{{ formatMeters(averageNavHorizontalAccuracyM) }}</div>
+        </div>
+        <div class="stat-box">
+          <h4>Vertical Error (1 sigma)</h4>
+          <div class="value">{{ formatMeters(averageNavVerticalAccuracyM) }}</div>
+        </div>
+      </div>
+
+      <h3 class="mt-3">GNSS Quality</h3>
+      <div class="stat-group">
+        <div class="stat-box">
+          <h4>Horizontal Error (1 sigma)</h4>
+          <div class="value">{{ formatMeters(telemetry.gnssHorizontalAccuracyM) }}</div>
+        </div>
+        <div class="stat-box">
+          <h4>Vertical Error (1 sigma)</h4>
+          <div class="value">{{ formatMeters(telemetry.gnssVerticalAccuracyM) }}</div>
+        </div>
+                <div class="stat-box">
           <h4>UTC Time</h4>
           <div class="value small">{{ telemetry.gnssUtcTime || '--' }}</div>
         </div>
@@ -45,9 +90,17 @@
           <h4>UTC Date</h4>
           <div class="value small">{{ telemetry.gnssUtcDate || '--' }}</div>
         </div>
+        <div class="stat-box">
+          <h4>Fix Type</h4>
+          <div class="value" :style="{ color: fixColor }">{{ fixLabel }}</div>
+        </div>
+        <div class="stat-box">
+          <h4>Satellites</h4>
+          <div class="value">{{ telemetry.gnssNumSats ?? 0 }}</div>
+        </div>
       </div>
 
-      <h3 class="mt-3">Position <span class="raw-badge">RAW</span></h3>
+      <h3 class="mt-3">GNSS Position <span class="raw-badge">RAW</span></h3>
       <div class="stat-group">
         <div class="stat-box">
           <h4>Latitude</h4>
@@ -63,7 +116,7 @@
         </div>
       </div>
 
-      <h3 class="mt-3">Navigation</h3>
+      <h3 class="mt-3">GNSS Navigation</h3>
       <div class="stat-group">
         <div class="stat-box">
           <h4>SOG</h4>
@@ -82,31 +135,41 @@
           <div class="value">{{ telemetry.imuMagHeading?.toFixed(1) ?? '0.0' }}°</div>
         </div>
       </div>
-      <h3 class="mt-3">Quality</h3>
+
+
+      <h3 class="mt-3">Plot Series</h3>
       <div class="stat-group">
-        <div class="stat-box">
-          <h4>Fix Type</h4>
-          <div class="value" :style="{ color: fixColor }">{{ fixLabel }}</div>
-        </div>
-        <div class="stat-box">
-          <h4>Satellites</h4>
-          <div class="value">{{ telemetry.gnssNumSats ?? 0 }}</div>
-        </div>
-        <div class="stat-box">
-          <h4>Horizontal Accuracy (1 sigma)</h4>
-          <div class="value">{{ telemetry.gnssHorizontalAccuracyM == null ? '--' : `${telemetry.gnssHorizontalAccuracyM.toFixed(3)} m` }}</div>
-        </div>
-        <div class="stat-box">
-          <h4>Vertical Accuracy (1 sigma)</h4>
-          <div class="value">{{ telemetry.gnssVerticalAccuracyM == null ? '--' : `${telemetry.gnssVerticalAccuracyM.toFixed(3)} m` }}</div>
-        </div>
+        <label class="stat-box plot-toggle" :class="{ 'var-hidden': !showInsHeading }">
+          <input v-model="showInsHeading" type="checkbox" class="var-check" />
+          <span>INS Heading</span>
+        </label>
+        <label class="stat-box plot-toggle" :class="{ 'var-hidden': !showGnssHeading }">
+          <input v-model="showGnssHeading" type="checkbox" class="var-check" />
+          <span>GNSS Heading</span>
+        </label>
+        <label class="stat-box plot-toggle" :class="{ 'var-hidden': !showMagHeading }">
+          <input v-model="showMagHeading" type="checkbox" class="var-check" />
+          <span>Magnetic Heading</span>
+        </label>
+        <label class="stat-box plot-toggle" :class="{ 'var-hidden': !showCog }">
+          <input v-model="showCog" type="checkbox" class="var-check" />
+          <span>COG</span>
+        </label>
+        <label class="stat-box plot-toggle" :class="{ 'var-hidden': !showGnssPosition }">
+          <input v-model="showGnssPosition" type="checkbox" class="var-check" />
+          <span>GNSS Position</span>
+        </label>
+        <label class="stat-box plot-toggle" :class="{ 'var-hidden': !showInsPosition }">
+          <input v-model="showInsPosition" type="checkbox" class="var-check" />
+          <span>INS Position</span>
+        </label>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useTelemetryStore } from '../stores/telemetry'
 import {
   Chart as ChartJS,
@@ -133,8 +196,49 @@ ChartJS.register(
 const telemetry = useTelemetryStore()
 
 const simSuffix = () => telemetry.dataSource === 'sim' ? ' (SIM)' : ''
+const formatMeters = value => value == null ? '--' : `${value.toFixed(3)} m`
+
+const averageNavHorizontalAccuracyM = ref(null)
+const averageNavVerticalAccuracyM = ref(null)
+let navAccuracySamples = []
+let navAccuracyAverageTimer
+
+watch(
+  () => [telemetry.navHorizontalAccuracyM, telemetry.navVerticalAccuracyM],
+  ([horizontalAccuracyM, verticalAccuracyM]) => {
+    navAccuracySamples.push({ horizontalAccuracyM, verticalAccuracyM })
+  },
+  { immediate: true }
+)
+
+onMounted(() => {
+  navAccuracyAverageTimer = setInterval(() => {
+    const horizontalSamples = navAccuracySamples
+      .map(sample => sample.horizontalAccuracyM)
+      .filter(Number.isFinite)
+    const verticalSamples = navAccuracySamples
+      .map(sample => sample.verticalAccuracyM)
+      .filter(Number.isFinite)
+
+    if (horizontalSamples.length) {
+      averageNavHorizontalAccuracyM.value = horizontalSamples.reduce((sum, value) => sum + value, 0) / horizontalSamples.length
+    }
+    if (verticalSamples.length) {
+      averageNavVerticalAccuracyM.value = verticalSamples.reduce((sum, value) => sum + value, 0) / verticalSamples.length
+    }
+    navAccuracySamples = []
+  }, 500)
+})
+
+onUnmounted(() => clearInterval(navAccuracyAverageTimer))
 
 const timeWindow = ref(120)
+const showInsHeading = ref(true)
+const showGnssHeading = ref(true)
+const showMagHeading = ref(true)
+const showCog = ref(true)
+const showGnssPosition = ref(true)
+const showInsPosition = ref(true)
 
 // --- Fix type helpers ---
 const fixLabel = computed(() => {
@@ -205,30 +309,60 @@ const altChartOptions = {
   }
 }
 
+const headingChartOptions = {
+  ...chartBaseOptions,
+  plugins: {
+    ...chartBaseOptions.plugins,
+    title: { display: true, text: 'Heading Comparison (degrees)', color: '#aaa' }
+  },
+  scales: {
+    ...chartBaseOptions.scales,
+    y: {
+      ...chartBaseOptions.scales.y,
+      grace: '5%',
+    }
+  }
+}
+
 // --- Chart data (computed from store history — no setInterval needed) ---
 const filteredHistory = computed(() => {
   const cutoff = Date.now() - (timeWindow.value * 1000)
-  return telemetry.gnssHistory.filter(p => p.timeMs > cutoff)
+  return telemetry.insComparisonHistory.filter(point => point.timeMs > cutoff)
 })
+
+const validGnssPosition = value => Number.isFinite(value) && value !== 0 ? value : null
+
+const headingChartData = computed(() => ({
+  labels: filteredHistory.value.map(point => point.label),
+  datasets: [
+    ...(showInsHeading.value ? [{ label: 'INS Heading', borderColor: '#42d4f4', data: filteredHistory.value.map(point => point.insHeading), borderWidth: 2, pointRadius: 0, tension: 0.1 }] : []),
+    ...(showGnssHeading.value ? [{ label: 'GNSS Heading', borderColor: '#ff5252', data: filteredHistory.value.map(point => point.gnssHeading), borderWidth: 1.5, pointRadius: 0, tension: 0.1 }] : []),
+    ...(showMagHeading.value ? [{ label: 'Magnetic Heading', borderColor: '#FFA500', data: filteredHistory.value.map(point => point.magHeading), borderWidth: 1.5, pointRadius: 0, tension: 0.1 }] : []),
+    ...(showCog.value ? [{ label: 'COG', borderColor: '#7bd88f', data: filteredHistory.value.map(point => point.cog), borderWidth: 1.5, pointRadius: 0, borderDash: [5, 4], tension: 0.1 }] : []),
+  ]
+}))
 
 const latChartData = computed(() => ({
   labels: filteredHistory.value.map(pt => pt.label),
   datasets: [
-    { label: 'Latitude' + simSuffix(), borderColor: '#00C851', data: filteredHistory.value.map(pt => pt.lat), borderWidth: 2, tension: 0.2, fill: false }
+    ...(showGnssPosition.value ? [{ label: 'GNSS CRP Latitude' + simSuffix(), borderColor: '#ff5252', data: filteredHistory.value.map(pt => validGnssPosition(pt.gnssLat)), borderWidth: 1.5, pointRadius: 1, tension: 0.1, fill: false }] : []),
+    ...(showInsPosition.value ? [{ label: 'INS Latitude' + simSuffix(), borderColor: '#42d4f4', data: filteredHistory.value.map(pt => pt.insLat), borderWidth: 2, pointRadius: 0, tension: 0.1, fill: false }] : [])
   ]
 }))
 
 const lonChartData = computed(() => ({
   labels: filteredHistory.value.map(pt => pt.label),
   datasets: [
-    { label: 'Longitude' + simSuffix(), borderColor: '#FFA500', data: filteredHistory.value.map(pt => pt.lon), borderWidth: 2, tension: 0.2, fill: false }
+    ...(showGnssPosition.value ? [{ label: 'GNSS CRP Longitude' + simSuffix(), borderColor: '#ff5252', data: filteredHistory.value.map(pt => validGnssPosition(pt.gnssLon)), borderWidth: 1.5, pointRadius: 1, tension: 0.1, fill: false }] : []),
+    ...(showInsPosition.value ? [{ label: 'INS Longitude' + simSuffix(), borderColor: '#42d4f4', data: filteredHistory.value.map(pt => pt.insLon), borderWidth: 2, pointRadius: 0, tension: 0.1, fill: false }] : [])
   ]
 }))
 
 const altChartData = computed(() => ({
   labels: filteredHistory.value.map(pt => pt.label),
   datasets: [
-    { label: 'Altitude' + simSuffix(), borderColor: '#00C851', data: filteredHistory.value.map(pt => pt.alt), borderWidth: 2, tension: 0.2, fill: false }
+    ...(showGnssPosition.value ? [{ label: 'GNSS CRP Altitude' + simSuffix(), borderColor: '#ff5252', data: filteredHistory.value.map(pt => pt.gnssAlt), borderWidth: 1.5, pointRadius: 1, tension: 0.1, fill: false }] : []),
+    ...(showInsPosition.value ? [{ label: 'INS Altitude' + simSuffix(), borderColor: '#42d4f4', data: filteredHistory.value.map(pt => pt.insAlt), borderWidth: 2, pointRadius: 0, tension: 0.1, fill: false }] : [])
   ]
 }))
 </script>
@@ -247,7 +381,7 @@ const altChartData = computed(() => ({
   flex-direction: column;
   padding: 20px;
   gap: 20px;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .chart-controls {
@@ -268,7 +402,7 @@ const altChartData = computed(() => ({
 }
 
 .chart-wrapper {
-  flex: 1;
+  flex: 0 0 250px;
   background-color: #1e1e1e;
   border-radius: 8px;
   padding: 15px;
@@ -397,6 +531,32 @@ const altChartData = computed(() => ({
   padding-right: 8px;
 }
 
+.plot-toggle {
+  justify-content: flex-start;
+  gap: 8px;
+  color: #ccc;
+  font-size: 0.8em;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.plot-toggle span {
+  flex: 1;
+}
+
+.var-check {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: #FFA500;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.var-hidden {
+  opacity: 0.4;
+}
+
 .value {
   font-size: 1em;
   font-weight: bold;
@@ -410,4 +570,23 @@ const altChartData = computed(() => ({
 
 /* Highlight sidebar values orange when displaying simulation data */
 .sim-mode .value { color: #FFA500; }
+
+@media (max-width: 800px) {
+  .gnss-container {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .main-content {
+    flex: none;
+    overflow: visible;
+  }
+
+  .sidebar {
+    flex: none;
+    max-width: none;
+    border-left: none;
+    border-top: 2px solid #333;
+  }
+}
 </style>

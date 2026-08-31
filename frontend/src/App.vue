@@ -49,9 +49,8 @@ import { useAudioAlerts } from './composables/useAudioAlerts'
 // Import Views
 import MapView from './views/MapView.vue'
 import GncView from './views/GncView.vue'
-import GnssView from './views/GnssView.vue'
+import InsView from './views/InsView.vue'
 import PowerView from './views/PowerView.vue'
-import ImuView from './views/ImuView.vue'
 import SimView from './views/SimView.vue'
 import SettingsView from './views/SettingsView.vue'
 import LogsView from './views/LogsView.vue'
@@ -72,10 +71,9 @@ const sensors = [
 // Tabs Configuration
 const tabs = [
   { id: 'map', name: 'Map', component: MapView },
-  { id: 'gnss', name: 'GNSS', component: GnssView },
+  { id: 'ins', name: 'INS', component: InsView },
   { id: 'gnc', name: 'Control', component: GncView },
   { id: 'power', name: 'Power', component: PowerView },
-  { id: 'imu', name: 'IMU', component: ImuView },
   { id: 'sim', name: 'Simulation', component: SimView },
   { id: 'logs', name: 'Logs', component: LogsView },
   { id: 'settings', name: 'Settings', component: SettingsView }
@@ -215,5 +213,31 @@ body, html {
   flex-grow: 1;
   position: relative;
   overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+}
+
+@media (max-width: 800px) {
+  .navbar {
+    padding: 0;
+  }
+
+  .nav-brand,
+  .sensor-status-bar,
+  .nav-status {
+    display: none;
+  }
+
+  .nav-tabs {
+    width: 100%;
+    gap: 0;
+    overflow-x: auto;
+  }
+
+  .nav-tabs button {
+    flex: 0 0 auto;
+    padding: 0 12px;
+    font-size: 0.85rem;
+  }
 }
 </style>

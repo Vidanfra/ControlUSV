@@ -75,7 +75,7 @@ flowchart TB
     end
 
     subgraph BACKEND["Backend Processes"]
-        NAV["NavigationProcess  ·  20 Hz\nSensor fusion\n(passthrough → future EKF/INS)"]
+        NAV["NavigationProcess  ·  20 Hz\n15-state INS MEKF\nGNSS quality-adaptive aiding"]
         GNC["GNCProcess  ·  20 Hz\nALOS guidance · PID heading\nStation keeping · RT sim\nFailsafe"]
         MGR["ManagerProcess  ·  10 Hz\nState machine · Settings\nMode & mission management"]
     end
@@ -107,7 +107,7 @@ flowchart TB
 
     %% Broker → Navigation
     BROKER -->|"sensor/gnss\nsensor/imu"| NAV
-    NAV    -->|"gnc/ekf_state"| BROKER
+    NAV    -->|"gnc/imu_state\ngnc/ekf_state"| BROKER
 
     %% Broker → GNC
     BROKER -->|"gnc/ekf_state\nsystem/status\ncommand/user"| GNC
@@ -144,6 +144,7 @@ flowchart TB
 | `sensor/imu` | ImuNode (HAL) | NavigationProcess, CommsProcess | ~20 Hz | `ImuMessage` |
 | `sensor/battery` | PowerNode (HAL) | CommsProcess | 1 Hz | `BatteryMessage` |
 | `sensor/status` | All HAL nodes | CommsProcess | 5 Hz (heartbeat) | `SensorStatusMessage` |
+| `gnc/imu_state` | NavigationProcess | CommsProcess | ~20 Hz | `ImuState` |
 | `gnc/ekf_state` | NavigationProcess | GNCProcess, CommsProcess, MAVLink bridge | 20 Hz | `USVState` |
 | `gnc/control_output` | GNCProcess, ManagerProcess | CommsProcess, ESP32 driver | 20 Hz | `ControlCmdMessage` |
 | `gnc/control_debug` | GNCProcess | CommsProcess | 20 Hz | `ControlDebugMessage` |
@@ -161,7 +162,7 @@ flowchart TB
 |---------|------|----|----------------|
 | **ManagerProcess** | `src/manager/process.py` | 10 | Central state machine: ARM/DISARM, mode switching, mission state, settings persistence |
 | **HALProcess** | `src/drivers/process.py` | 50 | Spawns and supervises GNSS, IMU, and power sensor threads; handles sensor mute/unmute for RT sim |
-| **NavigationProcess** | `src/gnc/navigation.py` | 20 | Sensor fusion: merges `sensor/gnss` + `sensor/imu` into unified `gnc/ekf_state`. Currently a passthrough (EKF not yet integrated) |
+| **NavigationProcess** | `src/gnc/navigation.py` | 20 | 15-state multiplicative error-state INS: propagates transformed IMU data and applies quality-adaptive GNSS position, velocity, and heading updates |
 | **GNCProcess** | `src/gnc/process.py` | 20 | Main GNC loop: ALOS path following, PID heading control, station keeping, failsafes, real-time 6-DOF simulation |
 | **CommsProcess** | `src/comms/manager.py` | — | FastAPI + WebSocket server (uvicorn). Bridges ZMQ ↔ frontend. Runs MAVLink bridge thread |
 
@@ -190,11 +191,10 @@ flowchart TB
 
 | View / Component | Description |
 |-----------------|-------------|
-| **MapView** | MapLibre GL map with satellite/nautical layers, real-time vessel marker, mission waypoints, station-keeping circles, survey pattern editor, simulation overlay |
+| **MapView** | MapLibre GL map with fused vessel marker/trail, last ten GNSS fixes translated to CRP, mission waypoints, station-keeping circles, survey pattern editor, simulation overlay |
 | **MissionPlannerPanel** | Waypoint list editor (drag-to-reorder), survey polygon drawing, CSV import/export |
 | **GncView** | Real-time heading (actual vs desired) and motor command charts |
-| **GnssView** | GNSS quality metrics: position, fix type, satellites, HDOP, dual-antenna heading |
-| **ImuView** | Orientation, acceleration, angular rate, and magnetic heading charts |
+| **InsView** | INS diagnostics workspace with GNSS and IMU subtabs; compares fused and raw position, altitude, heading, uncertainty, and IMU data |
 | **PowerView** | Voltage, current, power, energy consumed, battery level, alarms |
 | **SimView** | Offline batch simulation (multiple vehicle profiles) + real-time simulation overlay on map |
 | **SettingsView** | GNC tuning (wn, ζ, δ, γ), failsafe config, GNSS/NTRIP config, battery settings |
@@ -428,8 +428,9 @@ Apply a yaw step in MANUAL mode; measure the initial angular acceleration $\alph
 
 ### Navigation & Sensor Fusion
 
-- **Sensor passthrough** — GNSS heading (dual-antenna UM982, `heading_status='A'`) takes priority; falls back to IMU magnetic heading (`'M'`) if GNSS heading unavailable
-- **INS/MEKF implementation** — A complete 16-state multiplicative EKF (`_old/ins_mekf_psi.py`, Fossen) is available but not yet integrated into `NavigationProcess`
+- **15-state INS MEKF** — Local-NED position/velocity, multiplicative quaternion attitude error, accelerometer bias, and gyro bias. RTK is authoritative; degraded GNSS is noise-weighted; IMU propagates through complete outages
+- **Surface-vessel constraints** — Speed-gated gravity leveling and weak magnetic fallback when dual-antenna heading is unavailable
+- **Selectable source** — Settings → Sensors switches live between `GNSS + INS` and the lever-arm-corrected `GNSS Only` path. See [docs/INS_MEKF.md](docs/INS_MEKF.md)
 
 ### Real-Time 6-DOF Simulation
 
@@ -448,7 +449,7 @@ Apply a yaw step in MANUAL mode; measure the initial angular acceleration $\alph
 
 ### Sensors & Hardware Drivers
 
-- **UM982 GNSS** — Parses NMEA sentences (GGA, GSA, THS, VTG, ZDA). Dual-antenna heading via THS message. NTRIP client for RTK corrections. Hot-swap config via `SET_GNSS_CONFIG` command. Fix types: NoFix / GPS / DGNSS / RTK Float / RTK Fix
+- **UM982 GNSS** — Parses NMEA sentences (GGA, GSA, GST, THS, VTG, ZDA). GST supplies receiver-estimated position uncertainty; dual-antenna heading uses THS. NTRIP client for RTK corrections. Hot-swap config via `SET_GNSS_CONFIG`
 - **WT901 IMU** — Binary frame protocol (0x51–0x54: accel, gyro, angles, magnetometer). Magnetic heading with user-configurable declination offset. Temperature reading
 - **PZEM-017 Power** — Modbus RTU register polling: voltage, current, power, energy. Accumulated energy integration over time (`Wh`). Battery level estimation from capacity. `RESET_ENERGY` and `SET_BATTERY_CAPACITY` commands. High/low voltage alarms
 - **ESP32 / Arduino Nano** — JSON motor command protocol with checksum-based ACK. M1/M2 (motor %), R1/R2/R3 (relay states). 200 ms ACK timeout
@@ -458,7 +459,7 @@ Apply a yaw step in MANUAL mode; measure the initial angular acceleration $\alph
 - **Interactive map** (MapLibre GL) — Satellite, OSM, dark, and nautical tile layers. Windy weather overlay. Path history trail. Click-to-place modes for waypoints, survey polygon, station, and home
 - **Survey generator** — Boustrophedon lawnmower pattern inside a user-drawn polygon. Configurable track angle, line spacing, extension margin, and start corner. Accurate to ~1 m for areas < 10 km
 - **WebSocket** — Full-duplex channel between frontend and backend. All ZMQ telemetry forwarded in real time. Commands sent as JSON `CommandMessage` payloads
-- **Settings persistence** — `ManagerProcess` saves `gnc_config`, `failsafe_config`, and `home_wp` to `data/manager_settings.json` and reloads on startup
+- **Settings persistence** — `ManagerProcess` persists control, failsafe, sensor-offset, GNSS, INS, logging, relay, and mission settings in `data/manager_settings.json`
 - **USB device management** — `usb_identify.py` interactive udev rule generator: scans connected USB-serial devices and creates stable `/dev` symlinks
 
 ---
@@ -579,7 +580,7 @@ All processes write to `logs/usv_control.log` (rotated at 10 MB, retained for 1 
 
 | ID | Feature | Description | What's Missing | State | Priority | Notes |
 |----|---------|-------------|----------------|-------|----------|-------|
-| D-01 | **INS / MEKF Navigation** | 16-state multiplicative EKF for INS aided by GNSS and compass. Full implementation exists in `_old/ins_mekf_psi.py` (Fossen). `NavigationProcess` is currently a raw passthrough with no filtering | Integrate `ins_mekf_psi.py` into `NavigationProcess.loop()`; add EKF initialization, process noise tuning, and GNSS outage handling | 🟡 Blocked — needs hardware test harness | HIGH | The algorithm handles gyro/accel bias estimation, WGS-84 gravity, and optional velocity aiding |
+| D-01 | **INS / MEKF Navigation** | 15-state multiplicative error-state filter aided by GNSS position, velocity, dual-antenna heading, gravity, and compass | Harbor and sea-trial tuning of process noise and outage limits | 🟢 Implemented — hardware tuning pending | HIGH | Standalone deterministic harness: `simulator/validate_ins_mekf.py` |
 | D-02 | **RTL (Return to Launch)** | `CommandType.RTL` is defined in `models.py` but no handler exists in `ManagerProcess` or `GNCProcess` | Implement handler that sets mode to `WP_ROUTE` with single waypoint = `home_wp`, then disarms on arrival | 🔴 TODO (0%) | HIGH | `home_wp` is already persisted and configurable from the frontend |
 | D-03 | **Failsafe Enforcement in ManagerProcess** | `failsafe_config` is stored and sent to GNCProcess but the Manager itself never monitors battery level, GNSS fix quality, or comm timeouts | Add monitoring timers in `ManagerProcess.loop()` mirroring those already in `GNCProcess` | 🔴 TODO (0%) | HIGH | GNCProcess has partial failsafe (GNSS + comm); battery failsafe is not implemented anywhere |
 | D-04 | **Pre-arm Safety Checks** | `ARM` command is accepted unconditionally — no check that GNSS fix quality meets minimum threshold or that `home_wp` is set | Add validation gate before setting `is_armed = True`; publish rejection reason on `system/status` | 🔴 TODO (0%) | HIGH | — |
