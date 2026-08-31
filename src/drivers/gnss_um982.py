@@ -277,14 +277,14 @@ class UM982Driver:
 
     # ------------------------------------------------------------------ stream commands
     def _send_stream_commands(self):
-        """Request NMEA sentence streams from the UM982 at the specified frequency."""
-        freq = self.command_freq
+        """Request NMEA streams; UM982 commands take a period, not a rate."""
+        interval_s = 1.0 / self.command_freq
         commands = [
-            f"GPGGA {freq}",
-            f"GPGSA {freq}",
-            f"GPTHS {freq}",
-            f"GPVTG {freq}",
-            f"GPZDA {freq}",
+            f"GPGGA {interval_s:g}",
+            f"GPGSA {interval_s:g}",
+            f"GPTHS {interval_s:g}",
+            f"GPVTG {interval_s:g}",
+            f"GPZDA {interval_s:g}",
         ]
         for cmd in commands:
             try:

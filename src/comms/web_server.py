@@ -153,6 +153,7 @@ _ZMQ_TOPICS = [
     Topics.SENSOR_IMU,
     Topics.SENSOR_BATTERY,
     Topics.SENSOR_STATUS,
+    Topics.IMU_STATE,
     Topics.STATE_ESTIMATION,
     Topics.SYSTEM_STATUS,
     Topics.CONTROL_DEBUG,

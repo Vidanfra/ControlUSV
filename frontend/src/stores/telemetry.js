@@ -67,6 +67,7 @@ export const useTelemetryStore = defineStore('telemetry', {
     lat: 0.0,
     lon: 0.0,
     heading: 0.0,
+    headingStatus: '',
     battery: 0.0,
     speed: 0.0,
     isConnected: false,
@@ -421,18 +422,13 @@ export const useTelemetryStore = defineStore('telemetry', {
       return wps
     },
 
-    // Best heading: prefer GNSS dual-antenna heading if available, fallback to magnetic
+    // Navigation owns GNSS/magnetometer heading arbitration. State heading is radians.
     bestHeading(state) {
-      if (state.gnssHeadingStatus === 'A' && state.gnssHeading !== 0) {
-        return state.gnssHeading
-      }
-      return state.imuMagHeading
+      if (!Number.isFinite(state.heading)) return 0
+      return ((state.heading * 180 / Math.PI) + 360) % 360
     },
     headingSource(state) {
-      if (state.gnssHeadingStatus === 'A' && state.gnssHeading !== 0) {
-        return 'GNSS'
-      }
-      return 'MAG'
+      return { A: 'GNSS', M: 'MAG', S: 'SIM' }[state.headingStatus] || 'NONE'
     },
     // Fix quality color: green for RTK fixed (4), yellow-green for float (5), 
     // yellow for DGPS (2), orange for GPS only (1), red for no fix (0)
@@ -1172,10 +1168,41 @@ export const useTelemetryStore = defineStore('telemetry', {
             // Covers "acquiring fix" (fix_type=0/lat=lon=0), GPS-only, DGPS, and RTK Float.
             this.sensorZeroValues.gnss = (data.fix_type !== 4)
           } 
+          else if (topic === 'gnc/imu_state') {
+            this.imuRoll = data.roll_crp
+            this.imuPitch = data.pitch_crp
+            this.imuYaw = data.yaw_crp
+            this.imuAx = data.accx_crp
+            this.imuAy = data.accy_crp
+            this.imuAz = data.accz_crp
+            this.imuP = data.wx_crp
+            this.imuQ = data.wy_crp
+            this.imuR = data.wz_crp
+            this.imuMagHeading = data.mag_heading_crp
+
+            const nowMs = Number.isFinite(data.timestamp) ? data.timestamp * 1000 : Date.now()
+            this.imuHistory.push({
+              timeMs: nowMs,
+              label: new Date(nowMs).toISOString().substr(11, 8),
+              roll: data.roll_crp ?? 0,
+              pitch: data.pitch_crp ?? 0,
+              yaw: data.yaw_crp ?? 0,
+              ax: data.accx_crp ?? 0,
+              ay: data.accy_crp ?? 0,
+              az: data.accz_crp ?? 0,
+              p: data.wx_crp ?? 0,
+              q: data.wy_crp ?? 0,
+              r: data.wz_crp ?? 0
+            })
+            const cutoffImu = nowMs - 120000
+            if (this.imuHistory.length > 0 && this.imuHistory[0].timeMs < cutoffImu)
+              this.imuHistory = this.imuHistory.filter(point => point.timeMs > cutoffImu)
+          }
           else if (topic === 'gnc/ekf_state') {
             this.lat = data.lat
             this.lon = data.lon
             this.heading = data.heading
+            this.headingStatus = data.heading_status || ''
             this.speed = data.speed
             if (data.source) this.dataSource = data.source
             newLat = data.lat
@@ -1391,28 +1418,6 @@ export const useTelemetryStore = defineStore('telemetry', {
              this.sensorZeroValues.power = (data.voltage === 0)
           }
           else if (topic === 'sensor/imu') {
-             this.imuRoll = data.roll_raw
-             this.imuPitch = data.pitch_raw
-             this.imuYaw = data.yaw_raw
-             this.imuAx = data.ax_raw
-             this.imuAy = data.ay_raw
-             this.imuAz = data.az_raw
-             this.imuP = data.wx_raw
-             this.imuQ = data.wy_raw
-             this.imuR = data.wz_raw
-             this.imuMagHeading = data.mag_heading_raw ?? 0.0
-             // Append to chart history
-             const nowMs = Date.now()
-             this.imuHistory.push({
-               timeMs: nowMs,
-               label: new Date(nowMs).toISOString().substr(11, 8),
-               roll: data.roll_raw || 0, pitch: data.pitch_raw || 0, yaw: data.yaw_raw || 0,
-               ax: data.ax_raw || 0, ay: data.ay_raw || 0, az: data.az_raw || 0,
-               p: data.wx_raw || 0, q: data.wy_raw || 0, r: data.wz_raw || 0
-             })
-             const cutoffImu = nowMs - 120000
-             if (this.imuHistory.length > 0 && this.imuHistory[0].timeMs < cutoffImu)
-               this.imuHistory = this.imuHistory.filter(p => p.timeMs > cutoffImu)
              // Zero-value detection: warn if all motion values are zero while connected
              this.sensorZeroValues.imu = (
                data.roll_raw === 0 && data.pitch_raw === 0 && data.yaw_raw === 0 &&

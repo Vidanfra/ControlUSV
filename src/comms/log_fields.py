@@ -22,6 +22,7 @@ T_GNSS = Topics.SENSOR_GNSS.value
 T_IMU = Topics.SENSOR_IMU.value
 T_BAT = Topics.SENSOR_BATTERY.value
 T_STAT = Topics.SENSOR_STATUS.value
+T_IMU_STATE = Topics.IMU_STATE.value
 T_STATE = Topics.STATE_ESTIMATION.value
 T_CTRL = Topics.CONTROL_CMD.value
 T_DBG = Topics.CONTROL_DEBUG.value
@@ -100,7 +101,7 @@ LOG_FIELD_GROUPS = [
     },
     {
         "id": "imu",
-        "label": "IMU",
+        "label": "IMU (raw sensor)",
         "fields": [
             _f("imu_roll_raw",      "Roll (raw)",         T_IMU, "roll_raw",    "deg",   "float"),
             _f("imu_pitch_raw",     "Pitch (raw)",        T_IMU, "pitch_raw",   "deg",   "float"),
@@ -115,8 +116,24 @@ LOG_FIELD_GROUPS = [
             _f("imu_my_raw",        "Mag Y (raw)",        T_IMU, "my_raw",      "",      "float"),
             _f("imu_mz_raw",        "Mag Z (raw)",        T_IMU, "mz_raw",      "",      "float"),
             _f("imu_temp",          "Temperature",        T_IMU, "temp",        "°C",    "float"),
-            _f("imu_mag_heading_raw","Mag Heading (raw)", T_IMU, "mag_heading_raw","deg","float"),
             _f("imu_source",        "Source",             T_IMU, "source",      "",      "str"),
+        ],
+    },
+    {
+        "id": "imu_state",
+        "label": "IMU (body frame / CRP)",
+        "fields": [
+            _f("imu_state_roll",    "Roll (CRP)",         T_IMU_STATE, "roll_crp",        "deg",   "float"),
+            _f("imu_state_pitch",   "Pitch (CRP)",        T_IMU_STATE, "pitch_crp",       "deg",   "float"),
+            _f("imu_state_yaw",     "Yaw (CRP)",          T_IMU_STATE, "yaw_crp",         "deg",   "float"),
+            _f("imu_state_wx",      "Roll Rate (body)",   T_IMU_STATE, "wx_crp",          "deg/s", "float"),
+            _f("imu_state_wy",      "Pitch Rate (body)",  T_IMU_STATE, "wy_crp",          "deg/s", "float"),
+            _f("imu_state_wz",      "Yaw Rate (body)",    T_IMU_STATE, "wz_crp",          "deg/s", "float"),
+            _f("imu_state_accx",    "Accel X (CRP)",      T_IMU_STATE, "accx_crp",        "m/s²",  "float"),
+            _f("imu_state_accy",    "Accel Y (CRP)",      T_IMU_STATE, "accy_crp",        "m/s²",  "float"),
+            _f("imu_state_accz",    "Accel Z (CRP)",      T_IMU_STATE, "accz_crp",        "m/s²",  "float"),
+            _f("imu_state_mag_hdg", "Mag Heading (body)", T_IMU_STATE, "mag_heading_crp", "deg",   "float"),
+            _f("imu_state_source",  "Source",             T_IMU_STATE, "source",          "",      "str"),
         ],
     },
     {

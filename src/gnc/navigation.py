@@ -15,7 +15,7 @@ from loguru import logger
 
 from src.core.process import ServiceProcess
 from src.core.messaging import Publisher, Subscriber, Topics
-from src.core.models import USVState, OffsetsConfig
+from src.core.models import ImuState, USVState, OffsetsConfig
 
 # Mean Earth radius [m] (WGS-84 mean) used for the local flat-earth
 # metre <-> degree conversion of the lever-arm correction.
@@ -66,6 +66,7 @@ class NavigationProcess(ServiceProcess):
         - system/status : sensor lever-arm offsets (OffsetsConfig)
 
     Publishes to:
+        - gnc/imu_state : transformed IMU sample in the body frame / at CRP
         - gnc/ekf_state : USVState (combined navigation solution, referenced
                           to the vessel CRP after lever-arm compensation)
     """
@@ -77,6 +78,7 @@ class NavigationProcess(ServiceProcess):
         self.status_sub = Subscriber([Topics.SYSTEM_STATUS])
 
         # Publisher
+        self.imu_pub = Publisher(Topics.IMU_STATE)
         self.nav_pub = Publisher(Topics.STATE_ESTIMATION)
 
         # Latest sensor data
@@ -103,6 +105,8 @@ class NavigationProcess(ServiceProcess):
         self.acc_crp = np.zeros(3)   # [m/s^2]
         self.mag_heading_crp = 0.0
         self.last_imu_time = 0.0
+        self.imu_timestamp = 0.0
+        self.imu_source = "sensor"
 
         # Previous body angular rate [rad/s] for the lever-arm angular
         # acceleration term
@@ -166,6 +170,7 @@ class NavigationProcess(ServiceProcess):
             self.has_gnss = True
 
         # --- Consume IMU ---
+        imu_updated = False
         while True:
             msg = self.imu_sub.receive(timeout_ms=0)
             if msg is None:
@@ -184,12 +189,18 @@ class NavigationProcess(ServiceProcess):
                 self.acc_crp = np.array([float(data.get('ax_raw', 0.0)),
                                          float(data.get('ay_raw', 0.0)),
                                          float(data.get('az_raw', 0.0))])
-                self.mag_heading_crp = float(data.get('mag_heading_raw', 0.0))
+                self.mag_heading_crp = self.yaw_crp % 360.0
             else:
                 self._imu_to_crp(data)
 
+            self.imu_timestamp = float(data.get('timestamp') or time.time())
+            self.imu_source = imu_source
             self.last_imu_time = time.time()
             self.has_imu = True
+            imu_updated = True
+
+        if imu_updated:
+            self._publish_imu_state()
 
         # --- Publish unified state ---
         if not self.has_gnss:
@@ -252,6 +263,26 @@ class NavigationProcess(ServiceProcess):
             self.nav_pub.publish(state.model_dump())
         except Exception as e:
             logger.error(f"Navigation: failed to publish state: {e}")
+
+    def _publish_imu_state(self):
+        try:
+            state = ImuState(
+                timestamp=self.imu_timestamp,
+                roll_crp=self.roll_crp,
+                pitch_crp=self.pitch_crp,
+                yaw_crp=self.yaw_crp,
+                wx_crp=float(self.w_crp[0]),
+                wy_crp=float(self.w_crp[1]),
+                wz_crp=float(self.w_crp[2]),
+                accx_crp=float(self.acc_crp[0]),
+                accy_crp=float(self.acc_crp[1]),
+                accz_crp=float(self.acc_crp[2]),
+                mag_heading_crp=self.mag_heading_crp,
+                source=self.imu_source,
+            )
+            self.imu_pub.publish(state.model_dump())
+        except Exception as e:
+            logger.error(f"Navigation: failed to publish transformed IMU: {e}")
 
     def _imu_to_crp(self, data):
         """Convert a raw IMU sample to the body frame at the CRP and store it.

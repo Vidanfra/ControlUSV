@@ -1,5 +1,4 @@
 import time
-import math
 import serial
 import threading
 import zmq
@@ -16,6 +15,9 @@ from src.core.messaging import Topics, get_zmq_url
 from loguru import logger
 
 
+_STANDARD_GRAVITY_MPS2 = 9.80665
+
+
 class WT901Driver:
     def __init__(self, serial_port="/dev/serial0", baud_rate=9600, on_data_callback=None):
         self.serial_port = serial_port
@@ -24,9 +26,10 @@ class WT901Driver:
         self.running = False
         self.thread = None
         
-        # This callback is executed when a 0x53 (Angles) frame arrives
+        # Called once all measurement frames in a 0x51-0x54 burst arrive.
         self.on_data_callback = on_data_callback
         self._error_logged = False  # Suppress repeated read-error log spam
+        self._burst_frames = set()
 
         # Shared sensor data accumulator
         self.data = {
@@ -34,7 +37,8 @@ class WT901Driver:
             "wx": 0.0, "wy": 0.0, "wz": 0.0,      
             "roll": 0.0, "pitch": 0.0, "yaw": 0.0,
             "mx": 0.0, "my": 0.0, "mz": 0.0,      
-            "temp": 0.0                             
+            "temp": 0.0,
+            "timestamp": 0.0,
         }
 
     def start(self):
@@ -101,9 +105,10 @@ class WT901Driver:
             return raw / 100.0, raw
 
         if pid == 0x51:  # Acceleration
-            ax = self._to_int16(payload[0], payload[1]) / 32768.0 * 16 * 9.8
-            ay = self._to_int16(payload[2], payload[3]) / 32768.0 * 16 * 9.8
-            az = self._to_int16(payload[4], payload[5]) / 32768.0 * 16 * 9.8
+            self._burst_frames = {pid}
+            ax = self._to_int16(payload[0], payload[1]) / 32768.0 * 16 * _STANDARD_GRAVITY_MPS2
+            ay = self._to_int16(payload[2], payload[3]) / 32768.0 * 16 * _STANDARD_GRAVITY_MPS2
+            az = self._to_int16(payload[4], payload[5]) / 32768.0 * 16 * _STANDARD_GRAVITY_MPS2
 
             temp_c, temp_raw = parse_temp_from_bytes(payload[6], payload[7])
 
@@ -113,6 +118,7 @@ class WT901Driver:
                 self.data.update({"ax": ax, "ay": ay, "az": az})
 
         elif pid == 0x52:  # Angular velocity
+            self._burst_frames.add(pid)
             wx = self._to_int16(payload[0], payload[1]) / 32768.0 * 2000
             wy = self._to_int16(payload[2], payload[3]) / 32768.0 * 2000
             wz = self._to_int16(payload[4], payload[5]) / 32768.0 * 2000
@@ -125,21 +131,22 @@ class WT901Driver:
                 self.data.update({"wx": wx, "wy": wy, "wz": wz})
 
         elif pid == 0x53:  # Angles
+            self._burst_frames.add(pid)
             roll = self._to_int16(payload[0], payload[1]) / 32768.0 * 180
             pitch = self._to_int16(payload[2], payload[3]) / 32768.0 * 180
             yaw = self._to_int16(payload[4], payload[5]) / 32768.0 * 180
             self.data.update({"roll": roll, "pitch": pitch, "yaw": yaw})
-            
-            # Since 0x53 is usually the last packet in the 51-52-53-54 burst
-            # we trigger the callback to push the full dictionary upwards.
-            if self.on_data_callback:
-                self.on_data_callback(self.data)
 
         elif pid == 0x54:  # Magnetometer
+            self._burst_frames.add(pid)
             mx = self._to_int16(payload[0], payload[1])
             my = self._to_int16(payload[2], payload[3])
             mz = self._to_int16(payload[4], payload[5])
-            self.data.update({"mx": mx, "my": my, "mz": mz})
+            self.data.update({"mx": mx, "my": my, "mz": mz, "timestamp": time.time()})
+
+            if self._burst_frames == {0x51, 0x52, 0x53, 0x54} and self.on_data_callback:
+                self.on_data_callback(self.data.copy())
+            self._burst_frames.clear()
 
 
 class ImuNode:
@@ -147,15 +154,8 @@ class ImuNode:
     _STATUS_TIMEOUT = 5.0
     _STATUS_PUBLISH_INTERVAL = 5.0  # Publish status every 5 seconds for health heartbeat
 
-    def __init__(self, serial_port="/dev/serial0", baud_rate=9600, mag_declination=0.0, user_offset=0.0):
-        """
-        Connects the WT901 IMU to the internal ZMQ data bus.
-
-        Declination and user offset default to zero because Navigation applies
-        them from OffsetsConfig; they only exist for standalone CLI use.
-        """
-        self.mag_declination = mag_declination
-        self.user_offset = user_offset
+    def __init__(self, serial_port="/dev/serial0", baud_rate=9600):
+        """Connect the WT901 IMU to the internal raw-sensor data bus."""
         self._serial_port = serial_port
         self._baud_rate = baud_rate
 
@@ -164,13 +164,6 @@ class ImuNode:
         self._last_data_time = 0.0
         self._last_status_publish_time = 0.0
         
-        # QGC / MAVLink NED body frame mapping (copied from old parser)
-        self.QGC_AXIS_MAP = {
-            "mx_sign": 1,      # magnetometer X
-            "my_sign": 1,      # magnetometer Y
-            "mz_sign": 1       # magnetometer Z
-        }
-
         # ZMQ Context & Socket Setup
         self.context = zmq.Context()
         self.pub_socket = self.context.socket(zmq.PUB)
@@ -212,41 +205,17 @@ class ImuNode:
         except Exception as e:
             logger.error(f"[IMU Node] Failed to publish status: {e}", exc_info=True)
 
-    def calculate_mag_heading(self, mx, my):
-        """
-        Returns magnetic compass heading [0,360) degrees from raw mag values, 
-        applying declination and user offset.
-        """
-        mx_mapped = mx * self.QGC_AXIS_MAP.get("mx_sign", 1)
-        my_mapped = my * self.QGC_AXIS_MAP.get("my_sign", 1)
-        
-        # WT901C-TTL: heading = atan2(my, mx) (sensor X forward, Y right)
-        heading_rad = math.atan2(my_mapped, mx_mapped)
-        heading_deg = math.degrees(heading_rad)
-        
-        # Normalize to [0,360)
-        heading_deg = (heading_deg + 360.0) % 360.0
-        
-        # Apply declination and user offset
-        heading_deg = (heading_deg + self.mag_declination + self.user_offset) % 360.0
-        return heading_deg
-
     def publish_imu_data(self, raw_data_dict):
-        """
-        Driver invokes this every time an 'Angles (0x53)' frame is fully parsed.
-        """
+        """Publish one coherent raw measurement burst from the driver."""
         if self.muted:
             return  # RT simulation active, skip real sensor publishing
-        ts = time.time()
+        ts = float(raw_data_dict["timestamp"])
         self._last_data_time = ts
         if not self._connected:
             self._connected = True
             logger.info("[IMU Node] First data received - publishing OK status")
             self._publish_status(SensorStatus.OK, "Receiving data")
         
-        # Calculate heading
-        m_heading = self.calculate_mag_heading(raw_data_dict["mx"], raw_data_dict["my"])
-
         try:
             # Map into Pydantic Model
             msg = ImuMessage(
@@ -264,7 +233,6 @@ class ImuNode:
                 my_raw=raw_data_dict["my"],
                 mz_raw=raw_data_dict["mz"],
                 temp=raw_data_dict["temp"],
-                mag_heading_raw=m_heading
             )
             
             # Serialize
@@ -360,12 +328,11 @@ if __name__ == '__main__':
                         help="'test' = standalone serial read (no ZMQ), 'node' = full ZMQ publisher")
     parser.add_argument("--port", default="/dev/serial0", help="Serial port (default: /dev/serial0)")
     parser.add_argument("--baud", type=int, default=9600, help="Baud rate (default: 9600)")
-    parser.add_argument("--declination", type=float, default=2.5, help="Magnetic declination in degrees")
     args = parser.parse_args()
 
     if args.mode == "node":
         # Full ZMQ publisher mode
-        node = ImuNode(serial_port=args.port, baud_rate=args.baud, mag_declination=args.declination)
+        node = ImuNode(serial_port=args.port, baud_rate=args.baud)
         node.run()
     else:
         # Standalone test - read and print sensor data (no ZMQ needed)

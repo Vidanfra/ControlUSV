@@ -149,11 +149,11 @@
   "wp_route_direction": "forward",
   "wp_route_completion": "stop",
   "station_wp": {
-    "lat": 39.3239667813352,
-    "lon": -0.5825883937068852
+    "lat": 39.32524721828786,
+    "lon": -0.6000130530418074
   },
-  "station_reaching_radius": 3,
-  "station_radius": 10,
+  "station_reaching_radius": 0.5,
+  "station_radius": 1,
   "logging_config": {
     "csv_loggers": [
       {

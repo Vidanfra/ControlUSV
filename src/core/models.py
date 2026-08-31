@@ -85,7 +85,7 @@ class GnssConfig(BaseModel):
     mountpoint: str = ""
     username: str = ""
     password: str = ""
-    command_freq: float = 1.0
+    command_freq: float = Field(1.0, gt=0.0, le=20.0, description="NMEA output frequency [Hz]")
 
 class GncConfig(BaseModel):
     """GNC Controller configuration parameters."""
@@ -172,11 +172,33 @@ class ImuMessage(BaseModel):
     # Internal Temp
     temp: float = 0.0
 
-    # Compass heading computed by the driver in the sensor frame
-    mag_heading_raw: float = 0.0
-
     # Data source tag
     source: str = "sensor"
+
+
+class ImuState(BaseModel):
+    """IMU sample transformed to the vessel body frame and CRP.
+
+    Published on gnc/imu_state independently of GNSS so diagnostics and future
+    estimators can consume a single, explicit post-mounting transform stream.
+    """
+    timestamp: float
+
+    roll_crp: float = 0.0
+    pitch_crp: float = 0.0
+    yaw_crp: float = 0.0
+
+    wx_crp: float = 0.0
+    wy_crp: float = 0.0
+    wz_crp: float = 0.0
+
+    accx_crp: float = 0.0
+    accy_crp: float = 0.0
+    accz_crp: float = 0.0
+
+    mag_heading_crp: float = 0.0
+    source: str = "sensor"
+
 
 class USVState(BaseModel):
     """

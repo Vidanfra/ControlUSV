@@ -161,12 +161,7 @@ def simulate_imu(eta, nu):
     # In a real scenario we'd need the force equation; approximate here
     ax = 0.0  # Simplified: no accelerometer simulation needed for nav
     ay = 0.0
-    az = 9.81  # Approximate gravity along z
-
-    # Simulated magnetometer heading
-    mag_heading = yaw_deg % 360
-    if mag_heading < 0:
-        mag_heading += 360
+    az = -9.80665  # Stationary specific force in the body z-down frame
 
     return ImuMessage(
         timestamp=time.time(),
@@ -183,6 +178,5 @@ def simulate_imu(eta, nu):
         my_raw=0.0,
         mz_raw=0.0,
         temp=25.0,
-        mag_heading_raw=mag_heading,
         source='sim',
     )

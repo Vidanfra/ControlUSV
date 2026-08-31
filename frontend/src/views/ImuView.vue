@@ -29,12 +29,12 @@
 
       <div class="stat-group">
         <div class="stat-box highlight">
-          <h4>Mag Heading</h4>
+          <h4>Mag Heading (Body)</h4>
           <div class="value">{{ telemetry.imuMagHeading?.toFixed(1) ?? '0.0' }}°</div>
         </div>
       </div>
 
-      <h3 class="mt-3">Orientation</h3>
+      <h3 class="mt-3">Orientation (Body)</h3>
       <div class="stat-group">
         <div class="stat-box" :class="{ 'var-hidden': !showRoll }">
           <input type="checkbox" v-model="showRoll" class="var-check" title="Show in chart" />
@@ -53,26 +53,26 @@
         </div>
       </div>
 
-      <h3 class="mt-3">Accelerations</h3>
+      <h3 class="mt-3">Accelerations (CRP)</h3>
       <div class="stat-group">
         <div class="stat-box" :class="{ 'var-hidden': !showAx }">
           <input type="checkbox" v-model="showAx" class="var-check" title="Show in chart" />
-          <h4>Ax</h4>
+          <h4>Ax (Forward)</h4>
           <div class="value">{{ telemetry.imuAx?.toFixed(2) ?? '0.00' }}</div>
         </div>
         <div class="stat-box" :class="{ 'var-hidden': !showAy }">
           <input type="checkbox" v-model="showAy" class="var-check" title="Show in chart" />
-          <h4>Ay</h4>
+          <h4>Ay (Starboard)</h4>
           <div class="value">{{ telemetry.imuAy?.toFixed(2) ?? '0.00' }}</div>
         </div>
         <div class="stat-box" :class="{ 'var-hidden': !showAz }">
           <input type="checkbox" v-model="showAz" class="var-check" title="Show in chart" />
-          <h4>Az</h4>
+          <h4>Az (Down)</h4>
           <div class="value">{{ telemetry.imuAz?.toFixed(2) ?? '0.00' }}</div>
         </div>
       </div>
 
-      <h3 class="mt-3">Angular Rates</h3>
+      <h3 class="mt-3">Angular Rates (Body)</h3>
       <div class="stat-group">
         <div class="stat-box" :class="{ 'var-hidden': !showP }">
           <input type="checkbox" v-model="showP" class="var-check" title="Show in chart" />
@@ -168,7 +168,7 @@ const orientationChartOptions = {
   ...chartBaseOptions,
   plugins: {
     ...chartBaseOptions.plugins,
-    title: { display: true, text: 'Orientation (degrees)', color: '#aaa' }
+    title: { display: true, text: 'Body Orientation (degrees)', color: '#aaa' }
   }
 }
 
@@ -176,7 +176,7 @@ const accelChartOptions = {
   ...chartBaseOptions,
   plugins: {
     ...chartBaseOptions.plugins,
-    title: { display: true, text: 'Acceleration (m/s²)', color: '#aaa' }
+    title: { display: true, text: 'CRP Acceleration (m/s²)', color: '#aaa' }
   }
 }
 
@@ -184,7 +184,7 @@ const gyroChartOptions = {
   ...chartBaseOptions,
   plugins: {
     ...chartBaseOptions.plugins,
-    title: { display: true, text: 'Angular Rates (rad/s)', color: '#aaa' }
+    title: { display: true, text: 'Body Angular Rates (deg/s)', color: '#aaa' }
   }
 }
 
