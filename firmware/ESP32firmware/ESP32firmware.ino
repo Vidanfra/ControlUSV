@@ -23,7 +23,7 @@ const int PIN_LED = 2;
 // eléctrico de giro del ESC/motor (orden de fases), no un bug de mezcla.
 // En vez de re-soldear las fases del ESC, invierte aquí el canal afectado
 // (true) y vuelve a flashear. Deja el otro en false.
-const bool INVERT_M1 = true;  // Babor (Port)
+const bool INVERT_M1 = false;  // Babor (Port)
 const bool INVERT_M2 = false;  // Estribor (Starboard)
 
 const unsigned long TIMEOUT_MS = 250; // 0.25 segundos failsafe

@@ -159,7 +159,7 @@
       {
         "id": "csv-1780249503893-304",
         "name": "NAV",
-        "enabled": false,
+        "enabled": true,
         "frequency_value": 20.0,
         "frequency_unit": "hz",
         "rotation_hours": 1.0,
@@ -239,10 +239,10 @@
     ]
   },
   "motor_config": {
-    "fwd_deadzone": 0.0,
-    "fwd_saturation": 100.0,
-    "bwd_deadzone": 0.0,
-    "bwd_saturation": 100.0
+    "fwd_deadzone": 14.0,
+    "fwd_saturation": 98.0,
+    "bwd_deadzone": 14.0,
+    "bwd_saturation": 98.0
   },
   "offsets_config": {
     "imu": {
