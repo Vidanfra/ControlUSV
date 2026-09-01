@@ -166,6 +166,7 @@ const insSamples = ref([])
 const qualityMaintained = ref(true)
 const results = ref({ gnss: null, ins: null })
 const referencePosition = ref(null)
+const offsetsUsed = ref(null)
 let lastGnssEpochMs = null
 let completionTimer
 let progressTimer
@@ -285,6 +286,7 @@ function finishTest() {
     ins: calculateResult(insSamples.value, referencePosition.value)
   }
   phase.value = 'complete'
+  downloadReport()
 }
 
 function evaluateMetric(value, limit) {
@@ -293,6 +295,92 @@ function evaluateMetric(value, limit) {
   if (value <= limit) return { status: 'pass', label: `Pass (${value.toFixed(3)} m)` }
   if (value <= limit * 1.2) return { status: 'near', label: `Fail (${value.toFixed(3)} m)` }
   return { status: 'fail', label: `Fail (${value.toFixed(3)} m)` }
+}
+
+function reportSection(label, result) {
+  const lines = ['', `=== ${label} ===`]
+  if (!result) {
+    lines.push('Valid epochs: 0', 'Result: FAIL (no valid CRP positions)')
+  } else {
+    lines.push(
+      `Valid epochs: ${result.sampleCount}`,
+      `Centroid East: ${result.centroid.east.toFixed(4)} m`,
+      `Centroid North: ${result.centroid.north.toFixed(4)} m`,
+      `Centroid Up: ${result.centroid.up.toFixed(4)} m`,
+      `Horizontal empirical P95: ${result.horizontalP95.toFixed(4)} m`,
+      `Vertical empirical P95: ${result.verticalP95.toFixed(4)} m`
+    )
+  }
+
+  lines.push('', 'S-44 evaluation (TVU at depth d = 0 m):')
+  for (const row of S44_ORDERS) {
+    const horizontal = evaluateMetric(result?.horizontalP95, row.horizontalLimit)
+    const vertical = evaluateMetric(result?.verticalP95, row.verticalLimit)
+    lines.push(
+      `${row.order} | H limit ${row.horizontalLimit.toFixed(2)} m: ${horizontal.label}` +
+      ` | V limit ${row.verticalLimit.toFixed(2)} m: ${vertical.label}`
+    )
+  }
+  return lines
+}
+
+function reportOffsetsSection() {
+  const offsets = offsetsUsed.value
+  const position = (label, value) => value
+    ? `${label}: x=${value.x.toFixed(3)} m, y=${value.y.toFixed(3)} m, z=${value.z.toFixed(3)} m`
+    : `${label}: unavailable`
+
+  return [
+    '',
+    '=== SYSTEM OFFSETS USED ===',
+    'Body frame: x forward (+bow), y right (+starboard), z down (+below CRP).',
+    'CRP (CG): x=0.000 m, y=0.000 m, z=0.000 m',
+    position('IMU WT901C', offsets?.imu),
+    position('GNSS antenna bow', offsets?.gnss_bow),
+    position('GNSS antenna stern (position fix)', offsets?.gnss_stern),
+    `IMU mounting rotation: roll=${offsets?.imu?.roll_deg?.toFixed(3) ?? 'unavailable'} deg, ` +
+      `pitch=${offsets?.imu?.pitch_deg?.toFixed(3) ?? 'unavailable'} deg, ` +
+      `yaw=${offsets?.imu?.yaw_deg?.toFixed(3) ?? 'unavailable'} deg`,
+    `Magnetic declination: ${offsets?.imu?.mag_declination_deg?.toFixed(3) ?? 'unavailable'} deg`,
+    `Magnetic user heading offset: ${offsets?.imu?.mag_user_offset_deg?.toFixed(3) ?? 'unavailable'} deg`
+  ]
+}
+
+function downloadReport() {
+  const completedAt = new Date()
+  const reference = referencePosition.value
+  const lines = [
+    'GNSS STATIC VERIFICATION REPORT',
+    `Started UTC: ${new Date(startedAtMs.value).toISOString()}`,
+    `Completed UTC: ${completedAt.toISOString()}`,
+    `Duration: ${TEST_DURATION_MS / 1000} seconds`,
+    'Position reference: Common Reference Point (CRP)',
+    `Quality gate: ${qualityMaintained.value ? 'PASS - RTK Fix maintained' : 'FAIL - GNSS quality or connection dropped'}`,
+    `Shared ENU origin: ${reference
+      ? `${reference.lat.toFixed(8)} deg, ${reference.lon.toFixed(8)} deg, ${reference.alt.toFixed(3)} m`
+      : 'Unavailable'}`,
+    ...reportOffsetsSection(),
+    ...reportSection('GNSS ONLY', results.value.gnss),
+    ...reportSection('INS MODE', results.value.ins),
+    '',
+    'Method: centroid is the arithmetic mean of valid ENU positions. Horizontal P95 is the',
+    'empirical 95th percentile of radial distance from the centroid. Vertical P95 is the',
+    'empirical 95th percentile of absolute Up deviation from the centroid.',
+    '',
+    'HYDROGRAPHIC RIGOR WARNING',
+    'IHO S-44 THU and TVU apply to the sounding on the seafloor. This report evaluates the',
+    'static GNSS against the maximum allowed error for the entire system. Passing this test',
+    'does not guarantee full S-44 compliance for the USV survey.',
+    ''
+  ]
+  const timestamp = completedAt.toISOString().slice(0, 19).replace(/[:T]/g, '-')
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `GNSS_verification_${timestamp}.txt`
+  link.click()
+  URL.revokeObjectURL(url)
 }
 
 const evaluationRows = computed(() => S44_ORDERS.map(row => ({
@@ -499,6 +587,7 @@ watch(
 
 onMounted(() => {
   startedAtMs.value = Date.now()
+  offsetsUsed.value = JSON.parse(JSON.stringify(telemetry.offsetsConfig))
   markQualityFailure()
   progressTimer = setInterval(() => {
     elapsedMs.value = Date.now() - startedAtMs.value
