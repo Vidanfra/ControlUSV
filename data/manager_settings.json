@@ -159,7 +159,7 @@
       {
         "id": "csv-1780249503893-304",
         "name": "NAV",
-        "enabled": true,
+        "enabled": false,
         "frequency_value": 20.0,
         "frequency_unit": "hz",
         "rotation_hours": 1.0,

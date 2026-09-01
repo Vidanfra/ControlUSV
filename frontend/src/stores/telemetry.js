@@ -1318,6 +1318,8 @@ export const useTelemetryStore = defineStore('telemetry', {
               this._lastInsPushMs = Date.now()
               this.insComparisonHistory.push({
                 timeMs: nowMs,
+                gnssTimeMs: Number.isFinite(data.gnss_timestamp) ? data.gnss_timestamp * 1000 : null,
+                gnssFixType: this.gnssFixType,
                 label: new Date(nowMs).toISOString().substr(11, 8),
                 insLat: data.lat,
                 insLon: data.lon,

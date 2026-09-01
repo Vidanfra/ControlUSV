@@ -9,6 +9,9 @@
           <option :value="120">2 min</option>
           <option :value="300">5 min</option>
         </select>
+        <button class="verification-button" type="button" @click="showStaticVerification = true">
+          Run Static Verification
+        </button>
       </div>
 
       <div class="chart-wrapper">
@@ -166,11 +169,17 @@
       </div>
     </div>
   </div>
+
+  <GnssStaticVerification
+    v-if="showStaticVerification"
+    @close="showStaticVerification = false"
+  />
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useTelemetryStore } from '../stores/telemetry'
+import GnssStaticVerification from '../components/GnssStaticVerification.vue'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -194,6 +203,7 @@ ChartJS.register(
 )
 
 const telemetry = useTelemetryStore()
+const showStaticVerification = ref(false)
 
 const simSuffix = () => telemetry.dataSource === 'sim' ? ' (SIM)' : ''
 const formatMeters = value => value == null ? '--' : `${value.toFixed(3)} m`
@@ -455,6 +465,21 @@ const altChartData = computed(() => ({
   border: 1px solid #555;
   padding: 5px;
   border-radius: 4px;
+}
+
+.verification-button {
+  margin-left: auto;
+  padding: 7px 12px;
+  color: #17191a;
+  background: #FFA500;
+  border: 1px solid #ffb733;
+  border-radius: 5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.verification-button:hover {
+  background: #ffb733;
 }
 
 .chart-wrapper {
