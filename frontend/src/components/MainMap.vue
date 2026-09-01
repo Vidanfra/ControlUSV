@@ -333,6 +333,13 @@ const measurementDistance = computed(() => {
 let map = null
 let boatMarker = null
 let trailInterval = null
+let hasStartupPosition = false
+
+function isValidNavigationPosition(latitude, longitude, fixType) {
+  return fixType > 0 &&
+    Number.isFinite(latitude) && latitude >= -90 && latitude <= 90 &&
+    Number.isFinite(longitude) && longitude >= -180 && longitude <= 180
+}
 
 function formatDistance(meters) {
   if (meters < 0.01) return `${(meters * 1000).toFixed(2)} mm`
@@ -413,6 +420,12 @@ function geoCircle(lng, lat, radiusMeters, steps = 48) {
 }
 
 onMounted(() => {
+  const fallbackCenter = simStartWaypoint.value
+    ? [simStartWaypoint.value.lon, simStartWaypoint.value.lat]
+    : [telemetry.simDefaultLon, telemetry.simDefaultLat]
+  hasStartupPosition = isValidNavigationPosition(lat.value, lon.value, telemetry.navFixType)
+  const initialCenter = hasStartupPosition ? [lon.value, lat.value] : fallbackCenter
+
   // Initialize Map with a basic background style first
   map = new maplibregl.Map({
     container: 'map',
@@ -429,9 +442,7 @@ onMounted(() => {
         }
       ]
     },
-    center: simStartWaypoint.value
-      ? [simStartWaypoint.value.lon, simStartWaypoint.value.lat]
-      : [telemetry.simDefaultLon, telemetry.simDefaultLat], // Default center
+    center: initialCenter,
     zoom: 15,
     maxZoom: 29
   })
@@ -869,7 +880,7 @@ onMounted(() => {
     element: el,
     rotationAlignment: 'map'
   })
-  .setLngLat([-0.3763, 39.4699])
+  .setLngLat(initialCenter)
   .addTo(map)
   
   // Click Handler for Planning / Sim Pick / Station Pick / Home Pick / Survey Draw
@@ -1161,6 +1172,13 @@ watch(currentThemeName, (val) => {
     map.setLayoutProperty('osm', 'visibility', 'visible')
     if (map.getLayer('nautical')) map.setLayoutProperty('nautical', 'visibility', 'visible')
   }
+})
+
+// The first live fix often arrives after the map is mounted on page startup.
+watch([lat, lon, () => telemetry.navFixType], ([newLat, newLon, newFixType]) => {
+  if (hasStartupPosition || !map || !isValidNavigationPosition(newLat, newLon, newFixType)) return
+  hasStartupPosition = true
+  map.setCenter([newLon, newLat])
 })
 
 // Watch for changes in telemetry to update marker
