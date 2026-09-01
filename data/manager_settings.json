@@ -149,8 +149,8 @@
   "wp_route_direction": "forward",
   "wp_route_completion": "stop",
   "station_wp": {
-    "lat": 39.32524721828786,
-    "lon": -0.6000130530418074
+    "lat": 39.32524651109101,
+    "lon": -0.600012731788661
   },
   "station_reaching_radius": 0.5,
   "station_radius": 1,

@@ -1,7 +1,32 @@
 <template>
   <div class="map-container">
     <div id="map"></div>
-    
+
+    <div
+      v-if="mapContextMenu.visible"
+      class="map-context-menu"
+      :style="{ left: `${mapContextMenu.x}px`, top: `${mapContextMenu.y}px` }"
+      @contextmenu.prevent
+    >
+      <button class="context-action" @click="startMeasurement">
+        Measure from this point
+      </button>
+      <button
+        v-if="measurementStart"
+        class="context-action"
+        @click="finishMeasurement"
+      >
+        Measure to this point
+      </button>
+      <button
+        v-if="measurementStart"
+        class="context-action danger"
+        @click="clearMeasurement"
+      >
+        Remove measurement
+      </button>
+    </div>
+
     <div class="map-controls">
       <div class="map-type-wrapper">
         <button class="ctrl-btn layer-btn" @click="showMapMenu = !showMapMenu">
@@ -293,10 +318,85 @@ async function onClearCache() {
 const followVehicle = ref(false)
 const FOLLOW_ZOOM = 16.5  // ~200m north-south view
 const SIM_COLORS = ['#e6194b', '#3cb44b', '#4363d8', '#f032e6', '#42d4f4', '#fabed4']
+const measurementStart = ref(null)
+const measurementEnd = ref(null)
+const mapContextMenu = ref({ visible: false, x: 0, y: 0, lng: 0, lat: 0 })
+
+const measurementDistance = computed(() => {
+  if (!measurementStart.value || !measurementEnd.value) return null
+  return new maplibregl.LngLat(
+    measurementStart.value.lng,
+    measurementStart.value.lat
+  ).distanceTo(measurementEnd.value)
+})
 
 let map = null
 let boatMarker = null
 let trailInterval = null
+
+function formatDistance(meters) {
+  if (meters < 0.01) return `${(meters * 1000).toFixed(2)} mm`
+  if (meters < 1) return `${(meters * 100).toFixed(2)} cm`
+  if (meters < 1000) return `${meters.toFixed(meters < 10 ? 2 : 1)} m`
+  return `${(meters / 1000).toFixed(2)} km`
+}
+
+function updateMeasurementLayer() {
+  const source = map?.getSource('measurement')
+  if (!source) return
+
+  const points = [measurementStart.value, measurementEnd.value].filter(Boolean)
+  const features = points.map(point => ({
+    type: 'Feature',
+    properties: { role: 'endpoint' },
+    geometry: { type: 'Point', coordinates: [point.lng, point.lat] }
+  }))
+  if (points.length === 2) {
+    const midpoint = [
+      (points[0].lng + points[1].lng) / 2,
+      (points[0].lat + points[1].lat) / 2
+    ]
+    features.unshift({
+      type: 'Feature',
+      properties: { role: 'line' },
+      geometry: {
+        type: 'LineString',
+        coordinates: points.map(point => [point.lng, point.lat])
+      }
+    })
+    features.push({
+      type: 'Feature',
+      properties: {
+        role: 'label',
+        label: formatDistance(measurementDistance.value)
+      },
+      geometry: { type: 'Point', coordinates: midpoint }
+    })
+  }
+  source.setData({ type: 'FeatureCollection', features })
+}
+
+function startMeasurement() {
+  const { lng, lat } = mapContextMenu.value
+  measurementStart.value = { lng, lat }
+  measurementEnd.value = null
+  mapContextMenu.value.visible = false
+  updateMeasurementLayer()
+}
+
+function finishMeasurement() {
+  const { lng, lat } = mapContextMenu.value
+  measurementEnd.value = { lng, lat }
+  mapContextMenu.value.visible = false
+  updateMeasurementLayer()
+}
+
+function clearMeasurement() {
+  measurementStart.value = null
+  measurementEnd.value = null
+  mapContextMenu.value.visible = false
+  updateMeasurementLayer()
+}
 
 // Build a GeoJSON Polygon ring approximating a circle on the Earth surface
 function geoCircle(lng, lat, radiusMeters, steps = 48) {
@@ -332,8 +432,11 @@ onMounted(() => {
     center: simStartWaypoint.value
       ? [simStartWaypoint.value.lon, simStartWaypoint.value.lat]
       : [telemetry.simDefaultLon, telemetry.simDefaultLat], // Default center
-    zoom: 15
+    zoom: 15,
+    maxZoom: 29
   })
+
+  map.addControl(new maplibregl.ScaleControl({ maxWidth: 140, unit: 'metric' }), 'bottom-right')
   
   // Add sources and layers once map is loaded
   map.on('load', () => {
@@ -419,6 +522,52 @@ onMounted(() => {
               type: 'FeatureCollection',
               features: []
           }
+      })
+
+      map.addSource('measurement', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      })
+      map.addLayer({
+        id: 'measurement-line',
+        type: 'line',
+        source: 'measurement',
+        filter: ['==', '$type', 'LineString'],
+        paint: {
+          'line-color': '#00e5ff',
+          'line-width': 3,
+          'line-dasharray': [3, 2]
+        }
+      })
+      map.addLayer({
+        id: 'measurement-points',
+        type: 'circle',
+        source: 'measurement',
+        filter: ['==', ['get', 'role'], 'endpoint'],
+        paint: {
+          'circle-radius': 5,
+          'circle-color': '#00e5ff',
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 2
+        }
+      })
+      map.addLayer({
+        id: 'measurement-label',
+        type: 'symbol',
+        source: 'measurement',
+        filter: ['==', ['get', 'role'], 'label'],
+        layout: {
+          'text-field': ['get', 'label'],
+          'text-size': 13,
+          'text-anchor': 'bottom',
+          'text-offset': [0, -0.6],
+          'text-allow-overlap': true
+        },
+        paint: {
+          'text-color': '#ffffff',
+          'text-halo-color': '#111111',
+          'text-halo-width': 2
+        }
       })
 
           map.addSource('gnss-crp-fixes', {
@@ -725,6 +874,7 @@ onMounted(() => {
   
   // Click Handler for Planning / Sim Pick / Station Pick / Home Pick / Survey Draw
   map.on('click', (e) => {
+      mapContextMenu.value.visible = false
       if (telemetry.surveyDrawMode && telemetry.activeSurveyId !== null) {
           // Add vertex to active survey polygon
           const { lng, lat } = e.lngLat
@@ -752,6 +902,19 @@ onMounted(() => {
       }
   })
 
+  map.on('contextmenu', (e) => {
+      e.preventDefault()
+      const menuWidth = 210
+      const menuHeight = measurementStart.value ? 120 : 42
+      mapContextMenu.value = {
+        visible: true,
+        x: Math.max(5, Math.min(e.point.x, map.getContainer().clientWidth - menuWidth)),
+        y: Math.max(5, Math.min(e.point.y, map.getContainer().clientHeight - menuHeight)),
+        lng: e.lngLat.lng,
+        lat: e.lngLat.lat
+      }
+  })
+
   // Double-click closes the active polygon
   map.on('dblclick', (e) => {
       if (telemetry.surveyDrawMode && telemetry.activeSurveyId !== null) {
@@ -772,6 +935,8 @@ onMounted(() => {
 onUnmounted(() => {
     if (trailInterval) clearInterval(trailInterval)
     clearSurveyHandleMarkers()
+  if (map) map.remove()
+  map = null
 })
 
 // ── Survey draw cursor ────────────────────────────────────────────────────────
@@ -1271,6 +1436,44 @@ watch([simulationResults, simulationOverlayVisible], () => {
 #map {
   width: 100%;
   height: 100%;
+}
+
+.map-context-menu {
+  position: absolute;
+  z-index: 2000;
+  width: 200px;
+  padding: 5px;
+  background: rgba(35, 35, 35, 0.97);
+  border: 1px solid #666;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+.context-action {
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: #eee;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.context-action:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.context-action.danger {
+  color: #ff7770;
+}
+
+:deep(.maplibregl-ctrl-scale) {
+  border-color: #222;
+  background: rgba(255, 255, 255, 0.88);
+  color: #111;
+  font-size: 11px;
 }
 
 .map-controls {
