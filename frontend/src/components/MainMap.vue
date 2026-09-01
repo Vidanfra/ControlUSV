@@ -342,6 +342,7 @@ onMounted(() => {
           type: 'raster',
           tiles: [tileSourceUrl('osm')],
           tileSize: 256,
+          maxzoom: 19,
           attribution: '&copy; OpenStreetMap Contributors'
       })
       
@@ -349,6 +350,7 @@ onMounted(() => {
           type: 'raster',
           tiles: [tileSourceUrl('satellite')],
           tileSize: 256,
+          maxzoom: 19,
           attribution: 'Tiles &copy; Esri'
       })
 
@@ -356,6 +358,7 @@ onMounted(() => {
           type: 'raster',
           tiles: [tileSourceUrl('dark')],
           tileSize: 256,
+          maxzoom: 19,
           attribution: '&copy; CARTO'
       })
 
@@ -363,6 +366,7 @@ onMounted(() => {
           type: 'raster',
           tiles: [tileSourceUrl('nautical')],
           tileSize: 256,
+          maxzoom: 19,
           attribution: 'Map data &copy; OpenSeaMap contributors'
       })
 
@@ -436,7 +440,7 @@ onMounted(() => {
               'line-cap': 'round'
           },
           paint: {
-              'line-color': '#42d4f4',
+              'line-color': '#e60000',
               'line-width': 3,
               'line-opacity': 0.8
           }
@@ -1150,10 +1154,6 @@ const updateTrail = () => {
         type: 'FeatureCollection',
         features: [lineString]
     })
-
-    // Change trail color based on sim state
-    const trailColor = telemetry.insActive ? '#42d4f4' : '#FF0000'
-    map.setPaintProperty('trail-line', 'line-color', trailColor)
 }
 
 const updateGnssFixes = () => {

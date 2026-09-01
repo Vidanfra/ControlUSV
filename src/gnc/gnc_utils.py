@@ -187,7 +187,21 @@ def crossFlowDrag(L, B, T, nu_r):
 
 # ---- Coordinate conversion utilities ----
 
-EARTH_RADIUS = 6378137.0  # WGS84 equatorial radius (m)
+EARTH_RADIUS = 6378137.0      # WGS84 semi-major axis (m)
+_WGS84_E2 = 6.69437999014e-3  # WGS84 first eccentricity squared
+
+
+def _curvature_radii(lat_rad):
+    """Meridian and prime-vertical radii of curvature at a given latitude.
+
+    Using the sphere radius for both axes distorts North against East by ~0.4 %
+    at mid latitudes, which is metres over a survey line.
+    """
+    sin_lat = math.sin(lat_rad)
+    w = 1.0 - _WGS84_E2 * sin_lat * sin_lat
+    prime_vertical = EARTH_RADIUS / math.sqrt(w)
+    meridian = prime_vertical * (1.0 - _WGS84_E2) / w
+    return meridian, prime_vertical
 
 
 def latlon_to_ned(lat, lon, lat0, lon0):
@@ -195,12 +209,11 @@ def latlon_to_ned(lat, lon, lat0, lon0):
     Convert lat/lon (degrees) to local NED (North, East) in meters
     relative to a reference point (lat0, lon0).
     """
-    dLat = math.radians(lat - lat0)
-    dLon = math.radians(lon - lon0)
     lat0_rad = math.radians(lat0)
+    meridian, prime_vertical = _curvature_radii(lat0_rad)
 
-    N = EARTH_RADIUS * dLat
-    E = EARTH_RADIUS * math.cos(lat0_rad) * dLon
+    N = meridian * math.radians(lat - lat0)
+    E = prime_vertical * math.cos(lat0_rad) * math.radians(lon - lon0)
     return N, E
 
 
@@ -210,6 +223,8 @@ def ned_to_latlon(N, E, lat0, lon0):
     relative to a reference point (lat0, lon0).
     """
     lat0_rad = math.radians(lat0)
-    lat = lat0 + math.degrees(N / EARTH_RADIUS)
-    lon = lon0 + math.degrees(E / (EARTH_RADIUS * math.cos(lat0_rad)))
+    meridian, prime_vertical = _curvature_radii(lat0_rad)
+
+    lat = lat0 + math.degrees(N / meridian)
+    lon = lon0 + math.degrees(E / (prime_vertical * math.cos(lat0_rad)))
     return lat, lon

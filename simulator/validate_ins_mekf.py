@@ -102,8 +102,10 @@ def validate_kinematics():
     )
     navigation.ins_origin = (LATITUDE_DEG, -0.6, 0.0)
     navigation._last_ins_imu_t = 1000.0
+    navigation._last_attitude_aid_t = 0.0
     navigation.imu_timestamp = 1000.0
     navigation._gnss_heading_t = 0.0
+    navigation._gnss_heading_status = ''
     navigation.mag_heading_crp = 0.0
     for _ in range(int(duration / STEP_S)):
         navigation.imu_timestamp += STEP_S

@@ -309,17 +309,58 @@ const altChartOptions = {
   }
 }
 
+// Converts an angle to its canonical [0, 360) representation for display.
+const wrap360 = deg => ((deg % 360) + 360) % 360
+
+// Removes the 359->0 discontinuity within one series by letting the value
+// drift outside [0, 360) instead of wrapping. The shared reference also puts
+// separate series on the same angular branch (for example, 359 and 2 become
+// 359 and 362) so the y axis can autoscale to the real signal range.
+function unwrapDegrees(values, reference) {
+  let previousRaw = null
+  let unwrapped = null
+  return values.map(value => {
+    if (!Number.isFinite(value)) {
+      previousRaw = null
+      unwrapped = null
+      return null
+    }
+    if (previousRaw === null) {
+      const offset = Number.isFinite(reference)
+        ? Math.round((reference - value) / 360) * 360
+        : 0
+      unwrapped = value + offset
+    } else {
+      let delta = value - previousRaw
+      if (delta > 180) delta -= 360
+      else if (delta < -180) delta += 360
+      unwrapped += delta
+    }
+    previousRaw = value
+    return unwrapped
+  })
+}
+
 const headingChartOptions = {
   ...chartBaseOptions,
   plugins: {
     ...chartBaseOptions.plugins,
-    title: { display: true, text: 'Heading Comparison (degrees)', color: '#aaa' }
+    title: { display: true, text: 'Heading Comparison (degrees)', color: '#aaa' },
+    tooltip: {
+      callbacks: {
+        label: ctx => `${ctx.dataset.label}: ${wrap360(ctx.parsed.y).toFixed(1)}°`
+      }
+    }
   },
   scales: {
     ...chartBaseOptions.scales,
     y: {
       ...chartBaseOptions.scales.y,
-      grace: '5%',
+      grace: '10%',
+      ticks: {
+        ...chartBaseOptions.scales.y.ticks,
+        callback: value => `${Math.round(wrap360(value))}°`
+      }
     }
   }
 }
@@ -332,21 +373,36 @@ const filteredHistory = computed(() => {
 
 const validGnssPosition = value => Number.isFinite(value) && value !== 0 ? value : null
 
-const headingChartData = computed(() => ({
-  labels: filteredHistory.value.map(point => point.label),
-  datasets: [
-    ...(showInsHeading.value ? [{ label: 'INS Heading', borderColor: '#42d4f4', data: filteredHistory.value.map(point => point.insHeading), borderWidth: 2, pointRadius: 0, tension: 0.1 }] : []),
-    ...(showGnssHeading.value ? [{ label: 'GNSS Heading', borderColor: '#ff5252', data: filteredHistory.value.map(point => point.gnssHeading), borderWidth: 1.5, pointRadius: 0, tension: 0.1 }] : []),
-    ...(showMagHeading.value ? [{ label: 'Magnetic Heading', borderColor: '#FFA500', data: filteredHistory.value.map(point => point.magHeading), borderWidth: 1.5, pointRadius: 0, tension: 0.1 }] : []),
-    ...(showCog.value ? [{ label: 'COG', borderColor: '#7bd88f', data: filteredHistory.value.map(point => point.cog), borderWidth: 1.5, pointRadius: 0, borderDash: [5, 4], tension: 0.1 }] : []),
-  ]
-}))
+// In GNSS-only mode the navigation solution IS the GNSS fix, so drawing it as a
+// separate "INS" series would just duplicate the GNSS trace.
+const insValue = (point, value) => (point.insActive ? value : null)
+
+const headingChartData = computed(() => {
+  const history = filteredHistory.value
+  const insHeading = history.map(point => insValue(point, point.insHeading))
+  const gnssHeading = history.map(point => point.gnssHeading)
+  const magHeading = history.map(point => point.magHeading)
+  const cog = history.map(point => point.cog)
+  const reference = history
+    .flatMap((_, index) => [insHeading[index], gnssHeading[index], magHeading[index], cog[index]])
+    .find(Number.isFinite)
+
+  return {
+    labels: history.map(point => point.label),
+    datasets: [
+      ...(showInsHeading.value ? [{ label: 'INS Heading', borderColor: '#42d4f4', data: unwrapDegrees(insHeading, reference), borderWidth: 2, pointRadius: 0, tension: 0.1 }] : []),
+      ...(showGnssHeading.value ? [{ label: 'GNSS Heading', borderColor: '#ff5252', data: unwrapDegrees(gnssHeading, reference), borderWidth: 1.5, pointRadius: 0, tension: 0.1 }] : []),
+      ...(showMagHeading.value ? [{ label: 'Magnetic Heading', borderColor: '#FFA500', data: unwrapDegrees(magHeading, reference), borderWidth: 1.5, pointRadius: 0, tension: 0.1 }] : []),
+      ...(showCog.value ? [{ label: 'COG', borderColor: '#7bd88f', data: unwrapDegrees(cog, reference), borderWidth: 1.5, pointRadius: 0, borderDash: [5, 4], tension: 0.1 }] : []),
+    ]
+  }
+})
 
 const latChartData = computed(() => ({
   labels: filteredHistory.value.map(pt => pt.label),
   datasets: [
     ...(showGnssPosition.value ? [{ label: 'GNSS CRP Latitude' + simSuffix(), borderColor: '#ff5252', data: filteredHistory.value.map(pt => validGnssPosition(pt.gnssLat)), borderWidth: 1.5, pointRadius: 1, tension: 0.1, fill: false }] : []),
-    ...(showInsPosition.value ? [{ label: 'INS Latitude' + simSuffix(), borderColor: '#42d4f4', data: filteredHistory.value.map(pt => pt.insLat), borderWidth: 2, pointRadius: 0, tension: 0.1, fill: false }] : [])
+    ...(showInsPosition.value ? [{ label: 'INS Latitude' + simSuffix(), borderColor: '#42d4f4', data: filteredHistory.value.map(pt => insValue(pt, pt.insLat)), borderWidth: 2, pointRadius: 0, tension: 0.1, fill: false }] : [])
   ]
 }))
 
@@ -354,7 +410,7 @@ const lonChartData = computed(() => ({
   labels: filteredHistory.value.map(pt => pt.label),
   datasets: [
     ...(showGnssPosition.value ? [{ label: 'GNSS CRP Longitude' + simSuffix(), borderColor: '#ff5252', data: filteredHistory.value.map(pt => validGnssPosition(pt.gnssLon)), borderWidth: 1.5, pointRadius: 1, tension: 0.1, fill: false }] : []),
-    ...(showInsPosition.value ? [{ label: 'INS Longitude' + simSuffix(), borderColor: '#42d4f4', data: filteredHistory.value.map(pt => pt.insLon), borderWidth: 2, pointRadius: 0, tension: 0.1, fill: false }] : [])
+    ...(showInsPosition.value ? [{ label: 'INS Longitude' + simSuffix(), borderColor: '#42d4f4', data: filteredHistory.value.map(pt => insValue(pt, pt.insLon)), borderWidth: 2, pointRadius: 0, tension: 0.1, fill: false }] : [])
   ]
 }))
 
@@ -362,7 +418,7 @@ const altChartData = computed(() => ({
   labels: filteredHistory.value.map(pt => pt.label),
   datasets: [
     ...(showGnssPosition.value ? [{ label: 'GNSS CRP Altitude' + simSuffix(), borderColor: '#ff5252', data: filteredHistory.value.map(pt => pt.gnssAlt), borderWidth: 1.5, pointRadius: 1, tension: 0.1, fill: false }] : []),
-    ...(showInsPosition.value ? [{ label: 'INS Altitude' + simSuffix(), borderColor: '#42d4f4', data: filteredHistory.value.map(pt => pt.insAlt), borderWidth: 2, pointRadius: 0, tension: 0.1, fill: false }] : [])
+    ...(showInsPosition.value ? [{ label: 'INS Altitude' + simSuffix(), borderColor: '#42d4f4', data: filteredHistory.value.map(pt => insValue(pt, pt.insAlt)), borderWidth: 2, pointRadius: 0, tension: 0.1, fill: false }] : [])
   ]
 }))
 </script>

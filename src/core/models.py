@@ -99,14 +99,15 @@ class InsConfig(BaseModel):
     gyro_bias_noise_deg_s_sqrt_hz: float = Field(0.02, gt=0.0, le=10.0)
     accel_bias_tau_s: float = Field(500.0, ge=1.0, le=100000.0)
     gyro_bias_tau_s: float = Field(500.0, ge=1.0, le=100000.0)
-    gravity_aiding_noise: float = Field(0.05, gt=0.001, le=1.0)
-    gravity_gate_mps2: float = Field(0.75, gt=0.0, le=10.0)
-    gravity_max_speed_mps: float = Field(0.5, ge=0.0, le=10.0)
+    gravity_aiding_noise: float = Field(0.10, gt=0.001, le=1.0)
+    gravity_gate_mps2: float = Field(0.40, gt=0.0, le=10.0)
+    gravity_max_speed_mps: float = Field(2.0, ge=0.0, le=10.0)
+    attitude_aiding_rate_hz: float = Field(2.0, gt=0.0, le=50.0, description="Rate at which gravity and magnetometer attitude updates are applied; well below the IMU rate because those errors are strongly correlated")
     gnss_velocity_sigma_mps: float = Field(0.15, gt=0.001, le=20.0)
     gnss_heading_sigma_deg: float = Field(0.5, gt=0.01, le=90.0)
     mag_heading_sigma_deg: float = Field(10.0, gt=0.1, le=180.0)
-    rtk_fixed_horizontal_floor_m: float = Field(0.02, gt=0.001, le=10.0)
-    rtk_fixed_vertical_floor_m: float = Field(0.04, gt=0.001, le=20.0)
+    rtk_fixed_horizontal_floor_m: float = Field(0.10, gt=0.001, le=10.0)
+    rtk_fixed_vertical_floor_m: float = Field(0.15, gt=0.001, le=20.0)
     rtk_float_horizontal_sigma_m: float = Field(0.5, gt=0.01, le=100.0)
     rtk_float_vertical_sigma_m: float = Field(1.0, gt=0.01, le=200.0)
     dgps_horizontal_sigma_m: float = Field(1.5, gt=0.01, le=100.0)
@@ -235,7 +236,7 @@ class ImuState(BaseModel):
 class USVState(BaseModel):
     """
     State estimation of the vehicle (output of navigation/EKF filter).
-    Published on gnc/ekf_state. Consumed by GNC, Dashboard, Map, MAVLink.
+    Published on gnc/ekf_state. Consumed by GNC, Dashboard and Map.
 
     Every IMU-derived quantity is referenced to the body frame and to the CRP
     (``_crp``): the sensor frame is rotated into the body frame and the

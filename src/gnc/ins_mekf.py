@@ -95,8 +95,8 @@ class MekfTuning:
     gyro_bias_noise_rad_s_sqrt_hz: float = math.radians(0.02)
     accel_bias_tau_s: float = 500.0
     gyro_bias_tau_s: float = 500.0
-    gravity_aiding_noise: float = 0.05
-    gravity_gate_mps2: float = 0.75
+    gravity_aiding_noise: float = 0.10
+    gravity_gate_mps2: float = 0.40
     innovation_gate_sigma: float = 5.0
     max_step_s: float = 0.05
 

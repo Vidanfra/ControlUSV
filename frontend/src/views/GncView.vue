@@ -225,6 +225,14 @@ const headingChartOptions = {
   }
 }
 
+// Hides the segment that would be drawn across the whole plot when a heading
+// wraps between 359 deg and 0 deg.
+const hideWrapSegment = {
+  borderColor: ctx => (
+    Math.abs(ctx.p1.parsed.y - ctx.p0.parsed.y) > 180 ? 'transparent' : undefined
+  ),
+}
+
 const motorChartOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -323,8 +331,8 @@ const filteredHistory = computed(() => {
 const headingChartData = computed(() => ({
   labels: filteredHistory.value.map(pt => pt.label),
   datasets: [
-    { label: 'Actual Heading' + simSuffix(), borderColor: '#42A5F5', yAxisID: 'y', data: filteredHistory.value.map(pt => pt.actualHeading), borderWidth: 2, tension: 0.1 },
-    { label: 'Target Heading' + simSuffix(), borderColor: '#FFA500', yAxisID: 'y', data: filteredHistory.value.map(pt => pt.targetHeading), borderWidth: 2, tension: 0.1 },
+    { label: 'Actual Heading' + simSuffix(), borderColor: '#42A5F5', yAxisID: 'y', data: filteredHistory.value.map(pt => pt.actualHeading), borderWidth: 2, tension: 0.1, segment: hideWrapSegment },
+    { label: 'Target Heading' + simSuffix(), borderColor: '#FFA500', yAxisID: 'y', data: filteredHistory.value.map(pt => pt.targetHeading), borderWidth: 2, tension: 0.1, segment: hideWrapSegment },
     { label: 'Heading Error' + simSuffix(), borderColor: '#ef5350', yAxisID: 'y2', data: filteredHistory.value.map(pt => pt.headingError), borderWidth: 1.5, tension: 0.1, borderDash: [4, 2] },
   ]
 }))

@@ -35,7 +35,6 @@
 - **GNC stack** implementing ALOS path following, PID pole-placement heading control, station keeping, and 6-DOF real-time simulation
 - **Vue 3 web frontend** with interactive mission planner, real-time telemetry charts, simulation tool, and remote manual control
 - **REST + WebSocket API** (FastAPI) for bidirectional frontend communication
-- **MAVLink bridge** for integration with GCS tools such as QGroundControl
 
 ### Vehicle Specs
 
@@ -83,7 +82,6 @@ flowchart TB
     subgraph COMMS["CommsProcess\nFastAPI  :8000"]
         WS["/ws\nWebSocket"]
         REST["/api/simulate\n/api/upload-waypoints"]
-        MAVLINK["MAVLink Bridge\nUDP  :14550"]
     end
 
     subgraph FE["🖥️  Frontend  (Vue 3 + Vite)"]
@@ -92,8 +90,6 @@ flowchart TB
         SIM["SimView\nBatch sim · RT sim"]
         CTRL["ControlPanel · Settings"]
     end
-
-    GCS["GCS\n(QGroundControl)"]
 
     %% Hardware → HAL
     UM982 -->|"serial\n/dev/gnss_um982"| GnssNode
@@ -128,10 +124,6 @@ flowchart TB
     %% Comms → Frontend
     WS   <-->|"WebSocket"| FE
     REST <-->|"HTTP"| SIM
-
-    %% MAVLink
-    BROKER -->|"gnc/ekf_state"| MAVLINK
-    MAVLINK -->|"MAVLink UDP\nGLOBAL_POSITION_INT"| GCS
 ```
 [![](https://mermaid.ink/img/pako:eNqFVt1q40YUfpWDYEuWxmv5N7EpBdtxEm8sWWs5yZKqhIk1tkWkkZBGSbObhV71qlAopRe9Kb3oM7TXfZR9gfYRes5IcqxgHF3YM5rv_H1z5ht91Oahy7WutvDD-_mKxRJmfUcAPkl6s4xZtILTy28c7b_ff_kRTlns3rOYO9q3GYaec6NzWEeE-ncccZQyv9ITkgvB4MS0bXw3nZ3Bl2DOpiOrZHs56-g1tFX_iGtXjibHMDLOSyjramggiP4qeu2AYgzACu95DEYoPBnGJfjQthCNv406VKEXu6knQjCZCNHSCBEOg1DIOPR9XrY0JrPJ1Ebjz7_9gQGIjFWcJhJhjqB3tmTxTYgsPC0U9ly4jnjOXG-MzvDXisM5TxKAf_4CaOlw-qEU90QkiYn7gOBiWFofBWm-nI_K9BAT-fp6vDOv_nRyNpxmu_o9XBnvoB-Ht6rK9_Z5H7otfAAeAd5b-bS922FvcDY0j9Bjn81vEQF5xTwppWr2LhBjsjtvyaQXihIvdcWLI2wuEtyjRZogAud7EUsSuYrDdLmCzz_8jCsyjTkMz46rI9N-XabSHBCL5mCr6954YsMy9Vwm5pxWrNERrDhzPbGkyFJlBbecR_iGANMZJF6Aa8fM8xO2KFNvnBCLBhNsyeNSxFpRDLrkELD5yhMqos2lRN-J6kWXwxcQeAlViiByE3Ahd3I9mBgG9eggDIIkj6nyS2TPGgF0D3VdL58yglfvCXXJb-wQd0iWANOhPSMIi7wqVpv6mDOC1TyN_JC5lXv2EIWekOX9NHoX45F5RhzgyBO32EieuyTj8yMLc6k1Wy19ZznHQ9WHv_75798_ARzHISmHC7B3kXJooGpceJK_fhbVUqxHFx6_Jx5zAi2fCYGiQCyn8R1_KFldjIaKiBMxJztC4WnKXdCxK96qM6Teb5rbI9Ig2wtyiz6T8xX1xkaXbOIHs-lY7ZJSGosJ7pe2fwsnJwOV34AUc-_dCTa8cHP7jIAM9urVWojVcUB9yRaUAkOl8vWjoyU89phPm-jyu-oSy7tOAxJo7XEtN5mV0t6tVtlMJ5NCd0Shx5BbYA_fpAkScF5YRUTfdfSBB2T4JEgb2ffGKvFcdMSmBMI6ExIBlTg6zmcJHqY0IbeZgmWmeW7wzBT7-CXLdXJlyxsmUdkfdlmva8lqUOU8yVq2mmF31UMpolNUxcwCB7AuYynmVX67uKbg_KXYKHhbgpZdYNgHvLKCohxHzFFCmHCraUIX2eOTFxyUE5lnbXgdpjJKJZpuvnT5TUryiUdgF1XklHLNruBV8S2xDphFe2tPTDz1eKEUDcWTqKH6Fq_0DI0DQuf39XZGclHewkqp6vVeqJ3BICjpmQ0Onjh4ztwWTl7YISXXpWxy18z3QYaRN1fhL-38VNqZjGxJeVsg5V3FKRR0w81XmZMN7X9E2c0AJP0F4HQ2s2gNpW7Dda7sL7YXcZddBzl_2aTQifx-wGuB5HY86ffG19bEHs1GE_N6ZM5U_w1U9dq-tsRrROvKOOX7WsDjgNFU-0irjiZXeEs6WheHLl-w1MeKHPEJzSImrsIwKCzVJ4PWXTA_wVkauZjnkcfw4nmCIFU8HqDUSq3bbjWVD637UftO69YazTf12kG90zis1WvtQ_1gX3vQunX94E39sNFuN1sNvd066DQ_7WsfVFj9Tad50Gx3Wp263mk26zX0x136QjWyz2zsmYW31D79D2iGrVM?type=png)](https://mermaid.ai/live/edit#pako:eNqFVt1q40YUfpWDYEuWxmv5N7EpBdtxEm8sWWs5yZKqhIk1tkWkkZBGSbObhV71qlAopRe9Kb3oM7TXfZR9gfYRes5IcqxgHF3YM5rv_H1z5ht91Oahy7WutvDD-_mKxRJmfUcAPkl6s4xZtILTy28c7b_ff_kRTlns3rOYO9q3GYaec6NzWEeE-ncccZQyv9ITkgvB4MS0bXw3nZ3Bl2DOpiOrZHs56-g1tFX_iGtXjibHMDLOSyjramggiP4qeu2AYgzACu95DEYoPBnGJfjQthCNv406VKEXu6knQjCZCNHSCBEOg1DIOPR9XrY0JrPJ1Ebjz7_9gQGIjFWcJhJhjqB3tmTxTYgsPC0U9ly4jnjOXG-MzvDXisM5TxKAf_4CaOlw-qEU90QkiYn7gOBiWFofBWm-nI_K9BAT-fp6vDOv_nRyNpxmu_o9XBnvoB-Ht6rK9_Z5H7otfAAeAd5b-bS922FvcDY0j9Bjn81vEQF5xTwppWr2LhBjsjtvyaQXihIvdcWLI2wuEtyjRZogAud7EUsSuYrDdLmCzz_8jCsyjTkMz46rI9N-XabSHBCL5mCr6954YsMy9Vwm5pxWrNERrDhzPbGkyFJlBbecR_iGANMZJF6Aa8fM8xO2KFNvnBCLBhNsyeNSxFpRDLrkELD5yhMqos2lRN-J6kWXwxcQeAlViiByE3Ahd3I9mBgG9eggDIIkj6nyS2TPGgF0D3VdL58yglfvCXXJb-wQd0iWANOhPSMIi7wqVpv6mDOC1TyN_JC5lXv2EIWekOX9NHoX45F5RhzgyBO32EieuyTj8yMLc6k1Wy19ZznHQ9WHv_75798_ARzHISmHC7B3kXJooGpceJK_fhbVUqxHFx6_Jx5zAi2fCYGiQCyn8R1_KFldjIaKiBMxJztC4WnKXdCxK96qM6Teb5rbI9Ig2wtyiz6T8xX1xkaXbOIHs-lY7ZJSGosJ7pe2fwsnJwOV34AUc-_dCTa8cHP7jIAM9urVWojVcUB9yRaUAkOl8vWjoyU89phPm-jyu-oSy7tOAxJo7XEtN5mV0t6tVtlMJ5NCd0Shx5BbYA_fpAkScF5YRUTfdfSBB2T4JEgb2ffGKvFcdMSmBMI6ExIBlTg6zmcJHqY0IbeZgmWmeW7wzBT7-CXLdXJlyxsmUdkfdlmva8lqUOU8yVq2mmF31UMpolNUxcwCB7AuYynmVX67uKbg_KXYKHhbgpZdYNgHvLKCohxHzFFCmHCraUIX2eOTFxyUE5lnbXgdpjJKJZpuvnT5TUryiUdgF1XklHLNruBV8S2xDphFe2tPTDz1eKEUDcWTqKH6Fq_0DI0DQuf39XZGclHewkqp6vVeqJ3BICjpmQ0Onjh4ztwWTl7YISXXpWxy18z3QYaRN1fhL-38VNqZjGxJeVsg5V3FKRR0w81XmZMN7X9E2c0AJP0F4HQ2s2gNpW7Dda7sL7YXcZddBzl_2aTQifx-wGuB5HY86ffG19bEHs1GE_N6ZM5U_w1U9dq-tsRrROvKOOX7WsDjgNFU-0irjiZXeEs6WheHLl-w1MeKHPEJzSImrsIwKCzVJ4PWXTA_wVkauZjnkcfw4nmCIFU8HqDUSq3bbjWVD637UftO69YazTf12kG90zis1WvtQ_1gX3vQunX94E39sNFuN1sNvd066DQ_7WsfVFj9Tad50Gx3Wp263mk26zX0x136QjWyz2zsmYW31D79D2iGrVM)
 
@@ -145,7 +137,7 @@ flowchart TB
 | `sensor/battery` | PowerNode (HAL) | CommsProcess | 1 Hz | `BatteryMessage` |
 | `sensor/status` | All HAL nodes | CommsProcess | 5 Hz (heartbeat) | `SensorStatusMessage` |
 | `gnc/imu_state` | NavigationProcess | CommsProcess | ~20 Hz | `ImuState` |
-| `gnc/ekf_state` | NavigationProcess | GNCProcess, CommsProcess, MAVLink bridge | 20 Hz | `USVState` |
+| `gnc/ekf_state` | NavigationProcess | GNCProcess, CommsProcess | 20 Hz | `USVState` |
 | `gnc/control_output` | GNCProcess, ManagerProcess | CommsProcess, ESP32 driver | 20 Hz | `ControlCmdMessage` |
 | `gnc/control_debug` | GNCProcess | CommsProcess | 20 Hz | `ControlDebugMessage` |
 | `system/status` | ManagerProcess | GNCProcess, CommsProcess | 10 Hz | `SystemStatusMessage` |
@@ -164,7 +156,7 @@ flowchart TB
 | **HALProcess** | `src/drivers/process.py` | 50 | Spawns and supervises GNSS, IMU, and power sensor threads; handles sensor mute/unmute for RT sim |
 | **NavigationProcess** | `src/gnc/navigation.py` | 20 | 15-state multiplicative error-state INS: propagates transformed IMU data and applies quality-adaptive GNSS position, velocity, and heading updates |
 | **GNCProcess** | `src/gnc/process.py` | 20 | Main GNC loop: ALOS path following, PID heading control, station keeping, failsafes, real-time 6-DOF simulation |
-| **CommsProcess** | `src/comms/manager.py` | — | FastAPI + WebSocket server (uvicorn). Bridges ZMQ ↔ frontend. Runs MAVLink bridge thread |
+| **CommsProcess** | `src/comms/manager.py` | — | FastAPI + WebSocket server (uvicorn). Bridges ZMQ ↔ frontend |
 
 ### Hardware Drivers (`src/drivers/`)
 
@@ -584,7 +576,6 @@ All processes write to `logs/usv_control.log` (rotated at 10 MB, retained for 1 
 | D-02 | **RTL (Return to Launch)** | `CommandType.RTL` is defined in `models.py` but no handler exists in `ManagerProcess` or `GNCProcess` | Implement handler that sets mode to `WP_ROUTE` with single waypoint = `home_wp`, then disarms on arrival | 🔴 TODO (0%) | HIGH | `home_wp` is already persisted and configurable from the frontend |
 | D-03 | **Failsafe Enforcement in ManagerProcess** | `failsafe_config` is stored and sent to GNCProcess but the Manager itself never monitors battery level, GNSS fix quality, or comm timeouts | Add monitoring timers in `ManagerProcess.loop()` mirroring those already in `GNCProcess` | 🔴 TODO (0%) | HIGH | GNCProcess has partial failsafe (GNSS + comm); battery failsafe is not implemented anywhere |
 | D-04 | **Pre-arm Safety Checks** | `ARM` command is accepted unconditionally — no check that GNSS fix quality meets minimum threshold or that `home_wp` is set | Add validation gate before setting `is_armed = True`; publish rejection reason on `system/status` | 🔴 TODO (0%) | HIGH | — |
-| D-05 | **MAVLink Bridge — Full Telemetry** | Bridge sends only `GLOBAL_POSITION_INT` (position + velocity). Attitude, battery, system status, and servo outputs are not forwarded | Subscribe to additional ZMQ topics and send `ATTITUDE`, `SYS_STATUS`, `BATTERY_STATUS`, `SERVO_OUTPUT_RAW` | 🟠 Partial (30%) | MEDIUM | Heartbeat and position are functional |
 | D-06 | **Camera Streamer Service** | GStreamer + FFmpeg streaming pipeline partially implemented in `_old/camera_streamer.py`. Supports x264 (SW) and v4l2h264enc (HW) with auto-restart | Finish v4l2 capability detection; expose as a `ServiceProcess`; add ZMQ control (start/stop/bitrate) and `CommandType` | 🟠 Partial (70%) | MEDIUM | UDP output to QGC at configurable bitrate already coded |
 | D-07 | **SettingsView → Backend Sync** | The SettingsView UI is complete (GNC tuning, failsafe params, GNSS/NTRIP config, battery capacity) but `save*()` methods do not send commands to the vehicle | Wire each save action to a `command/user` WebSocket message using the appropriate `CommandType` | 🟠 Partial (30%) | MEDIUM | Only `SET_BATTERY_CAPACITY` and `RESET_ENERGY` are wired |
 | D-08 | **Process Watchdog / Auto-restart** | `main.py` checks whether child processes have died but takes no action (`pass`). A crashed process silently stops its data stream | Implement exponential-backoff restart logic in `main.py`; publish a critical alert on `system/status` | 🔴 TODO (0%) | MEDIUM | — |
@@ -612,7 +603,6 @@ All processes write to `logs/usv_control.log` (rotated at 10 MB, retained for 1 
 | B-08 | **GNSS driver does not reconnect after timeout** — `GnssNode` correctly detects when no data has been received for `_STATUS_TIMEOUT` (5 s) and publishes `DISCONNECTED` sensor status, but it never closes and reopens the serial port. A frozen or unplugged UM982 receiver requires a manual service restart | `src/drivers/gnss_um982.py` ~L490 | When the UM982 receiver freezes, disconnects, or is power-cycled | 2026-05-13 | Added `break` after timeout detection in the inner monitor loop of all three drivers (GNSS, IMU, Power), so the outer retry loop closes the serial port, waits, and restarts the driver automatically. Also fixed log spam: "Cannot open …" warnings now fire only once per disconnection event (GNSS and IMU — `_start_error_logged` flag; Power was already guarded). Fixed `WT901Driver._read_loop` using `print()` instead of `logger` — replaced with `logger.warning` + `_error_logged` once-per-error suppression. | 🟢 FIXED |
 | B-09 | **Frontend `localStorage` config staleness** — On page reload, the Pinia store initialises `gncConfig`, `failsafeConfig`, and `homeWaypoint` from `localStorage`. If the backend config was changed between sessions (e.g. via another client or direct file edit), the stale frontend values are re-sent to the vehicle on the next `SET_*` command, silently overwriting the correct values | `frontend/src/stores/telemetry.js` | After a backend-side config change followed by a frontend page reload | 2026-05-13 | Removed the push-on-connect block in `ws.onopen` (which was overwriting the backend with stale localStorage). Changed `system/status` handler to always accept backend values for `gnc_config`, `failsafe_config`, and `home_wp`, and write them back to localStorage so the next reload starts with the correct values. Backend (`manager_settings.json`) is now the single source of truth; localStorage is a display cache only. | 🟢 FIXED |
 | B-10 | **PID anti-windup threshold undocumented and possibly too conservative** — The integral term in `PIDpolePlacement` only accumulates when `e_ψ < 0.35 rad (~20°)`. This means heading errors beyond 20° receive no integral correction. In the presence of constant current disturbances combined with large initial heading errors, the vessel may converge to a steady-state cross-track offset | `src/gnc/control.py` ~L61 | During large-angle turns or when persistent disturbances produce heading errors > 20° | 2026-05-13 | **(1) Increased threshold to 30° (0.5236 rad) and made it configurable** via `GncConfig.e_x_threshold_deg` (adjustable 0–90° in GNC Controller Settings). **(2) Added soft integrator decay** when |e_x| >= threshold: instead of freezing, e_int now decays by 5% per cycle to prevent stale accumulation. **(3) Added output saturation with anti-windup back-calculation**: if computed torque exceeds u_max, it's clamped and Ki term is reduced by 10% to prevent integrator windup on saturation. **(4) Added propeller speed bounds checking**: controlAllocation() now accepts optional n_max, n_min and clamps n1, n2 to realistic motor limits (previously unchecked, could demand speeds beyond hardware capability). All changes preserve backward compatibility. | 🟢 FIXED |
-| B-11 | **MAVLink bridge sends incomplete telemetry** — `MavlinkSender` only sends `GLOBAL_POSITION_INT` (lat, lon, alt, NED velocity). Attitude (`ATTITUDE`), battery (`BATTERY_STATUS`), system health (`SYS_STATUS`), and actuator outputs (`SERVO_OUTPUT_RAW`) are not forwarded. A GCS displays the vehicle position but cannot show its heading, battery, or health status | `src/comms/mavlink_bridge.py` | Whenever the MAVLink bridge is active (always, on startup) | 2026-05-13 | None — tracked also in D-05 | 🟡 OPEN |
 | B-12 | **ZMQ context leak per `Subscriber` instance** — Each `Subscriber` object creates its own `zmq.Context()` in its constructor and never closes it. If subscribers are created and destroyed repeatedly (e.g. in unit tests or future hot-reload scenarios), contexts accumulate in memory | `src/core/messaging.py` | During rapid Subscriber creation/destruction; not an issue in normal steady-state operation | 2026-05-13 | None | 🟢 OPEN |
 | B-13 | **ESP32 and Arduino Nano drivers are identical** — `arduino_nano.py` and `esp32.py` contain the exact same implementation differing only in comments. Any bug fixed in one file must be manually replicated in the other | `src/drivers/arduino_nano.py`, `src/drivers/esp32.py` | Maintenance risk; not a runtime bug | 2026-05-13 | None | 🟢 OPEN |
 | B-14 | **Unused `dt` variable in `ServiceProcess` loop** — `dt = now - last_time` is computed on every iteration of the base class loop but is never passed to `loop()` or used anywhere. Subclasses that need `dt` must recompute it themselves | `src/core/process.py` L53 | Always; cosmetic issue | 2026-05-13 | None | 🟢 OPEN |

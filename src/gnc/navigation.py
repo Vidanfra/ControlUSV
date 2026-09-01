@@ -18,10 +18,6 @@ from src.core.models import ImuState, InsConfig, USVState, OffsetsConfig
 from src.gnc.gnc_utils import latlon_to_ned, ned_to_latlon
 from src.gnc.ins_mekf import InsMekf, MekfTuning
 
-# Mean Earth radius [m] (WGS-84 mean) used for the local flat-earth
-# metre <-> degree conversion of the lever-arm correction.
-_EARTH_RADIUS_M = 6_371_000.0
-
 # Rx(180 deg): converts the attitude reference frame of a z-up IMU such as the
 # WT901C (x north, y west, z up) into NED. It is a property of the sensor
 # family, not of how the sensor is bolted to the hull.
@@ -31,6 +27,9 @@ _SENSOR_REF_TO_NED = np.diag([1.0, -1.0, -1.0])
 # over; an IMU older than this stops feeding rates to the autopilot.
 _GNSS_HEADING_TIMEOUT_S = 2.0
 _IMU_TIMEOUT_S = 0.5
+
+# Cut-off of the low-pass applied to the differentiated gyro rate.
+_WDOT_LPF_HZ = 1.0
 
 
 def _wrap180(deg):
@@ -119,9 +118,10 @@ class NavigationProcess(ServiceProcess):
         self.imu_source = "sensor"
 
         # Previous body angular rate [rad/s] for the lever-arm angular
-        # acceleration term
+        # acceleration term, plus its low-pass state.
         self._prev_w = None
         self._prev_w_t = 0.0
+        self._w_dot = np.zeros(3)
 
         # Gyro-sign cross-check against the GNSS heading derivative
         self._prev_heading = None
@@ -139,6 +139,7 @@ class NavigationProcess(ServiceProcess):
         self.ins_filter = self._new_ins_filter()
         self.ins_origin = None
         self._last_ins_imu_t = 0.0
+        self._last_attitude_aid_t = 0.0
         self._ins_source = None
 
         # Validity
@@ -163,11 +164,24 @@ class NavigationProcess(ServiceProcess):
             innovation_gate_sigma=cfg.innovation_gate_sigma,
         ))
 
+    def _gnss_heading_is_fresh(self, now=None):
+        """True while the dual-antenna heading is both valid and recent.
+
+        The UM982 keeps emitting THS with status 'V' once the heading solution
+        is lost, so the last good value must expire on its own.
+        """
+        now = time.time() if now is None else now
+        return (
+            self._gnss_heading_status in ('A', 'S')
+            and now - self._gnss_heading_t < _GNSS_HEADING_TIMEOUT_S
+        )
+
     def _reset_ins(self, reason):
         was_initialized = getattr(self, 'ins_filter', None) is not None and self.ins_filter.initialized
         self.ins_filter = self._new_ins_filter()
         self.ins_origin = None
         self._last_ins_imu_t = 0.0
+        self._last_attitude_aid_t = 0.0
         self._ins_source = None
         if was_initialized:
             logger.info(f"Navigation: INS reset ({reason})")
@@ -185,7 +199,7 @@ class NavigationProcess(ServiceProcess):
         ):
             return False
 
-        if now - self._gnss_heading_t < _GNSS_HEADING_TIMEOUT_S:
+        if self._gnss_heading_is_fresh(now):
             initial_yaw = self._gnss_heading_rad
             yaw_sigma = math.radians(self.ins_config.gnss_heading_sigma_deg)
         elif self.ins_config.use_magnetometer:
@@ -210,11 +224,14 @@ class NavigationProcess(ServiceProcess):
         self.gnss_lat_crp = crp_lat
         self.gnss_lon_crp = crp_lon
         self.gnss_altitude_crp = crp_alt
-        velocity_ned = np.array([
-            self.speed * math.cos(self.course),
-            self.speed * math.sin(self.course),
-            0.0,
-        ])
+        velocity_ned = self._antenna_velocity_to_crp(
+            np.array([
+                self.speed * math.cos(self.course),
+                self.speed * math.sin(self.course),
+                0.0,
+            ]),
+            attitude,
+        )
         position_sigma = self._gnss_position_sigmas()
         self.ins_filter.initialize(
             position_ned=np.zeros(3),
@@ -258,21 +275,27 @@ class NavigationProcess(ServiceProcess):
             dt,
             latitude_rad,
         )
+
+        # Wave-induced tilt and magnetic disturbance are strongly correlated, so
+        # applying these at the full IMU rate would make the filter track the
+        # disturbance instead of averaging it out.
+        aiding_period = 1.0 / self.ins_config.attitude_aiding_rate_hz
+        if sample_time - self._last_attitude_aid_t < aiding_period:
+            return
+        self._last_attitude_aid_t = sample_time
+
         horizontal_speed = float(np.linalg.norm(self.ins_filter.velocity[0:2]))
         if horizontal_speed <= self.ins_config.gravity_max_speed_mps:
             self.ins_filter.update_gravity(self.acc_crp, latitude_rad)
 
-        gnss_heading_fresh = (
-            time.time() - self._gnss_heading_t < _GNSS_HEADING_TIMEOUT_S
-        )
-        if self.ins_config.use_magnetometer and not gnss_heading_fresh:
+        if self.ins_config.use_magnetometer and not self._gnss_heading_is_fresh():
             self.ins_filter.update_heading(
                 math.radians(self.mag_heading_crp),
                 math.radians(self.ins_config.mag_heading_sigma_deg),
             )
 
     def _update_ins_from_gnss(self):
-        if self._gnss_heading_status in ('A', 'S'):
+        if self._gnss_heading_is_fresh():
             heading_sigma = (
                 math.radians(0.2) if self._gnss_heading_status == 'S'
                 else math.radians(self.ins_config.gnss_heading_sigma_deg)
@@ -306,10 +329,14 @@ class NavigationProcess(ServiceProcess):
         velocity_scale = {4: 1.0, 5: 2.0, 2: 4.0, 1: 6.0}.get(
             self.fix_type, 6.0
         )
-        velocity_ne = np.array([
-            self.speed * math.cos(self.course),
-            self.speed * math.sin(self.course),
-        ])
+        velocity_ne = self._antenna_velocity_to_crp(
+            np.array([
+                self.speed * math.cos(self.course),
+                self.speed * math.sin(self.course),
+                0.0,
+            ]),
+            attitude,
+        )[0:2]
         velocity_sigma = np.full(
             2, self.ins_config.gnss_velocity_sigma_mps * velocity_scale
         )
@@ -387,7 +414,7 @@ class NavigationProcess(ServiceProcess):
             math.atan2(velocity_east, velocity_north) if speed > 1e-6 else self.course
         )
 
-        gnss_heading_fresh = now - self._gnss_heading_t < _GNSS_HEADING_TIMEOUT_S
+        gnss_heading_fresh = self._gnss_heading_is_fresh(now)
         if self.source == 'sim' and gnss_heading_fresh:
             heading_status = 'S'
         elif gnss_heading_fresh:
@@ -566,7 +593,7 @@ class NavigationProcess(ServiceProcess):
 
         # Heading source arbitration: the dual antenna wins while it is fresh,
         # otherwise the magnetometer takes over and the status degrades.
-        if (now - self._gnss_heading_t) < _GNSS_HEADING_TIMEOUT_S:
+        if self._gnss_heading_is_fresh(now):
             self.heading_rad = self._gnss_heading_rad
             self.heading_status = self._gnss_heading_status
         elif imu_fresh:
@@ -594,6 +621,7 @@ class NavigationProcess(ServiceProcess):
         # A stale rate would keep feeding the autopilot derivative term after an
         # IMU dropout; publish zero instead.
         w = self.w_crp if imu_fresh else np.zeros(3)
+        acc = self.acc_crp if imu_fresh else np.zeros(3)
         self._check_yaw_rate_sign(math.radians(w[2]), now)
 
         try:
@@ -616,9 +644,9 @@ class NavigationProcess(ServiceProcess):
                 wx_crp=float(w[0]),
                 wy_crp=float(w[1]),
                 wz_crp=float(w[2]),
-                accx_crp=float(self.acc_crp[0]),
-                accy_crp=float(self.acc_crp[1]),
-                accz_crp=float(self.acc_crp[2]),
+                accx_crp=float(acc[0]),
+                accy_crp=float(acc[1]),
+                accz_crp=float(acc[2]),
                 mag_heading_crp=self.mag_heading_crp,
                 heading_status=self.heading_status,
                 fix_type=effective_fix_type,
@@ -702,12 +730,15 @@ class NavigationProcess(ServiceProcess):
 
         dt = ts - self._prev_w_t
         if self._prev_w is not None and 0.0 < dt < 0.5:
-            w_dot = (w - self._prev_w) / dt
+            # Differentiating a noisy 20 Hz gyro amplifies its noise by 1/dt, and
+            # the lever arm turns that straight into fake specific force.
+            alpha = dt / (dt + 1.0 / (2.0 * math.pi * _WDOT_LPF_HZ))
+            self._w_dot += alpha * ((w - self._prev_w) / dt - self._w_dot)
         else:
-            w_dot = np.zeros(3)
+            self._w_dot = np.zeros(3)
         self._prev_w, self._prev_w_t = w, ts
 
-        return a_body - np.cross(w_dot, r) - np.cross(w, np.cross(w, r))
+        return a_body - np.cross(self._w_dot, r) - np.cross(w, np.cross(w, r))
 
     def _mag_heading(self, mag_body, roll_deg, pitch_deg):
         """Tilt-compensated magnetic heading [0,360) from the body-frame
@@ -798,8 +829,8 @@ class NavigationProcess(ServiceProcess):
 
         The lever arm from the antenna to the CRP in the body frame is
         ``-offset`` (the CRP is the origin, and ``offset`` is the antenna
-        position relative to it). That vector is rotated into NED and applied
-        as a local flat-earth metre → degree correction.
+        position relative to it). That vector is rotated into NED and converted
+        back to degrees with the same local tangent plane the filter uses.
         """
         ant = self.offsets_config.gnss_stern
 
@@ -809,16 +840,25 @@ class NavigationProcess(ServiceProcess):
             r_body, attitude_rpy_rad
         )
 
-        # Flat-earth conversion of the local NED offset to lat/lon/altitude.
-        lat_rad = math.radians(lat_deg)
-        d_lat = math.degrees(d_north / _EARTH_RADIUS_M)
-        cos_lat = math.cos(lat_rad)
-        if abs(cos_lat) < 1e-9:
-            d_lon = 0.0
-        else:
-            d_lon = math.degrees(d_east / (_EARTH_RADIUS_M * cos_lat))
-
-        crp_lat = lat_deg + d_lat
-        crp_lon = lon_deg + d_lon
+        crp_lat, crp_lon = ned_to_latlon(d_north, d_east, lat_deg, lon_deg)
         crp_alt = alt_m - d_down   # altitude is up-positive, NED down is down-positive
         return crp_lat, crp_lon, crp_alt
+
+    def _antenna_velocity_to_crp(self, velocity_ned, attitude_rpy_rad=None):
+        """Return the NED velocity of the CRP given the ground velocity reported
+        by the stern GNSS antenna.
+
+        A rotating rigid body gives ``v_antenna = v_crp + w x r_antenna``, so the
+        lever-arm term is subtracted. Skipped when the IMU rate is stale, since
+        an old angular rate would inject a spurious velocity.
+        """
+        velocity_ned = np.asarray(velocity_ned, dtype=float)
+        if self.source == 'sim' or (time.time() - self.last_imu_time) > _IMU_TIMEOUT_S:
+            return velocity_ned
+        ant = self.offsets_config.gnss_stern
+        lever_arm_body = np.cross(
+            np.radians(self.w_crp), np.array([ant.x, ant.y, ant.z])
+        )
+        return velocity_ned - np.array(
+            self._body_to_ned(lever_arm_body, attitude_rpy_rad)
+        )

@@ -35,6 +35,11 @@ const PING_TIMEOUT_MS = 3000        // unanswered after this → counted as lost
 const LATENCY_HISTORY_LEN = 60      // samples kept for the sparkline (~30 s)
 const _pendingPings = new Map()     // seq → send timestamp (performance.now())
 
+// The INS, IMU and GNC streams arrive at 20 Hz. Every push invalidates a
+// reactive array that several Chart.js line charts re-render from, so they are
+// decimated to 8 Hz before being stored.
+const CHART_PUSH_INTERVAL_MS = 125
+
 function resetLinkStats(store) {
   _pendingPings.clear()
   store.latencyMs = 0
@@ -71,6 +76,7 @@ export const useTelemetryStore = defineStore('telemetry', {
     headingStatus: '',
     insActive: false,
     positionSource: 'GNSS',
+    navFixType: 0,
     navHorizontalAccuracyM: null,
     navVerticalAccuracyM: null,
     battery: 0.0,
@@ -228,6 +234,10 @@ export const useTelemetryStore = defineStore('telemetry', {
     imuHistory: [],    // { timeMs, label, roll, pitch, yaw, ax, ay, az, p, q, r }
     gncHistory: [],    // { timeMs, label, actualHeading, targetHeading, headingError, cte, port, starboard, surgeVel, swayVel, surgeAcc, swayAcc, vCruise, tauXEff }
     powerHistory: [],  // { timeMs, label, voltage, current, power }
+    // Decimation clocks for the 20 Hz streams above (see CHART_PUSH_INTERVAL_MS).
+    _lastInsPushMs: 0,
+    _lastImuPushMs: 0,
+    _lastGncPushMs: 0,
 
     // Vehicle command modes
     vehicleMode: 'MANUAL',        // 'MANUAL', 'STATION', 'WP_ROUTE'
@@ -328,14 +338,15 @@ export const useTelemetryStore = defineStore('telemetry', {
       gyro_bias_noise_deg_s_sqrt_hz: 0.02,
       accel_bias_tau_s: 500.0,
       gyro_bias_tau_s: 500.0,
-      gravity_aiding_noise: 0.05,
-      gravity_gate_mps2: 0.75,
-      gravity_max_speed_mps: 0.5,
+      gravity_aiding_noise: 0.10,
+      gravity_gate_mps2: 0.40,
+      gravity_max_speed_mps: 2.0,
+      attitude_aiding_rate_hz: 2.0,
       gnss_velocity_sigma_mps: 0.15,
       gnss_heading_sigma_deg: 0.5,
       mag_heading_sigma_deg: 10.0,
-      rtk_fixed_horizontal_floor_m: 0.02,
-      rtk_fixed_vertical_floor_m: 0.04,
+      rtk_fixed_horizontal_floor_m: 0.10,
+      rtk_fixed_vertical_floor_m: 0.15,
       rtk_float_horizontal_sigma_m: 0.5,
       rtk_float_vertical_sigma_m: 1.0,
       dgps_horizontal_sigma_m: 1.5,
@@ -469,18 +480,19 @@ export const useTelemetryStore = defineStore('telemetry', {
       if (state.insActive) return 'INS'
       return { A: 'GNSS', M: 'MAG', I: 'INS', S: 'SIM' }[state.headingStatus] || 'NONE'
     },
-    // Fix quality color: green for RTK fixed (4), yellow-green for float (5), 
-    // yellow for DGPS (2), orange for GPS only (1), red for no fix (0)
+    // Fix quality color. Uses the navigation-effective fix (gnc/ekf_state), which
+    // decays to 0 on GNSS loss — the raw sensor/gnss value freezes instead.
     fixColor(state) {
-      const f = state.gnssFixType
-      if (f >= 4) return '#00C851'   // RTK Fixed
-      if (f === 3) return '#88cc00'  // PPS
-      if (f === 2) return '#aacc00'  // DGPS
+      const f = state.navFixType ?? state.gnssFixType
+      if (f === 4) return '#00C851'  // RTK Fixed
+      if (f === 5) return '#88cc00'  // RTK Float
+      if (f === 3) return '#aacc00'  // PPS
+      if (f === 2) return '#ffdd00'  // DGPS
       if (f === 1) return '#FFA500'  // GPS
       return '#e53935'               // No fix
     },
     canStartAutoMode(state) {
-      return state.gnssFixType >= state.failsafeMinGnssFix
+      return (state.navFixType ?? state.gnssFixType) >= state.failsafeMinGnssFix
     },
     autoModeWarnings(state) {
       const warnings = []
@@ -1249,22 +1261,25 @@ export const useTelemetryStore = defineStore('telemetry', {
             this.imuMagHeading = data.mag_heading_crp
 
             const nowMs = Number.isFinite(data.timestamp) ? data.timestamp * 1000 : Date.now()
-            this.imuHistory.push({
-              timeMs: nowMs,
-              label: new Date(nowMs).toISOString().substr(11, 8),
-              roll: data.roll_crp ?? 0,
-              pitch: data.pitch_crp ?? 0,
-              yaw: data.yaw_crp ?? 0,
-              ax: data.accx_crp ?? 0,
-              ay: data.accy_crp ?? 0,
-              az: data.accz_crp ?? 0,
-              p: data.wx_crp ?? 0,
-              q: data.wy_crp ?? 0,
-              r: data.wz_crp ?? 0
-            })
-            const cutoffImu = nowMs - 120000
-            if (this.imuHistory.length > 0 && this.imuHistory[0].timeMs < cutoffImu)
-              this.imuHistory = this.imuHistory.filter(point => point.timeMs > cutoffImu)
+            if (Date.now() - this._lastImuPushMs >= CHART_PUSH_INTERVAL_MS) {
+              this._lastImuPushMs = Date.now()
+              this.imuHistory.push({
+                timeMs: nowMs,
+                label: new Date(nowMs).toISOString().substr(11, 8),
+                roll: data.roll_crp ?? 0,
+                pitch: data.pitch_crp ?? 0,
+                yaw: data.yaw_crp ?? 0,
+                ax: data.accx_crp ?? 0,
+                ay: data.accy_crp ?? 0,
+                az: data.accz_crp ?? 0,
+                p: data.wx_crp ?? 0,
+                q: data.wy_crp ?? 0,
+                r: data.wz_crp ?? 0
+              })
+              const cutoffImu = nowMs - 120000
+              if (this.imuHistory.length > 0 && this.imuHistory[0].timeMs < cutoffImu)
+                this.imuHistory = this.imuHistory.filter(point => point.timeMs > cutoffImu)
+            }
           }
           else if (topic === 'gnc/ekf_state') {
             this.lat = data.lat
@@ -1274,6 +1289,7 @@ export const useTelemetryStore = defineStore('telemetry', {
             this.headingStatus = data.heading_status || ''
             this.insActive = data.ins_active ?? false
             this.positionSource = data.position_source || 'GNSS'
+            this.navFixType = data.fix_type ?? 0
             this.navHorizontalAccuracyM = data.horizontal_accuracy_m ?? null
             this.navVerticalAccuracyM = data.vertical_accuracy_m ?? null
             this.speed = data.speed
@@ -1298,36 +1314,39 @@ export const useTelemetryStore = defineStore('telemetry', {
             }
 
             const nowMs = Number.isFinite(data.timestamp) ? data.timestamp * 1000 : Date.now()
-            this.insComparisonHistory.push({
-              timeMs: nowMs,
-              label: new Date(nowMs).toISOString().substr(11, 8),
-              insLat: data.lat,
-              insLon: data.lon,
-              insAlt: data.altitude ?? 0,
-              insHeading: Number.isFinite(data.heading)
-                ? ((data.heading * 180 / Math.PI) + 360) % 360
-                : 0,
-              gnssLat: data.gnss_lat_crp ?? this.gnssRawLat,
-              gnssLon: data.gnss_lon_crp ?? this.gnssRawLon,
-              gnssAlt: data.gnss_altitude_crp ?? this.gnssAlt,
-              gnssHeading: this.gnssHeading,
-              magHeading: this.imuMagHeading,
-              cog: this.gnssCog,
-              gnssHorizontalAccuracyM: this.gnssHorizontalAccuracyM,
-              gnssVerticalAccuracyM: this.gnssVerticalAccuracyM,
-              insHorizontalAccuracyM: data.horizontal_accuracy_m ?? null,
-              insVerticalAccuracyM: data.vertical_accuracy_m ?? null,
-              insActive: data.ins_active ?? false,
-              positionSource: data.position_source || 'GNSS'
-            })
-            const cutoffIns = nowMs - 300000
-            if (
-              this.insComparisonHistory.length > 0 &&
-              this.insComparisonHistory[0].timeMs < cutoffIns
-            ) {
-              this.insComparisonHistory = this.insComparisonHistory.filter(
-                point => point.timeMs > cutoffIns
-              )
+            if (Date.now() - this._lastInsPushMs >= CHART_PUSH_INTERVAL_MS) {
+              this._lastInsPushMs = Date.now()
+              this.insComparisonHistory.push({
+                timeMs: nowMs,
+                label: new Date(nowMs).toISOString().substr(11, 8),
+                insLat: data.lat,
+                insLon: data.lon,
+                insAlt: data.altitude ?? 0,
+                insHeading: Number.isFinite(data.heading)
+                  ? ((data.heading * 180 / Math.PI) + 360) % 360
+                  : 0,
+                gnssLat: data.gnss_lat_crp ?? this.gnssRawLat,
+                gnssLon: data.gnss_lon_crp ?? this.gnssRawLon,
+                gnssAlt: data.gnss_altitude_crp ?? this.gnssAlt,
+                gnssHeading: this.gnssHeading,
+                magHeading: this.imuMagHeading,
+                cog: this.gnssCog,
+                gnssHorizontalAccuracyM: this.gnssHorizontalAccuracyM,
+                gnssVerticalAccuracyM: this.gnssVerticalAccuracyM,
+                insHorizontalAccuracyM: data.horizontal_accuracy_m ?? null,
+                insVerticalAccuracyM: data.vertical_accuracy_m ?? null,
+                insActive: data.ins_active ?? false,
+                positionSource: data.position_source || 'GNSS'
+              })
+              const cutoffIns = nowMs - 300000
+              if (
+                this.insComparisonHistory.length > 0 &&
+                this.insComparisonHistory[0].timeMs < cutoffIns
+              ) {
+                this.insComparisonHistory = this.insComparisonHistory.filter(
+                  point => point.timeMs > cutoffIns
+                )
+              }
             }
             if (data.source) this.dataSource = data.source
             newLat = data.lat
@@ -1496,28 +1515,31 @@ export const useTelemetryStore = defineStore('telemetry', {
              const nowMs = Date.now()
              const RAD2DEG = 180 / Math.PI
              const dbg = this._lastGncDebug || {}
-             this.gncHistory.push({
-               timeMs: nowMs,
-               label: new Date(nowMs).toISOString().substr(11, 8),
-               actualHeading: ((this.heading || 0) * RAD2DEG + 360) % 360,
-               targetHeading: ((this.targetHeading || 0) * RAD2DEG + 360) % 360,
-               headingError: (this.headingError || 0) * RAD2DEG,
-               cte: this.crossTrackError || 0,
-               port: data.port_pct || 0,
-               starboard: data.starboard_pct || 0,
-               surgeVel:   dbg.surgeVel   || 0,
-               swayVel:    dbg.swayVel    || 0,
-               surgeAcc:   dbg.surgeAcc   || 0,
-               swayAcc:    dbg.swayAcc    || 0,
-               vCruise:    dbg.vCruise    || 0,
-               tauXEff:    dbg.tauXEff    || 0,
-               distToWp:   dbg.distToWp   || 0,
-               wpIndex:    dbg.wpIndex    || 0,
-               refSpeedKn: dbg.refSpeedKn || 0,
-             })
-             const cutoffGnc = nowMs - 120000
-             if (this.gncHistory.length > 0 && this.gncHistory[0].timeMs < cutoffGnc)
-               this.gncHistory = this.gncHistory.filter(p => p.timeMs > cutoffGnc)
+             if (nowMs - this._lastGncPushMs >= CHART_PUSH_INTERVAL_MS) {
+               this._lastGncPushMs = nowMs
+               this.gncHistory.push({
+                 timeMs: nowMs,
+                 label: new Date(nowMs).toISOString().substr(11, 8),
+                 actualHeading: ((this.heading || 0) * RAD2DEG + 360) % 360,
+                 targetHeading: ((this.targetHeading || 0) * RAD2DEG + 360) % 360,
+                 headingError: (this.headingError || 0) * RAD2DEG,
+                 cte: this.crossTrackError || 0,
+                 port: data.port_pct || 0,
+                 starboard: data.starboard_pct || 0,
+                 surgeVel:   dbg.surgeVel   || 0,
+                 swayVel:    dbg.swayVel    || 0,
+                 surgeAcc:   dbg.surgeAcc   || 0,
+                 swayAcc:    dbg.swayAcc    || 0,
+                 vCruise:    dbg.vCruise    || 0,
+                 tauXEff:    dbg.tauXEff    || 0,
+                 distToWp:   dbg.distToWp   || 0,
+                 wpIndex:    dbg.wpIndex    || 0,
+                 refSpeedKn: dbg.refSpeedKn || 0,
+               })
+               const cutoffGnc = nowMs - 120000
+               if (this.gncHistory.length > 0 && this.gncHistory[0].timeMs < cutoffGnc)
+                 this.gncHistory = this.gncHistory.filter(p => p.timeMs > cutoffGnc)
+             }
           }
           else if (topic === 'sensor/battery') {
              this.batteryVoltage = data.voltage
