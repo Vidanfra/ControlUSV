@@ -58,9 +58,14 @@ LOG_FIELD_GROUPS = [
         "id": "position",
         "label": "Position / Navigation (EKF)",
         "fields": [
+            _f("state_timestamp",   "State Timestamp",    T_STATE, "timestamp", "ts",   "float"),
             _f("state_lat",         "Latitude",           T_STATE, "lat",     "deg",  "float"),
             _f("state_lon",         "Longitude",          T_STATE, "lon",     "deg",  "float"),
             _f("state_altitude",    "Altitude",           T_STATE, "altitude","m",    "float"),
+            _f("state_gnss_timestamp", "GNSS Timestamp",  T_STATE, "gnss_timestamp", "ts", "float"),
+            _f("state_gnss_lat_crp", "GNSS Latitude (CRP)", T_STATE, "gnss_lat_crp", "deg", "float"),
+            _f("state_gnss_lon_crp", "GNSS Longitude (CRP)", T_STATE, "gnss_lon_crp", "deg", "float"),
+            _f("state_gnss_altitude_crp", "GNSS Altitude (CRP)", T_STATE, "gnss_altitude_crp", "m", "float"),
             _f("state_speed",       "Speed",              T_STATE, "speed",   "m/s",  "float"),
             _f("state_course",      "Course",             T_STATE, "course",  "deg",  "float"),
             _f("state_heading",     "Heading",            T_STATE, "heading", "deg",  "float"),
@@ -87,6 +92,7 @@ LOG_FIELD_GROUPS = [
         "id": "gnss",
         "label": "GNSS (raw sensor)",
         "fields": [
+            _f("gnss_timestamp",    "Measurement Timestamp", T_GNSS, "timestamp", "ts", "float"),
             _f("gnss_lat",          "Latitude",           T_GNSS, "lat",            "deg",  "float"),
             _f("gnss_lon",          "Longitude",          T_GNSS, "lon",            "deg",  "float"),
             _f("gnss_alt",          "Altitude (AMSL)",    T_GNSS, "alt",            "m",    "float"),
@@ -110,6 +116,7 @@ LOG_FIELD_GROUPS = [
         "id": "imu",
         "label": "IMU (raw sensor)",
         "fields": [
+            _f("imu_timestamp",     "Measurement Timestamp", T_IMU, "timestamp", "ts", "float"),
             _f("imu_roll_raw",      "Roll (raw)",         T_IMU, "roll_raw",    "deg",   "float"),
             _f("imu_pitch_raw",     "Pitch (raw)",        T_IMU, "pitch_raw",   "deg",   "float"),
             _f("imu_yaw_raw",       "Yaw (raw)",          T_IMU, "yaw_raw",     "deg",   "float"),
@@ -130,6 +137,7 @@ LOG_FIELD_GROUPS = [
         "id": "imu_state",
         "label": "IMU (body frame / CRP)",
         "fields": [
+            _f("imu_state_timestamp", "Measurement Timestamp", T_IMU_STATE, "timestamp", "ts", "float"),
             _f("imu_state_roll",    "Roll (CRP)",         T_IMU_STATE, "roll_crp",        "deg",   "float"),
             _f("imu_state_pitch",   "Pitch (CRP)",        T_IMU_STATE, "pitch_crp",       "deg",   "float"),
             _f("imu_state_yaw",     "Yaw (CRP)",          T_IMU_STATE, "yaw_crp",         "deg",   "float"),

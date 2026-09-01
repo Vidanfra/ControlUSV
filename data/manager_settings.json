@@ -159,17 +159,13 @@
       {
         "id": "csv-1780249503893-304",
         "name": "NAV",
-        "enabled": false,
+        "enabled": true,
         "frequency_value": 20.0,
         "frequency_unit": "hz",
         "rotation_hours": 1.0,
         "output_path": "/home/usv/USV/ControlUSV/logs",
         "fields": [
-          "sim_mode",
           "vehicle_mode",
-          "state_lat",
-          "state_lon",
-          "state_altitude",
           "state_speed",
           "state_course",
           "state_heading",
@@ -179,7 +175,6 @@
           "state_wz_crp",
           "state_heading_status",
           "state_source",
-          "gnss_fix_type_sys",
           "gnc_target_heading",
           "gnc_cte",
           "gnc_heading_error",
@@ -193,10 +188,14 @@
           "bat_accumulated_wh",
           "fs_comm_timeout",
           "link_last_ping_age",
-          "sysmon_os",
           "sysmon_net_rx",
           "sysmon_net_tx",
-          "state_mag_heading_crp"
+          "state_mag_heading_crp",
+          "state_gnss_timestamp",
+          "state_gnss_lon_crp",
+          "state_gnss_lat_crp",
+          "state_gnss_altitude_crp",
+          "state_fix_type"
         ]
       }
     ],
@@ -211,9 +210,6 @@
         "host": "255.255.255.255",
         "port": 9000,
         "fields": [
-          "state_lat",
-          "state_lon",
-          "state_altitude",
           "state_speed",
           "state_course",
           "state_heading",
@@ -221,7 +217,11 @@
           "state_pitch_crp",
           "state_yaw_crp",
           "state_heading_status",
-          "state_source"
+          "state_source",
+          "state_gnss_lon_crp",
+          "state_gnss_lat_crp",
+          "state_gnss_altitude_crp",
+          "state_timestamp"
         ]
       }
     ]

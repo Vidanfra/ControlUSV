@@ -209,7 +209,9 @@ function capturePoint(point) {
       timeMs: point.gnssTimeMs,
       lat: point.gnssLat,
       lon: point.gnssLon,
-      alt: point.gnssAlt
+      alt: point.gnssAlt,
+      gnssFixType: point.gnssFixType,
+      navFixType: telemetry.navFixType
     })
   }
   if (point.insActive && isValidPosition(point.insLat, point.insLon, point.insAlt)) {
@@ -217,7 +219,9 @@ function capturePoint(point) {
       timeMs: point.gnssTimeMs,
       lat: point.insLat,
       lon: point.insLon,
-      alt: point.insAlt
+      alt: point.insAlt,
+      gnssFixType: point.gnssFixType,
+      navFixType: telemetry.navFixType
     })
   }
 }
@@ -346,6 +350,47 @@ function reportOffsetsSection() {
   ]
 }
 
+function reportRawDataSection(label, samples, result, origin) {
+  const lines = [
+    '',
+    `=== RAW ${label} CRP POSITION DATA ===`,
+    'Columns are tab-separated. Geodetic values are the original values used by the verification.',
+    'epoch\ttimestamp_ms\ttimestamp_utc\telapsed_s\tlatitude_deg\tlongitude_deg\taltitude_m\t' +
+      'gnss_fix_type\tnav_fix_type\teast_m\tnorth_m\tup_m\teast_deviation_m\t' +
+      'north_deviation_m\tup_deviation_m\tradial_distance_m\tabs_vertical_deviation_m'
+  ]
+  if (!origin || !result) {
+    lines.push('NO VALID DATA')
+    return lines
+  }
+
+  const firstTimeMs = samples[0].timeMs
+  samples.forEach((sample, index) => {
+    const enu = toEnu(sample, origin)
+    const deviation = result.deviations[index]
+    lines.push([
+      index + 1,
+      sample.timeMs,
+      new Date(sample.timeMs).toISOString(),
+      ((sample.timeMs - firstTimeMs) / 1000).toFixed(3),
+      String(sample.lat),
+      String(sample.lon),
+      String(sample.alt),
+      sample.gnssFixType ?? 'unknown',
+      sample.navFixType ?? 'unknown',
+      enu.east.toFixed(9),
+      enu.north.toFixed(9),
+      enu.up.toFixed(9),
+      deviation.east.toFixed(9),
+      deviation.north.toFixed(9),
+      deviation.up.toFixed(9),
+      Math.hypot(deviation.east, deviation.north).toFixed(9),
+      Math.abs(deviation.up).toFixed(9)
+    ].join('\t'))
+  })
+  return lines
+}
+
 function downloadReport() {
   const completedAt = new Date()
   const reference = referencePosition.value
@@ -366,6 +411,10 @@ function downloadReport() {
     'Method: centroid is the arithmetic mean of valid ENU positions. Horizontal P95 is the',
     'empirical 95th percentile of radial distance from the centroid. Vertical P95 is the',
     'empirical 95th percentile of absolute Up deviation from the centroid.',
+    `ENU conversion constants: WGS84_A_M=${WGS84_A_M}, WGS84_E2=${WGS84_E2}.`,
+    'Empirical percentile method: linear interpolation at rank p/100 * (n - 1).',
+    ...reportRawDataSection('GNSS ONLY', gnssSamples.value, results.value.gnss, reference),
+    ...reportRawDataSection('INS MODE', insSamples.value, results.value.ins, reference),
     '',
     'HYDROGRAPHIC RIGOR WARNING',
     'IHO S-44 THU and TVU apply to the sounding on the seafloor. This report evaluates the',

@@ -86,7 +86,9 @@ def _resolve_field_value(field_id: str, snapshots: Dict[str, dict]):
 # JSON broadcast payloads small.
 _FULL_PRECISION_IDS = {
     fid for fid, fdef in FIELD_INDEX.items()
-    if fdef["path"].split(".")[-1] in ("lat", "lon")
+    if fdef["path"].split(".")[-1] in (
+        "lat", "lon", "gnss_lat_crp", "gnss_lon_crp"
+    )
 }
 
 
@@ -140,7 +142,6 @@ class CsvLoggerTask(threading.Thread):
         self._file = None
         self._writer = None
         self._current_path = None
-        self._file_start_ts = 0.0
         self._file_rotation_ts = 0.0
         self._last_fsync = 0.0
         self.last_row: Dict[str, object] = {}  # for live preview
@@ -160,12 +161,16 @@ class CsvLoggerTask(threading.Thread):
             logger.warning(f"[Logger {self.cfg.name}] {self.paused_reason}")
             return False
 
-        self._file_start_ts = now
         self._file_rotation_ts = now + self.cfg.rotation_hours * 3600.0
         start_iso = _iso_for_filename(now)
         safe_name = "".join(c if (c.isalnum() or c in "-_") else "_" for c in self.cfg.name)
         fname = f"{safe_name}_{start_iso}.csv"
         self._current_path = os.path.join(self.cfg.output_path, fname)
+        collision_index = 2
+        while os.path.exists(self._current_path):
+            fname = f"{safe_name}_{start_iso}_{collision_index}.csv"
+            self._current_path = os.path.join(self.cfg.output_path, fname)
+            collision_index += 1
 
         try:
             self._file = open(self._current_path, "w", newline="", encoding="utf-8")
@@ -180,7 +185,7 @@ class CsvLoggerTask(threading.Thread):
             logger.error(f"[Logger {self.cfg.name}] {self.paused_reason}")
             return False
 
-    def _close_file(self, now: float):
+    def _close_file(self):
         if self._file is None:
             return
         try:
@@ -188,20 +193,6 @@ class CsvLoggerTask(threading.Thread):
             self._file.close()
         except Exception:
             pass
-
-        # Rename file: append actual close time to filename.
-        # Original: <name>_<start_iso>.csv
-        # After close: <name>_<start_iso>_<end_iso>.csv
-        if self._current_path:
-            actual_end_iso = _iso_for_filename(now)
-            try:
-                stem, ext = os.path.splitext(self._current_path)
-                new_path = f"{stem}_{actual_end_iso}{ext}"
-                if new_path != self._current_path and not os.path.exists(new_path):
-                    os.rename(self._current_path, new_path)
-                    self._current_path = new_path
-            except Exception:
-                pass
         self._file = None
         self._writer = None
 
@@ -230,7 +221,7 @@ class CsvLoggerTask(threading.Thread):
             self.last_row = preview
         except Exception as e:
             logger.error(f"[Logger {self.cfg.name}] write failed: {e}")
-            self._close_file(now)
+            self._close_file()
 
     # ── main loop ─────────────────────────────────────────────────────────
     def run(self):
@@ -244,7 +235,7 @@ class CsvLoggerTask(threading.Thread):
                     continue
 
             if now >= self._file_rotation_ts:
-                self._close_file(now)
+                self._close_file()
                 continue  # next iteration reopens
 
             self._write_row(now)
@@ -258,7 +249,7 @@ class CsvLoggerTask(threading.Thread):
             if sleep_for > 0:
                 self.stop_event.wait(sleep_for)
 
-        self._close_file(time.time())
+        self._close_file()
 
     def stop(self):
         self.stop_event.set()
